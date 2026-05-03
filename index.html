@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Annie · 个人博客</title>
+
+    <!-- 现代化图标库 Remix Icon -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
+
+    <style>
+        /* ==================== CSS 变量 & 全局重置 ==================== */
+        :root {
+            --max-width: 720px;
+            --font-sans: 'Inter', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            --font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'Georgia', serif;
+
+            /* 纯白背景下的灰度体系 */
+            --color-bg: #ffffff;
+            --color-surface: #fafafa;
+            --color-border: #eaeaea;
+            --color-border-light: #f0f0f0;
+
+            --color-text-primary: #1a1a1a;
+            --color-text-secondary: #6b6b6b;
+            --color-text-tertiary: #999999;
+            --color-accent: #0d0d0d;
+            --color-accent-hover: #333333;
+            --color-tag-bg: #f5f5f5;
+            --color-tag-text: #555555;
+            --color-divider: #eeeeee;
+
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+
+            --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.03);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.08);
+
+            --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--color-bg);
+            color: var(--color-text-primary);
+            line-height: 1.7;
+            letter-spacing: 0.01em;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 24px;
+        }
+
+        /* ==================== 主容器 ==================== */
+        .main-container {
+            width: 100%;
+            max-width: var(--max-width);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ==================== 头部导航 ==================== */
+        .site-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 28px 0 20px 0;
+            border-bottom: 1px solid var(--color-divider);
+            margin-bottom: 36px;
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 100;
+            transition: var(--transition-smooth);
+        }
+
+        .site-branding {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* 头像占位 —— 替换 src 即可 */
+        .avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1.5px solid var(--color-border);
+            background: var(--color-surface);
+            flex-shrink: 0;
+        }
+
+        .site-title-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .site-title {
+            font-size: 1.15rem;
+            font-weight: 650;
+            letter-spacing: -0.01em;
+            color: var(--color-text-primary);
+            text-decoration: none;
+            line-height: 1.2;
+        }
+        .site-subtitle {
+            font-size: 0.78rem;
+            color: var(--color-text-tertiary);
+            letter-spacing: 0.02em;
+            font-weight: 400;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 22px;
+            align-items: center;
+            list-style: none;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: var(--transition-fast);
+            position: relative;
+            padding: 4px 0;
+        }
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--color-text-primary);
+        }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0%;
+            height: 1.5px;
+            background: var(--color-text-primary);
+            transition: width var(--transition-fast);
+            border-radius: 1px;
+        }
+        .nav-links a:hover::after,
+        .nav-links a.active::after {
+            width: 100%;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--color-text-primary);
+            padding: 4px;
+        }
+
+        /* ==================== 英雄区 / 个人简介 ==================== */
+        .hero-section {
+            padding: 20px 0 40px 0;
+            border-bottom: 1px solid var(--color-divider);
+            margin-bottom: 40px;
+        }
+        .hero-greeting {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--color-text-tertiary);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .hero-name {
+            font-size: 2.6rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+            margin-bottom: 12px;
+            color: var(--color-text-primary);
+        }
+        .hero-bio {
+            font-size: 1.05rem;
+            color: var(--color-text-secondary);
+            max-width: 560px;
+            line-height: 1.65;
+            margin-bottom: 20px;
+        }
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            font-size: 0.85rem;
+            color: var(--color-text-tertiary);
+        }
+        .hero-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .hero-meta i {
+            font-size: 1rem;
+        }
+        .social-links {
+            display: flex;
+            gap: 14px;
+            margin-top: 18px;
+        }
+        .social-links a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--color-surface);
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            transition: var(--transition-fast);
+            font-size: 1.1rem;
+            border: 1px solid transparent;
+        }
+        .social-links a:hover {
+            background: var(--color-text-primary);
+            color: #fff;
+            border-color: var(--color-text-primary);
+        }
+
+        /* ==================== 文章列表 ==================== */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .section-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--color-text-tertiary);
+            font-weight: 600;
+        }
+        .tag-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .tag-pill {
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid var(--color-border);
+            background: #fff;
+            color: var(--color-text-secondary);
+            transition: var(--transition-fast);
+            white-space: nowrap;
+            user-select: none;
+        }
+        .tag-pill:hover {
+            border-color: #ccc;
+            color: var(--color-text-primary);
+        }
+        .tag-pill.active {
+            background: var(--color-text-primary);
+            color: #fff;
+            border-color: var(--color-text-primary);
+        }
+
+        .posts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        .post-card {
+            display: flex;
+            flex-direction: column;
+            padding: 22px 0;
+            border-bottom: 1px solid var(--color-border-light);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+        }
+        .post-card:hover {
+            padding-left: 10px;
+            background: var(--color-surface);
+            margin: 0 -12px;
+            padding-left: 22px;
+            padding-right: 12px;
+            border-radius: var(--radius-sm);
+            border-bottom-color: transparent;
+        }
+        .post-card:last-child {
+            border-bottom: none;
+        }
+        .post-date {
+            font-size: 0.78rem;
+            color: var(--color-text-tertiary);
+            letter-spacing: 0.03em;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        .post-title {
+            font-size: 1.25rem;
+            font-weight: 650;
+            letter-spacing: -0.02em;
+            line-height: 1.35;
+            margin-bottom: 6px;
+            color: var(--color-text-primary);
+            transition: var(--transition-fast);
+        }
+        .post-excerpt {
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+            line-height: 1.55;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .post-tags-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .post-tag {
+            font-size: 0.72rem;
+            padding: 3px 10px;
+            border-radius: 12px;
+            background: var(--color-tag-bg);
+            color: var(--color-tag-text);
+            letter-spacing: 0.02em;
+            font-weight: 500;
+        }
+
+        /* ==================== 文章详情页 ==================== */
+        .article-detail {
+            display: none;
+            animation: fadeSlideIn 0.35s ease;
+        }
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .article-detail.active {
+            display: block;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.88rem;
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            margin-bottom: 24px;
+            transition: var(--transition-fast);
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .back-link:hover {
+            color: var(--color-text-primary);
+        }
+        .article-full-title {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.2;
+            margin-bottom: 8px;
+        }
+        .article-full-meta {
+            font-size: 0.82rem;
+            color: var(--color-text-tertiary);
+            margin-bottom: 28px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: center;
+        }
+        .article-content {
+            font-family: var(--font-serif);
+            font-size: 1.05rem;
+            line-height: 1.85;
+            color: var(--color-text-primary);
+        }
+        .article-content p {
+            margin-bottom: 1.4em;
+        }
+        .article-content h2 {
+            font-family: var(--font-sans);
+            font-size: 1.4rem;
+            font-weight: 650;
+            margin: 2em 0 0.6em 0;
+            letter-spacing: -0.01em;
+        }
+        .article-content blockquote {
+            border-left: 2.5px solid var(--color-border);
+            padding-left: 18px;
+            color: var(--color-text-secondary);
+            margin: 1.6em 0;
+            font-style: italic;
+        }
+        .article-content code {
+            background: var(--color-surface);
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+        }
+        .divider-thin {
+            border: none;
+            border-top: 1px solid var(--color-divider);
+            margin: 32px 0;
+        }
+
+        /* ==================== 页脚 ==================== */
+        .site-footer {
+            text-align: center;
+            padding: 36px 0 28px 0;
+            font-size: 0.75rem;
+            color: var(--color-text-tertiary);
+            letter-spacing: 0.03em;
+            border-top: 1px solid var(--color-divider);
+            margin-top: 48px;
+        }
+        .site-footer a {
+            color: var(--color-text-secondary);
+            text-decoration: none;
+        }
+        .site-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ==================== 响应式 ==================== */
+        @media (max-width: 600px) {
+            body {
+                padding: 0 16px;
+            }
+            .site-header {
+                padding: 18px 0 14px 0;
+                margin-bottom: 24px;
+            }
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                right: 0;
+                flex-direction: column;
+                background: #fff;
+                border: 1px solid var(--color-border);
+                border-radius: var(--radius-md);
+                padding: 12px 20px;
+                gap: 10px;
+                box-shadow: var(--shadow-md);
+                z-index: 99;
+            }
+            .nav-links.open {
+                display: flex;
+            }
+            .mobile-menu-btn {
+                display: block;
+            }
+            .hero-name {
+                font-size: 2rem;
+            }
+            .hero-bio {
+                font-size: 0.95rem;
+            }
+            .article-full-title {
+                font-size: 1.5rem;
+            }
+            .post-card:hover {
+                padding-left: 8px;
+                margin: 0 -8px;
+                padding-right: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container" id="app">
+
+        <!-- ==================== 头部导航 ==================== -->
+        <header class="site-header">
+            <div class="site-branding">
+                <!-- ★ 替换头像：把 src 改成你自己的头像图片链接 ★ -->
+                <img
+                class="avatar"
+                src="https://github.com/Annie106/myweb/blob/main/images/avatar.jpg?raw=true"
+                alt="Annie 的头像"
+                loading="lazy"
+                />
+                <div class="site-title-group">
+                    <a href="#" class="site-title" id="homeLink">Annie</a>
+                    <span class="site-subtitle">思考 · 记录 · 创造</span>
+                </div>
+            </div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="菜单">
+                <i class="ri-menu-line"></i>
+            </button>
+            <nav>
+                <ul class="nav-links" id="navLinks">
+                    <li><a href="#" class="active" data-nav="home">首页</a></li>
+                    <li><a href="#" data-nav="blog">文章</a></li>
+                    <li><a href="#" data-nav="about">关于</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <!-- ==================== 首页视图 ==================== -->
+        <div id="view-home" class="view active-view">
+            <!-- 个人简介区 -->
+            <section class="hero-section">
+                <div class="hero-greeting">👋 你好，我是</div>
+                <!-- ★ 修改姓名 ★ -->
+                <h1 class="hero-name">Annie</h1>
+                <!-- ★ 修改个人简介 ★ -->
+                <p class="hero-bio">
+思考 · 记录 · 创造
+</p>敏感、真实、讨厌冷暴力与敷衍         
+                <div class="hero-meta">
+                    <!-- ★ 修改所在地、职业等信息 ★ -->
+                    <span><i class="ri-map-pin-line"></i> 辽宁</span>
+                    <span><i class="ri-briefcase-line"></i> 自由撰稿</span>
+                    <span><i class="ri-calendar-line"></i> 博客始于 2026</span>
+                </div>
+<div class="social-links">
+    <!-- ★ 微信：点击弹出微信号提示（不跳转） -->
+    <!-- 微信：点击复制微信号 -->
+    <a href="javascript:void(0);" onclick="copyToClipboard('sossil', '微信号已复制')" title="微信"><i class="ri-wechat-fill"></i></a>
+
+    <!-- QQ：点击复制QQ号 -->
+    <a href="javascript:void(0);" onclick="copyToClipboard('3810710631', 'QQ号已复制')" title="QQ"><i class="ri-qq-fill"></i></a>
+
+    <!-- 邮箱：点击复制邮箱 -->
+    <a href="javascript:void(0);" onclick="copyToClipboard('anniedv106@gmail.com', '邮箱地址已复制')" title="邮箱"><i class="ri-mail-line"></i></a>
+    <a href="#" title="RSS 订阅"><i class="ri-rss-line"></i></a>
+</div>
+            </section>
+
+            <!-- 最新文章 -->
+            <div class="section-header">
+                <span class="section-label">最新文章</span>
+                <div class="tag-filter" id="tagFilterHome">
+                    <span class="tag-pill active" data-tag="all">全部</span>
+                </div>
+            </div>
+            <div class="posts-list" id="postsListHome"></div>
+            <div style="text-align:center;margin-top:20px;">
+                <a href="#" class="tag-pill" data-nav="blog" style="text-decoration:none;cursor:pointer;">查看全部文章 →</a>
+            </div>
+        </div>
+
+        <!-- ==================== 文章列表视图 ==================== -->
+        <div id="view-blog" class="view" style="display:none;">
+            <div class="section-header">
+                <span class="section-label">全部文章</span>
+                <div class="tag-filter" id="tagFilterBlog">
+                    <span class="tag-pill active" data-tag="all">全部</span>
+                </div>
+            </div>
+            <div class="posts-list" id="postsListBlog"></div>
+        </div>
+
+        <!-- ==================== 关于视图 ==================== -->
+        <div id="view-about" class="view" style="display:none;">
+            <section class="hero-section" style="border-bottom:none;margin-bottom:20px;">
+                <h1 class="hero-name" style="font-size:2rem;">关于我</h1>
+                <!-- ★ 修改"关于"页面内容 ★ -->
+                <p class="hero-bio">
+                    我是 Annie，一个用文字整理思绪的人。<br><br>
+                    这个博客是我记录阅读、成长和日常灵感的地方。
+                    相信简单的记录也可以汇聚成光。<br><br>
+                    如需联系，欢迎发送邮件至
+                    <strong>anniedv106@gmail.com</strong>。
+                </p>
+            </section>
+        </div>
+
+        <!-- ==================== 文章详情视图 ==================== -->
+        <div id="view-article" class="article-detail" style="display:none;">
+            <span class="back-link" id="backBtn"><i class="ri-arrow-left-line"></i> 返回文章列表</span>
+            <h1 class="article-full-title" id="articleTitle"></h1>
+            <div class="article-full-meta" id="articleMeta"></div>
+            <div class="article-content" id="articleContent"></div>
+            <hr class="divider-thin">
+            <span class="back-link" id="backBtn2" style="margin-top:0;"><i class="ri-arrow-left-line"></i> 返回</span>
+        </div>
+
+        <!-- ==================== 页脚 ==================== -->
+        <footer class="site-footer">
+            <!-- ★ 修改版权信息 ★ -->
+            <p>© 2026 <a href="#">Annie</a> · 由 <a href="#">RH 工作室 </a> 维护 · 保留所有权利</p></a> 版本 · 0.1.5.11 beta1</p>
+        </footer>
+    </div>
+
+    <script>
+        (function() {
+            // ==================== ★★★ 在这里修改你的博客内容 ★★★ ====================
+            // 所有文章数据都集中在这个数组里，增删改都非常方便。
+            const blogPosts = [{
+                id: 1,
+                title: '设计的本质是减法',
+                date: '2026-05-03',
+                excerpt: '在信息过载的时代，好的设计不是增加更多元素，而是勇敢地移除一切不必要的部分。',
+                tags: ['设计', '极简主义'],
+                featured: true,
+                content: `
+                        <p>我们生活在一个信息极度膨胀的时代。每一天，成千上万的视觉信号争夺着我们的注意力。在这样的背景下，设计的责任不再是"填满空白"，而是<strong>创造呼吸的空间</strong>。</p>
+                        <h2>少即是多</h2>
+                        <p>Dieter Rams 的经典设计原则至今仍然适用。好的设计是尽可能少的设计。当你移除所有非必要元素后，剩下的就是核心价值。</p>
+                        <blockquote>完美不在于无以复加，而在于无可删减。——圣埃克苏佩里</blockquote>
+                        <p>在实践中，这意味着每一个像素、每一行文字、每一个交互都需要经过严格的审视：它真的有必要存在吗？</p>
+                        <h2>留白的力量</h2>
+                        <p>白色空间不是"空的"，它是承载内容的容器。恰当的留白让阅读变得轻松，让重点自然浮现。在纯白背景下，这种感受尤为强烈——内容仿佛悬浮于宁静之中。</p>
+                        <p>这也是为什么这个博客选择了纯白背景。没有干扰，只有文字与你。</p>
+                    `,
+            }, {
+                id: 2,
+                title: '我的阅读工作流（2024版）',
+                date: '2026-05-03',
+                excerpt: '分享我如何用 Readwise + Obsidian 搭建知识内化系统，让阅读不止于浏览。',
+                tags: ['工具', '阅读', '生产力'],
+                featured: true,
+                content: `
+                        <p>过去一年，我调整了阅读流程，目标是<strong>减少信息囤积，增加知识内化</strong>。以下是我的完整工作流。</p>
+                        <h2>第一步：捕获</h2>
+                        <p>使用 Readwise 自动同步所有高亮和批注。无论是 Kindle、Apple Books 还是网页文章，所有标注汇聚一处。</p>
+                        <h2>第二步：回顾</h2>
+                        <p>每天早晨花 8 分钟进行间隔重复回顾。Readwise 会推送 15 条过往高亮，这是知识留存率最高的环节。</p>
+                        <h2>第三步：连接</h2>
+                        <p>将触动我的高亮导入 Obsidian，用自己的话重写一遍，并链接到已有笔记。这才是真正的"内化"。</p>
+                    `,
+            }, {
+                id: 3,
+                title: '漫步西湖：关于水与时间的隐喻',
+                date: '2026-05-03',
+                excerpt: '一个秋日午后的湖边漫思，关于流动、静止与创造力的关系。',
+                tags: ['随笔', '生活'],
+                featured: false,
+                content: `
+                        <p>杭州的秋天来得温柔。西湖的水面在微风中泛起细密的纹理，像是时间本身的质地。</p>
+                        <p>我常在这里散步。水从不着急，它有自己的节奏。这让我想到创造力——有时候，最好的想法并不是在键盘前产生的，而是在<strong>看似无所事事</strong>的时刻悄然浮现。</p>
+                        <p>流动与静止并非对立。正如湖面，表面平静，深处却有暗流涌动。创作也是如此。</p>
+                    `,
+            }, {
+                id: 4,
+                title: '从零搭建现代个人网站指南',
+                date: '2026-05-03',
+                excerpt: '不需要框架，用纯 HTML/CSS/JS 打造一个快速、易维护的个人博客。',
+                tags: ['技术', '教程', '前端'],
+                featured: true,
+                content: `
+                        <p>很多人觉得建站必须用 React、Vue 或 Next.js。但其实，对于一个个人博客来说，<strong>纯静态方案</strong>往往是最优解。</p>
+                        <h2>为什么选择纯 HTML？</h2>
+                        <p>零依赖、加载极快、无需构建步骤。你只需要一个文本编辑器就能修改内容。部署到任何静态托管服务（如 Vercel、Netlify、GitHub Pages）都极其简单。</p>
+                        <h2>内容管理</h2>
+                        <p>像这个博客一样，把所有文章放在一个 JavaScript 数组里。修改文章就像编辑笔记一样直观。不需要 CMS，不需要数据库。</p>
+                        <p>简单，是一种高级的复杂。</p>
+                    `,
+            }, {
+                id: 5,
+                title: '字体排印的微观美学',
+                date: '2026-05-03',
+                excerpt: '字间距、行高、字重——这些看不见的细节如何塑造阅读体验。',
+                tags: ['设计', '字体排印'],
+                featured: false,
+                content: `
+                        <p>字体排印（Typography）是设计的无声语言。读者可能永远不会注意到<code>line-height: 1.7</code>和<code>1.5</code>之间的区别，但他们的眼睛会感受到。</p>
+                        <h2>行高与阅读舒适度</h2>
+                        <p>对于中文正文，行高建议在 1.6 到 1.8 之间。过密会让文字拥挤不堪，过疏则失去连贯性。这个博客正文使用约 1.85 的行高，配合纯白背景，营造呼吸感。</p>
+                        <h2>字体选择</h2>
+                        <p>无衬线字体用于标题和导航，有衬线字体（宋体/Noto Serif SC）用于正文——这种搭配在中文排版中经典而优雅。</p>
+                    `,
+             }, {
+                id: 6,
+                title: '我也要做一个类似的个人博客',
+                date: '2026-05-03',
+                excerpt: '此文章提供博客服务 点击查看详情和服务价格',
+                tags: ['服务', '个人博客', ],
+                featured: true,
+                content: `
+                        <p>关于价格：</p>
+	        <p>28/季 88/年</p>
+                        <h2>样式？</h2>
+                        <p>可根据需求进行编写，可以有自己的域名</p>
+                        <h2>已提供的服务</h2>
+                        <p>已为一位客户提供服务</p>
+                        <p>可以免费试用1个月 并提供9.9/季的限时福利</p>
+                        <h2>提供服务的博客地址（已征求同意）</h2>
+                        <p>https://annie106.github.io/myweb/</p>
+                        <p>https://annie106.github.io/mayuwo/</p>
+                    `,
+            }, ];
+
+            // ==================== ★★★ 修改个人信息 ★★★ ====================
+            const siteConfig = {
+                authorName: 'Annie',              // 你的名字
+                subtitle: '思考 · 记录 · 创造',
+                bio: '敏感、真实、讨厌冷暴力与敷衍',
+                location: '辽宁',
+                occupation: '自由撰稿',
+                blogStartYear: '2026',
+                email: 'anniedv106@gmail.com',
+                aboutText: `
+                        <p>我是 Annie，一个用文字整理思绪的人。</p>
+                        <p>这个博客是我记录阅读、成长和日常灵感的地方。相信简单的记录也可以汇聚成光。</p>
+                    `,
+            };
+
+            // ==================== DOM 引用 ====================
+            const $ = (sel) => document.querySelector(sel);
+            const $$ = (sel) => document.querySelectorAll(sel);
+
+            const navLinks = $('#navLinks');
+            const mobileMenuBtn = $('#mobileMenuBtn');
+            const homeLink = $('#homeLink');
+            const viewHome = $('#view-home');
+            const viewBlog = $('#view-blog');
+            const viewAbout = $('#view-about');
+            const viewArticle = $('#view-article');
+            const postsListHome = $('#postsListHome');
+            const postsListBlog = $('#postsListBlog');
+            const tagFilterHome = $('#tagFilterHome');
+            const tagFilterBlog = $('#tagFilterBlog');
+            const articleTitle = $('#articleTitle');
+            const articleMeta = $('#articleMeta');
+            const articleContent = $('#articleContent');
+            const backBtn = $('#backBtn');
+            const backBtn2 = $('#backBtn2');
+
+            let currentView = 'home';
+            let activeTag = 'all';
+            let currentArticleId = null;
+
+            // ==================== 工具函数 ====================
+            function getAllTags() {
+                const tagSet = new Set();
+                blogPosts.forEach(p => p.tags.forEach(t => tagSet.add(t)));
+                return ['all', ...Array.from(tagSet)];
+            }
+
+            function renderTagPills(containerId) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                const tags = getAllTags();
+                container.innerHTML = tags.map(t =>
+                    `<span class="tag-pill${t === activeTag ? ' active' : ''}" data-tag="${t}">${t === 'all' ? '全部' : t}</span>`
+                ).join('');
+                container.querySelectorAll('.tag-pill').forEach(pill => {
+                    pill.addEventListener('click', function() {
+                        const tag = this.getAttribute('data-tag');
+                        activeTag = tag;
+                        renderTagPills('tagFilterHome');
+                        renderTagPills('tagFilterBlog');
+                        renderPostsList('postsListHome');
+                        renderPostsList('postsListBlog');
+                    });
+                });
+            }
+
+            function getFilteredPosts() {
+                if (activeTag === 'all') return [...blogPosts];
+                return blogPosts.filter(p => p.tags.includes(activeTag));
+            }
+
+            function renderPostsList(containerId) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                const posts = getFilteredPosts();
+                if (posts.length === 0) {
+                    container.innerHTML =
+                        '<p style="color:#999;text-align:center;padding:30px 0;">暂无文章</p>';
+                    return;
+                }
+                container.innerHTML = posts.map(p => `
+                    <div class="post-card" data-article-id="${p.id}">
+                        <span class="post-date">${p.date}</span>
+                        <h3 class="post-title">${p.title}</h3>
+                        <p class="post-excerpt">${p.excerpt}</p>
+                        <div class="post-tags-row">
+                            ${p.tags.map(t => `<span class="post-tag">${t}</span>`).join('')}
+                        </div>
+                    </div>
+                `).join('');
+                container.querySelectorAll('.post-card').forEach(card => {
+                    card.addEventListener('click', function() {
+                        const id = parseInt(this.getAttribute('data-article-id'));
+                        openArticle(id);
+                    });
+                });
+            }
+
+            function openArticle(id) {
+                const post = blogPosts.find(p => p.id === id);
+                if (!post) return;
+                currentArticleId = id;
+                articleTitle.textContent = post.title;
+                articleMeta.innerHTML = `
+                    <span><i class="ri-calendar-line"></i> ${post.date}</span>
+                    <span>${post.tags.map(t => `<span class="post-tag">${t}</span>`).join(' ')}</span>
+                `;
+                articleContent.innerHTML = post.content;
+                switchView('article');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            function switchView(viewName) {
+                currentView = viewName;
+                [viewHome, viewBlog, viewAbout, viewArticle].forEach(v => {
+                    v.style.display = 'none';
+                    v.classList.remove('active-view');
+                });
+                viewArticle.classList.remove('active');
+
+                if (viewName === 'home') {
+                    viewHome.style.display = 'block';
+                    viewHome.classList.add('active-view');
+                } else if (viewName === 'blog') {
+                    viewBlog.style.display = 'block';
+                    viewBlog.classList.add('active-view');
+                    renderPostsList('postsListBlog');
+                    renderTagPills('tagFilterBlog');
+                } else if (viewName === 'about') {
+                    viewAbout.style.display = 'block';
+                    viewAbout.classList.add('active-view');
+                } else if (viewName === 'article') {
+                    viewArticle.style.display = 'block';
+                    viewArticle.classList.add('active');
+                }
+
+                $$('.nav-links a').forEach(link => link.classList.remove('active'));
+                const navMap = { home: 'home', blog: 'blog', about: 'about', article: 'blog' };
+                const activeNav = navMap[viewName] || 'home';
+                const navLink = document.querySelector(`.nav-links a[data-nav="${activeNav}"]`);
+                if (navLink) navLink.classList.add('active');
+
+                navLinks.classList.remove('open');
+            }
+
+            // ==================== 事件绑定 ====================
+            $$('.nav-links a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const nav = this.getAttribute('data-nav');
+                    if (nav === 'home') switchView('home');
+                    if (nav === 'blog') switchView('blog');
+                    if (nav === 'about') switchView('about');
+                });
+            });
+
+            homeLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('home');
+            });
+
+            mobileMenuBtn.addEventListener('click', function() {
+                navLinks.classList.toggle('open');
+            });
+
+            backBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('blog');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+            backBtn2.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchView('blog');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            document.addEventListener('click', function(e) {
+                if (e.target.matches('[data-nav="blog"]') && e.target.closest('.tag-pill')) {
+                    e.preventDefault();
+                    switchView('blog');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.site-header') && navLinks.classList.contains('open')) {
+                    navLinks.classList.remove('open');
+                }
+            });
+
+            // ==================== 初始化 ====================
+            function init() {
+                renderTagPills('tagFilterHome');
+                renderTagPills('tagFilterBlog');
+                renderPostsList('postsListHome');
+                renderPostsList('postsListBlog');
+                switchView('home');
+            }
+
+            init();
+
+            console.log('✅ Annie 的个人博客已就绪！');
+            console.log('📝 修改文章内容：编辑 blogPosts 数组');
+            console.log('👤 修改个人信息：编辑 siteConfig 对象');
+            console.log('🖼️ 修改头像：替换 .avatar 的 src 属性');
+            console.log('🔗 修改社交链接：编辑 .social-links 中的 href');
+        })();
+    </script>
+<script>
+    function copyToClipboard(text, message) {
+        // 方法一：现代浏览器 Clipboard API
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert(message);
+            }).catch(() => {
+                fallbackCopy(text, message);
+            });
+        } else {
+            // 方法二：兼容老浏览器 / 非 HTTPS 环境
+            fallbackCopy(text, message);
+        }
+    }
+
+    function fallbackCopy(text, message) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            alert(message);
+        } catch (err) {
+            alert('复制失败，请手动复制：' + text);
+        }
+        document.body.removeChild(textarea);
+    }
+</script>
+</body>
+</html>
