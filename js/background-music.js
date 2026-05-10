@@ -5,7 +5,7 @@
         {
             title: "Heart Linked",
             artist: "Jannik",
-            src: "https://1837491863.v.123pan.cn/1837491863/33300096"
+            src: "https://1837491863.v.123pan.cn/1837491863/33511341"
         }
     ];
 
