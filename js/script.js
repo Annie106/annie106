@@ -244,8 +244,9 @@
             // ==================== 事件绑定 ====================
             $$('.nav-links a').forEach(link => {
                 link.addEventListener('click', function(e) {
-                    e.preventDefault();
                     const nav = this.getAttribute('data-nav');
+                    if (!nav) return;
+                    e.preventDefault();
                     if (nav === 'home') switchView('home');
                     if (nav === 'blog') switchView('blog');
                     if (nav === 'about') switchView('about');
