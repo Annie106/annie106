@@ -74,10 +74,7 @@ python -m http.server 8000
 
 ## 部署
 
-可以部署到任何静态托管服务，如：
-- GitHub Pages
-- Vercel
-- Netlify
+可以部署到任何静态托管服务
 
 ## 许可证
 
