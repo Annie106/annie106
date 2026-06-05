@@ -298,6 +298,30 @@
         .hero-meta i {
             font-size: 1rem;
         }
+        .hero-actions {
+            margin-top: 22px;
+        }
+        .hero-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
+            border-radius: 999px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition-fast);
+            border: 1px solid transparent;
+        }
+        .hero-button-primary {
+            background: var(--color-text-primary);
+            color: #fff;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+        }
+        .hero-button-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
+        }
         .social-links {
             display: flex;
             gap: 14px;
