@@ -3,9 +3,9 @@
     // 音乐列表 - 可以在这里添加更多音乐
     const musicList = [
         {
-            title: "Heart Linked",
-            artist: "Jannik",
-            src: "https://1837491863.v.123pan.cn/1837491863/33511341"
+            title: "2020中秋节-活动BGM",
+            artist: "第五人格",
+            src: "https://links.8uid.com/d/074409faa40e66ae993a29602f49716e"
         }
     ];
 
