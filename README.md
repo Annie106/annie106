@@ -54,7 +54,7 @@ const playlist = [
 ## 自定义内容
 
 ### 修改文章
-编辑 `js/script.js` 中的 `blogPosts` 数组。
+编辑 `js/script.js` 中的 `blogPosts` 数组。文章对象中的 `pinned: true` 会让文章置顶，并显示“置顶”标记；取消置顶改为 `pinned: false`。
 
 ### 修改个人信息
 编辑 `js/script.js` 中的 `siteConfig` 对象。

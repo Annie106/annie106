@@ -2,7 +2,25 @@
             // ==================== ★★★ 在这里修改你的博客内容 ★★★ ====================
             // 所有文章数据都集中在这个数组里，增删改都非常方便。
             const blogPosts = [{
+                id: 7,
+                // 这是置顶文章模板，直接修改下面的标题、摘要和正文即可
+                pinned: true,
+                title: '我的其它网站',
+                date: '2026-09-23',
+                excerpt: '有视频网站、直链下载站等',
+                tags: ['置顶'],
+                content: `
+                        <p>视频站</p>
+                        <p>https://annie106.github.io/video</p>
+                        <p>直链下载站</p>
+                        <p>https://annie106.github.io/Studio</p>
+                        <h2>视频无法播放时 添加联系方式 备注来意</h2>
+                        <p>联系方式在“联系客服”下方的图标 点击即复制相关信息</p>
+                    `,
+            }, {
                 id: 1,
+                // 需要置顶时改为 true；取消置顶改为 false
+                pinned: false,
                 title: '设计的本质是减法',
                 date: '2026-05-03',
                 excerpt: '在信息过载的时代，好的设计不是增加更多元素，而是勇敢地移除一切不必要的部分。',
@@ -163,8 +181,10 @@
             }
 
             function getFilteredPosts() {
-                if (activeTag === 'all') return [...blogPosts];
-                return blogPosts.filter(p => p.tags.includes(activeTag));
+                const posts = activeTag === 'all'
+                    ? [...blogPosts]
+                    : blogPosts.filter(p => p.tags.includes(activeTag));
+                return posts.sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)));
             }
 
             function renderPostsList(containerId) {
@@ -178,7 +198,10 @@
                 }
                 container.innerHTML = posts.map(p => `
                     <div class="post-card" data-article-id="${p.id}">
-                        <span class="post-date">${p.date}</span>
+                        <div class="post-meta-row">
+                            <span class="post-date">${p.date}</span>
+                            ${p.pinned ? '<span class="post-pinned"><i class="ri-pushpin-2-line"></i> 置顶</span>' : ''}
+                        </div>
                         <h3 class="post-title">${p.title}</h3>
                         <p class="post-excerpt">${p.excerpt}</p>
                         <div class="post-tags-row">

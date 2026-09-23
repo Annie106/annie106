@@ -1,8 +1,8 @@
         /* ==================== CSS 变量 & 全局重置 ==================== */
         :root {
             --max-width: 720px;
-            --font-sans: 'Inter', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
-            --font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'Georgia', serif;
+            --font-sans: 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif;
+            --font-serif: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
 
             /* 纯白背景下的灰度体系 */
             --color-bg: #ffffff;
@@ -49,7 +49,7 @@
             background-color: var(--color-bg);
             color: var(--color-text-primary);
             line-height: 1.7;
-            letter-spacing: 0.01em;
+            letter-spacing: 0;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -422,9 +422,30 @@
         .post-date {
             font-size: 0.78rem;
             color: var(--color-text-tertiary);
-            letter-spacing: 0.03em;
+            letter-spacing: 0;
             margin-bottom: 4px;
             font-weight: 500;
+        }
+        .post-meta-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 4px;
+        }
+        .post-pinned {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: #f1f1f1;
+            color: var(--color-text-secondary);
+            font-size: 0.7rem;
+            line-height: 1.4;
+            font-weight: 600;
+        }
+        .post-pinned i {
+            font-size: 0.75rem;
         }
         .post-title {
             font-size: 1.25rem;
@@ -512,7 +533,8 @@
         .article-content {
             font-family: var(--font-serif);
             font-size: 1.05rem;
-            line-height: 1.85;
+            line-height: 1.78;
+            letter-spacing: -0.01em;
             color: var(--color-text-primary);
         }
         .article-content p {
