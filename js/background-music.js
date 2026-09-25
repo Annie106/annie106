@@ -5,7 +5,7 @@
         {
             title: "2020中秋节-活动BGM",
             artist: "第五人格",
-            src: "https://links.8uid.com/d/074409faa40e66ae993a29602f49716e"
+            src: "https://links.8uid.com/d/e842d93457c00307c6b82e5ff0bcf917"
         }
     ];
 

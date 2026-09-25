@@ -126,37 +126,39 @@
 
         .nav-links {
             display: flex;
-            gap: 22px;
+            gap: 10px;
             align-items: center;
             list-style: none;
+            padding: 6px;
+            border: 1px solid rgba(17, 17, 17, 0.06);
+            border-radius: 999px;
+            background: rgba(17, 17, 17, 0.04);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+        .nav-links li {
+            display: flex;
         }
         .nav-links a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             text-decoration: none;
             color: var(--color-text-secondary);
             font-size: 0.9rem;
             font-weight: 500;
-            transition: var(--transition-fast);
-            position: relative;
-            padding: 4px 0;
+            transition: all var(--transition-fast);
+            padding: 8px 14px;
+            border-radius: 999px;
+            white-space: nowrap;
         }
         .nav-links a:hover,
         .nav-links a.active {
-            color: var(--color-text-primary);
+            color: #ffffff;
+            background: #111111;
+            box-shadow: 0 4px 12px rgba(17, 17, 17, 0.14);
         }
         .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 0%;
-            height: 1.5px;
-            background: var(--color-text-primary);
-            transition: width var(--transition-fast);
-            border-radius: 1px;
-        }
-        .nav-links a:hover::after,
-        .nav-links a.active::after {
-            width: 100%;
+            display: none;
         }
 
         .mobile-menu-btn {
@@ -920,26 +922,63 @@
                 top: 12px;
                 padding: 10px 12px;
                 border-radius: 15px;
+                gap: 10px;
+            }
+            .site-branding {
+                min-width: 0;
+                flex: 1;
+            }
+            nav {
+                flex: 1;
+                min-width: 0;
             }
             .nav-links {
+                display: flex !important;
+                position: static;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+                background: rgba(17, 17, 17, 0.04);
+                border: 1px solid rgba(17, 17, 17, 0.06);
+                border-radius: 999px;
+                padding: 4px;
+                gap: 4px;
+                box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+                z-index: auto;
+                flex-wrap: nowrap;
+                white-space: nowrap;
+            }
+            .nav-links li {
+                flex: 1 0 auto;
+                text-align: center;
+            }
+            .nav-links a {
+                display: inline-block;
+                width: 100%;
+                padding: 7px 10px;
+                border-radius: 999px;
+                font-size: 0.74rem;
+                line-height: 1.2;
+                white-space: nowrap;
+                color: var(--color-text-secondary);
+                background: transparent;
+                transition: all var(--transition-fast);
+            }
+            .nav-links a:hover,
+            .nav-links a.active {
+                background: #111111;
+                color: #ffffff;
+                box-shadow: 0 4px 12px rgba(17, 17, 17, 0.14);
+            }
+            .nav-links a::after {
                 display: none;
-                position: absolute;
-                top: 100%;
-                right: 0;
-                flex-direction: column;
-                background: #fff;
-                border: 1px solid var(--color-border);
-                border-radius: var(--radius-md);
-                padding: 12px 20px;
-                gap: 10px;
-                box-shadow: var(--shadow-md);
-                z-index: 99;
             }
             .nav-links.open {
-                display: flex;
+                display: flex !important;
             }
             .mobile-menu-btn {
-                display: block;
+                display: none;
             }
             .hero-name {
                 font-size: 2rem;
