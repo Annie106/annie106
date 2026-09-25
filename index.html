@@ -27,9 +27,6 @@
                     <a href="#" class="site-title" id="homeLink">Annie</a>
                     <span class="site-subtitle">思考 · 记录 · 创造</span>
                 </div>
-                <button class="music-toggle-btn" id="musicToggleBtn" title="背景音乐">
-                    <i class="ri-music-2-line"></i>
-                </button>
             </div>
             <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="菜单">
                 <i class="ri-menu-line"></i>
@@ -60,8 +57,50 @@
                     <span><i class="ri-briefcase-line"></i> 自由撰稿</span>
                     <span><i class="ri-calendar-line"></i> 博客始于 2026</span>
                 </div>
-                <div class="hero-actions">
-                    <a href="https://work.weixin.qq.com/kfid/kfc1c4faf94ea255069" target="_blank" rel="noopener noreferrer" class="hero-button hero-button-primary" title="联系客服">联系客服</a>
+                <div class="music-player-card" id="musicPlayerCard" aria-live="polite">
+                    <div class="music-player-main">
+                        <div class="music-player-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9 18V5l12-2v13"></path>
+                                <circle cx="6" cy="18" r="3"></circle>
+                                <circle cx="18" cy="16" r="3"></circle>
+                            </svg>
+                        </div>
+                        <div class="music-player-text">
+                            <h3 id="musicCardTitle">2020中秋节-活动BGM</h3>
+                            <p id="musicCardArtist">第五人格</p>
+                        </div>
+                        <div class="music-player-actions">
+                            <button class="music-icon-btn" type="button" aria-label="收藏">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+                                </svg>
+                            </button>
+                            <button class="music-card-toggle" id="musicCardToggle" type="button" aria-label="播放或暂停音乐">
+                                <i class="ri-play-line"></i>
+                            </button>
+                            <button class="music-card-collapse" id="musicCardCollapse" type="button" aria-label="收起播放器">
+                                <i class="ri-arrow-down-s-line"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="music-track-progress-wrap">
+                        <span class="music-track-time" id="musicCurrentTime">00:00</span>
+                        <div class="music-track-progress" aria-label="播放进度">
+                            <span class="music-track-progress-bar" id="musicProgressBar"></span>
+                        </div>
+                        <span class="music-track-time" id="musicDuration">00:00</span>
+                    </div>
+
+                    <div class="music-player-progress-wrap">
+                        <button class="music-volume-trigger" id="musicVolumeToggle" type="button" aria-label="静音/开启声音">
+                            <i class="ri-volume-up-line"></i>
+                        </button>
+                        <input id="musicVolumeSlider" class="music-volume-slider" type="range" min="0" max="100" value="30" aria-label="音量调节">
+                        <span class="music-player-percent" id="musicPlayerPercent">30%</span>
+                    </div>
+
                 </div>
                 <div class="social-links">
     <!-- ★ 微信：点击弹出微信号提示（不跳转） -->
@@ -74,8 +113,6 @@
     <!-- 邮箱：点击复制邮箱 -->
     <a href="javascript:void(0);" onclick="copyToClipboard('anniedv106@gmail.com', '邮箱地址已复制')" title="邮箱"><i class="ri-mail-line"></i></a>
 
-    <!-- 客服：点击跳转客服链接 -->
-    <a href="https://work.weixin.qq.com/kfid/kfc1c4faf94ea255069" target="_blank" rel="noopener noreferrer" title="客服"><i class="ri-customer-service-2-line"></i></a>
     <a href="#" title="RSS 订阅"><i class="ri-rss-line"></i></a>
 </div>
             </section>
@@ -121,29 +158,22 @@
 
         <!-- ==================== 文章详情视图 ==================== -->
         <div id="view-article" class="article-detail" style="display:none;">
-        <span class="back-link" id="backBtn"><i class="ri-arrow-left-line"></i> 返回首页</span>
+        <span class="back-link" id="backBtn"><i class="ri-arrow-left-line"></i> 返回</span>
 
             <h1 class="article-full-title" id="articleTitle"></h1>
             <div class="article-full-meta" id="articleMeta"></div>
             <div class="article-content" id="articleContent"></div>
             <hr class="divider-thin">
-            <span class="back-link" id="backBtn2"><i class="ri-arrow-left-line"></i> 返回首页</span>
+            <span class="back-link" id="backBtn2"><i class="ri-arrow-left-line"></i> 返回</span>
         </div>
 
         <!-- ==================== 页脚 ==================== -->
         <footer class="site-footer">
-              <p>© 2026 <a href="https://annie106.github.io/RHfortwo/" target="_blank" rel="noopener noreferrer">Annie</a> · 由 <a href="https://annie106.github.io/RHfortwo/" target="_blank" rel="noopener noreferrer">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.1.5.16 beta</p>
+              <p>© 2026 <a href="https://annie106.github.io/RHfortwo/" target="_blank" rel="noopener noreferrer">Annie</a> · 由 <a href="https://annie106.github.io/RHfortwo/" target="_blank" rel="noopener noreferrer">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.2.2.10 </p>
         </footer>
 
     </div>
 
-    <!-- 移动端浮动音乐控制按钮 -->
-    <div class="mobile-music-float" id="mobileMusicFloat">
-        <button class="mobile-music-btn" id="mobileMusicBtn">
-            <i class="ri-music-2-line"></i>
-        </button>
-    </div>
-    <!-- 音乐启用提示 -->
     <div class="music-enable-hint" id="musicEnableHint" style="display: none;">
         <div class="music-hint-content">
             <i class="ri-music-line"></i>

@@ -18,9 +18,19 @@
     const maxRetries = 3;
 
     // DOM 元素
-    let musicToggleBtn = null;
-    let mobileMusicBtn = null;
+    let musicCardToggle = null;
+    let musicCardCollapse = null;
+    let musicVolumeToggle = null;
+    let musicVolumeSlider = null;
+    let musicPlayerPercent = null;
+    let musicProgressBar = null;
+    let musicCurrentTime = null;
+    let musicDuration = null;
+    let musicPlayerCard = null;
     let musicEnableHint = null;
+    let musicCardTitle = null;
+    let musicCardArtist = null;
+    let isCollapsed = false;
 
     // 创建音频元素
     const audio = new Audio();
@@ -33,9 +43,22 @@
         if (musicList.length === 0) return;
 
         // 获取控制按钮
-        musicToggleBtn = document.getElementById('musicToggleBtn');
-        mobileMusicBtn = document.getElementById('mobileMusicBtn');
+        musicCardToggle = document.getElementById('musicCardToggle');
+        musicCardCollapse = document.getElementById('musicCardCollapse');
+        musicVolumeToggle = document.getElementById('musicVolumeToggle');
+        musicVolumeSlider = document.getElementById('musicVolumeSlider');
+        musicPlayerPercent = document.getElementById('musicPlayerPercent');
+        musicProgressBar = document.getElementById('musicProgressBar');
+        musicCurrentTime = document.getElementById('musicCurrentTime');
+        musicDuration = document.getElementById('musicDuration');
+        musicPlayerCard = document.getElementById('musicPlayerCard');
         musicEnableHint = document.getElementById('musicEnableHint');
+        musicCardTitle = document.getElementById('musicCardTitle');
+        musicCardArtist = document.getElementById('musicCardArtist');
+
+        updateMusicCard();
+        syncVolumeUI();
+        applyCollapseState();
 
         // 设置音频源
         audio.src = musicList[currentIndex].src;
@@ -56,20 +79,24 @@
 
     // 设置事件监听器
     function setupEventListeners() {
-        // 桌面端音乐控制按钮
-        if (musicToggleBtn) {
-            musicToggleBtn.addEventListener('click', toggleMusic);
+        if (musicCardToggle) {
+            musicCardToggle.addEventListener('click', toggleMusic);
         }
-
-        // 移动端浮动音乐按钮
-        if (mobileMusicBtn) {
-            mobileMusicBtn.addEventListener('click', toggleMusic);
+        if (musicCardCollapse) {
+            musicCardCollapse.addEventListener('click', toggleCollapse);
+        }
+        if (musicVolumeToggle) {
+            musicVolumeToggle.addEventListener('click', toggleMute);
+        }
+        if (musicVolumeSlider) {
+            musicVolumeSlider.addEventListener('input', handleVolumeChange);
         }
 
         // 音频事件
         audio.addEventListener('ended', playNext);
         audio.addEventListener('play', () => {
             isPlaying = true;
+            hideAudioError();
             updateToggleButtons();
             console.log(`🎵 正在播放: ${musicList[currentIndex].title} - ${musicList[currentIndex].artist}`);
         });
@@ -77,6 +104,9 @@
             isPlaying = false;
             updateToggleButtons();
         });
+        audio.addEventListener('timeupdate', updatePlaybackProgress);
+        audio.addEventListener('loadedmetadata', updatePlaybackProgress);
+        audio.addEventListener('durationchange', updatePlaybackProgress);
         audio.addEventListener('error', handleAudioError);
 
         // 用户交互检测
@@ -109,49 +139,33 @@
                 showTrafficLimitMessage();
             }
         } else {
-            // 其他错误，尝试播放下一首
-            setTimeout(() => playNext(), 2000);
+            showTrafficLimitMessage();
         }
     }
 
-    // 显示流量限制提示
+    // 显示音频错误提示
     function showTrafficLimitMessage() {
         if (document.getElementById('trafficLimitMsg')) return;
 
         const message = document.createElement('div');
         message.id = 'trafficLimitMsg';
+        message.className = 'audio-error-toast';
         message.innerHTML = `
-            <div style="
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: #ff6b6b;
-                color: white;
-                padding: 12px 16px;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 1000;
-                font-size: 14px;
-                max-width: 300px;
-                cursor: pointer;
-            ">
-                <i class="ri-error-warning-line" style="margin-right: 8px;"></i>
-                您当前的IP已达到访问限制，请等待次日0:00重新尝试
-                <button onclick="this.parentElement.remove()" style="
-                    background: none;
-                    border: none;
-                    color: white;
-                    float: right;
-                    cursor: pointer;
-                    font-size: 16px;
-                    margin-left: 8px;
-                ">×</button>
-            </div>
+            <button type="button" class="audio-error-close" aria-label="关闭错误提示">
+                <i class="ri-close-line"></i>
+            </button>
+            <p class="audio-error-message">
+                <i class="ri-error-warning-line" aria-hidden="true"></i>
+                <span>音频播放失败，请稍后重试</span>
+            </p>
         `;
 
+        message.querySelector('.audio-error-close').addEventListener('click', () => {
+            message.remove();
+        });
         document.body.appendChild(message);
 
-        // 50秒后自动隐藏
+        // 避免错误提示长时间占据页面
         setTimeout(() => {
             if (message.parentElement) {
                 message.remove();
@@ -159,14 +173,24 @@
         }, 50000);
     }
 
+    function hideAudioError() {
+        const message = document.getElementById('trafficLimitMsg');
+        if (message) message.remove();
+    }
+
     // 尝试自动播放（处理浏览器自动播放策略）
     function tryAutoPlay() {
         if (!isEnabled) return;
 
-        // 显示音乐启用提示
-        showMusicEnableHint();
-
-        console.log('🎵 音乐系统已准备就绪，等待用户交互后开始播放');
+        hasUserInteracted = true;
+        audio.muted = false;
+        audio.play().then(() => {
+            console.log('🎵 自动播放已开启');
+            hideMusicEnableHint();
+        }).catch(() => {
+            showMusicEnableHint();
+            console.log('🎵 浏览器阻止了自动播放，等待用户交互后再播放');
+        });
     }
 
     // 显示音乐启用提示
@@ -229,46 +253,115 @@
         updateToggleButtons();
     }
 
+    function applyCollapseState() {
+        if (!musicPlayerCard || !musicCardCollapse) return;
+        musicPlayerCard.classList.toggle('collapsed', isCollapsed);
+        const icon = musicCardCollapse.querySelector('i');
+        if (icon) {
+            icon.className = isCollapsed ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line';
+        }
+        musicCardCollapse.setAttribute('aria-label', isCollapsed ? '展开播放器' : '收起播放器');
+    }
+
+    function toggleCollapse() {
+        isCollapsed = !isCollapsed;
+        applyCollapseState();
+    }
+
+    function toggleMute() {
+        if (!musicVolumeSlider) return;
+
+        const nextVolume = audio.muted ? Number(musicVolumeSlider.dataset.lastVolume || 30) : 0;
+        musicVolumeSlider.value = nextVolume;
+        audio.volume = nextVolume / 100;
+        audio.muted = nextVolume === 0;
+        syncVolumeUI();
+    }
+
+    function handleVolumeChange(event) {
+        const value = Number(event.target.value || 0);
+        audio.volume = value / 100;
+        audio.muted = value === 0;
+        event.target.dataset.lastVolume = String(value === 0 ? 30 : value);
+        syncVolumeUI();
+    }
+
+    function syncVolumeUI() {
+        if (!musicVolumeSlider || !musicVolumeToggle || !musicPlayerPercent) return;
+
+        const volumeValue = audio.muted ? 0 : Math.round(audio.volume * 100);
+        musicVolumeSlider.value = String(volumeValue);
+        musicVolumeSlider.style.setProperty('--volume-percent', `${volumeValue}%`);
+        musicPlayerPercent.textContent = `${volumeValue}%`;
+
+        const icon = musicVolumeToggle.querySelector('i');
+        if (!icon) return;
+
+        if (volumeValue === 0 || audio.muted) {
+            icon.className = 'ri-volume-mute-line';
+            musicVolumeToggle.setAttribute('aria-label', '开启声音');
+        } else if (volumeValue < 50) {
+            icon.className = 'ri-volume-down-line';
+            musicVolumeToggle.setAttribute('aria-label', '静音');
+        } else {
+            icon.className = 'ri-volume-up-line';
+            musicVolumeToggle.setAttribute('aria-label', '静音');
+        }
+    }
+
+    function formatTime(seconds) {
+        if (!Number.isFinite(seconds) || seconds < 0) return '00:00';
+
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+    }
+
+    function updatePlaybackProgress() {
+        if (!musicProgressBar || !musicCurrentTime || !musicDuration) return;
+
+        const duration = audio.duration;
+        const currentTime = audio.currentTime || 0;
+        const progress = Number.isFinite(duration) && duration > 0
+            ? Math.min((currentTime / duration) * 100, 100)
+            : 0;
+
+        musicProgressBar.style.width = `${progress}%`;
+        musicCurrentTime.textContent = formatTime(currentTime);
+        musicDuration.textContent = formatTime(duration);
+    }
+
     // 更新按钮状态
     function updateToggleButtons() {
-        // 更新桌面端按钮
-        if (musicToggleBtn) {
-            const icon = musicToggleBtn.querySelector('i');
-
-            if (isEnabled) {
-                musicToggleBtn.classList.add('active');
-                if (isPlaying) {
-                    icon.className = 'ri-pause-line'; // 播放时显示暂停图标，更直观
-                    musicToggleBtn.classList.add('playing');
-                    musicToggleBtn.title = '暂停背景音乐';
-                } else {
-                    icon.className = 'ri-play-line'; // 停止时显示播放图标
-                    musicToggleBtn.classList.remove('playing');
-                    musicToggleBtn.title = '播放背景音乐';
-                }
-            } else {
-                musicToggleBtn.classList.remove('active', 'playing');
-                icon.className = 'ri-music-2-line'; // 关闭时显示音乐图标
-                musicToggleBtn.title = '开启背景音乐';
-            }
-        }
-
-        // 更新移动端浮动按钮
-        if (mobileMusicBtn) {
-            const icon = mobileMusicBtn.querySelector('i');
+        if (musicCardToggle) {
+            const icon = musicCardToggle.querySelector('i');
+            if (!icon) return;
 
             if (isEnabled) {
                 if (isPlaying) {
                     icon.className = 'ri-pause-line';
-                    mobileMusicBtn.classList.add('playing');
+                    musicCardToggle.setAttribute('aria-label', '暂停音乐');
                 } else {
                     icon.className = 'ri-play-line';
-                    mobileMusicBtn.classList.remove('playing');
+                    musicCardToggle.setAttribute('aria-label', '播放音乐');
                 }
             } else {
-                icon.className = 'ri-music-2-line';
-                mobileMusicBtn.classList.remove('playing');
+                icon.className = 'ri-play-line';
+                musicCardToggle.setAttribute('aria-label', '播放音乐');
             }
+        }
+
+        if (musicPlayerCard) {
+            musicPlayerCard.classList.toggle('playing', isEnabled && isPlaying);
+        }
+    }
+
+    function updateMusicCard() {
+        if (musicCardTitle) {
+            musicCardTitle.textContent = musicList[currentIndex].title;
+        }
+        if (musicCardArtist) {
+            musicCardArtist.textContent = musicList[currentIndex].artist;
         }
     }
 
@@ -278,6 +371,7 @@
 
         currentIndex = (currentIndex + 1) % musicList.length;
         retryCount = 0; // 重置重试计数
+        updateMusicCard();
 
         audio.src = musicList[currentIndex].src;
 
