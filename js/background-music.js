@@ -5,7 +5,7 @@
         {
             title: "2020中秋节-活动BGM",
             artist: "第五人格",
-            src: "https://links.8uid.com/d/e842d93457c00307c6b82e5ff0bcf917"
+            src: "https://1837491863.cdn.123clouddisk.com/1837491863/46339020#"
         }
     ];
 
@@ -156,7 +156,7 @@
             </button>
             <p class="audio-error-message">
                 <i class="ri-error-warning-line" aria-hidden="true"></i>
-                <span>音频播放失败，请稍后重试</span>
+                <span>当前ip已达到流量限制，请等待次日0:00重新尝试</span>
             </p>
         `;
 
