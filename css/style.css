@@ -615,7 +615,11 @@
         }
         @media (max-width: 700px) {
             #view-movie.active-view {
-                animation: none;
+                animation: movieViewFadeIn 0.35s ease both;
+            }
+            @keyframes movieViewFadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
             }
             .movie-frame {
                 height: min(78vh, 760px);

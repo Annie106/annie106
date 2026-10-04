@@ -175,6 +175,24 @@
             let currentArticleId = null;
             let articleReturnView = 'home';
             let articleReturnScroll = 0;
+            const viewScrollPositions = { home: 0, blog: 0, movie: null, about: 0 };
+
+            function centerMovieFrame(behavior = 'smooth') {
+                const frameRect = movieFrame.getBoundingClientRect();
+                const headerBottom = $('.site-header').getBoundingClientRect().bottom;
+                const viewportHeight = window.visualViewport?.height || window.innerHeight;
+                const visibleCenter = headerBottom + (viewportHeight - headerBottom) / 2;
+                const targetTop = window.scrollY + frameRect.top + frameRect.height / 2 - visibleCenter;
+                const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+                const scrollTop = Math.max(0, Math.min(maxScroll, targetTop));
+                window.scrollTo({ top: scrollTop, behavior });
+                viewScrollPositions.movie = scrollTop;
+            }
+
+            function restoreViewScroll(viewName) {
+                const scrollTop = viewScrollPositions[viewName] || 0;
+                window.scrollTo({ top: scrollTop, behavior: 'instant' });
+            }
 
             function sizeMovieFrame() {
                 if (currentView !== 'movie') return;
@@ -186,7 +204,30 @@
                 }
             }
 
-            window.addEventListener('resize', sizeMovieFrame);
+            window.addEventListener('resize', function() {
+                if (currentView !== 'movie') return;
+                sizeMovieFrame();
+                if (window.innerWidth <= 700) {
+                    window.requestAnimationFrame(() => centerMovieFrame());
+                }
+            });
+
+            movieFrame.addEventListener('load', function() {
+                const movieDocument = movieFrame.contentDocument;
+                if (!movieDocument) return;
+                const handleFullscreenChange = function() {
+                    if (movieDocument.fullscreenElement || movieDocument.webkitFullscreenElement) return;
+                    if (currentView !== 'movie' || window.innerWidth > 700) return;
+                    window.requestAnimationFrame(() => {
+                        sizeMovieFrame();
+                        centerMovieFrame();
+                    });
+                };
+                movieDocument.addEventListener('fullscreenchange', handleFullscreenChange);
+                movieDocument.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+                    movieDocument.querySelector('#player')?.addEventListener('webkitendfullscreen', handleFullscreenChange);
+                movieDocument.querySelector('#player')?.addEventListener('webkitendfullscreen', handleFullscreenChange);
+            });
 
             // ==================== 工具函数 ====================
             function getAllTags() {
@@ -298,6 +339,9 @@
 
             function switchView(viewName) {
                 const previousView = currentView;
+                if (previousView !== 'article') {
+                    viewScrollPositions[previousView] = window.scrollY;
+                }
                 currentView = viewName;
                 [viewHome, viewBlog, viewMovie, viewAbout, viewArticle].forEach(v => {
                     v.style.display = 'none';
@@ -324,12 +368,11 @@
                     sizeMovieFrame();
                     if (window.innerWidth <= 700) {
                         window.requestAnimationFrame(() => {
-                            const frameRect = movieFrame.getBoundingClientRect();
-                            const headerBottom = $('.site-header').getBoundingClientRect().bottom;
-                            const viewportHeight = window.visualViewport?.height || window.innerHeight;
-                            const visibleCenter = headerBottom + (viewportHeight - headerBottom) / 2;
-                            const targetTop = window.scrollY + frameRect.top + frameRect.height / 2 - visibleCenter;
-                            window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+                            if (viewScrollPositions.movie === null) {
+                                centerMovieFrame();
+                            } else {
+                                restoreViewScroll('movie');
+                            }
                         });
                     }
                 } else if (viewName === 'about') {
@@ -338,6 +381,12 @@
                 } else if (viewName === 'article') {
                     viewArticle.style.display = 'block';
                     viewArticle.classList.add('active');
+                }
+
+                if (viewName !== 'movie' && viewName !== 'article') {
+                    window.requestAnimationFrame(() => {
+                        restoreViewScroll(viewName);
+                    });
                 }
 
                 $$('.nav-links a').forEach(link => link.classList.remove('active'));
