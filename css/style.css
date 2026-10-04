@@ -604,7 +604,22 @@
             color: var(--color-text-secondary);
             font-size: 0.9rem;
         }
+        .movie-frame {
+            display: block;
+            width: 100%;
+            height: clamp(360px, 56vw, 720px);
+            border: 0;
+            border-radius: var(--radius-md);
+            background: #080809;
+            box-shadow: var(--shadow-md);
+        }
         @media (max-width: 700px) {
+            #view-movie.active-view {
+                animation: none;
+            }
+            .movie-frame {
+                height: min(78vh, 760px);
+            }
             .about-intro {
                 padding: 42px 20px;
             }
@@ -1111,7 +1126,8 @@
                 white-space: nowrap;
             }
             .nav-links li {
-                flex: 1 0 auto;
+                flex: 1 1 0;
+                min-width: 0;
                 text-align: center;
             }
             .nav-links a {

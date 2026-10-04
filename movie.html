@@ -747,7 +747,7 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
      ① 视频直链列表
      ========================================================= */
   const VIDEO_LIST = [
-    { name: '唐人街探案1900 4k', url: 'https://links.8uid.com/d/17f7e7a38d3b789c28df3a23266193b8' },
+    { name: '唐人街探案1900 4k', url: 'https://links.8uid.com/d/fab8hnnv8lfh' },
     { name: '涉过愤怒的海 4k', url: 'https://links.8uid.com/d/6e79d2c67770da42ec09d209c12914de' },
     { name: '疯狂动物城2', url: ' https://links.8uid.com/d/f203c2566e63fb0b4c8b5f2038c58c97' },
     { name: '花木兰', url: '  https://links.8uid.com/d/bbe987ca4f8ebcd9ff93f9761c2f6c32' },
@@ -756,7 +756,7 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
     { name: '视频 2', url: 'https://links.8uid.com/d/e41689ac5b8eaa73f943e45f3a42a321' },
   ];
 
-  const PROBE_IMAGE_URL = 'https://links.8uid.com/d/5f32af891af0e4462dc5c62d937ac8cf';
+  const PROBE_IMAGE_URL = 'https://links.8uid.com/d/49nb0z6k4a78';
   const CONTACT_URL = 'https://annie106.github.io/annie106';
 
   /* =========================================================
@@ -1835,7 +1835,8 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
   btnFull.innerHTML = SVG.fsEnter;
 
   if (playlist.length) {
-    loadOnly(0);
+    nowTitle.textContent = '请选择视频';
+    setPanel(true);
   } else {
     overlay.hidden = false;
     ovIcon.textContent = '🎬';

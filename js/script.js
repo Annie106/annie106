@@ -156,7 +156,9 @@
             const homeLink = $('#homeLink');
             const viewHome = $('#view-home');
             const viewBlog = $('#view-blog');
+            const viewMovie = $('#view-movie');
             const viewAbout = $('#view-about');
+            const movieFrame = $('#movieFrame');
             const viewArticle = $('#view-article');
             const postsListHome = $('#postsListHome');
             const postsListBlog = $('#postsListBlog');
@@ -173,6 +175,18 @@
             let currentArticleId = null;
             let articleReturnView = 'home';
             let articleReturnScroll = 0;
+
+            function sizeMovieFrame() {
+                if (currentView !== 'movie') return;
+                if (window.innerWidth <= 700) {
+                    const frameWidth = movieFrame.getBoundingClientRect().width;
+                    movieFrame.style.height = `${Math.round(frameWidth * window.innerHeight / window.innerWidth)}px`;
+                } else {
+                    movieFrame.style.height = '';
+                }
+            }
+
+            window.addEventListener('resize', sizeMovieFrame);
 
             // ==================== 工具函数 ====================
             function getAllTags() {
@@ -283,12 +297,17 @@
             }
 
             function switchView(viewName) {
+                const previousView = currentView;
                 currentView = viewName;
-                [viewHome, viewBlog, viewAbout, viewArticle].forEach(v => {
+                [viewHome, viewBlog, viewMovie, viewAbout, viewArticle].forEach(v => {
                     v.style.display = 'none';
                     v.classList.remove('active-view');
                 });
                 viewArticle.classList.remove('active');
+
+                if (previousView === 'movie' && viewName !== 'movie') {
+                    movieFrame.src = 'about:blank';
+                }
 
                 if (viewName === 'home') {
                     viewHome.style.display = 'block';
@@ -298,6 +317,21 @@
                     viewBlog.classList.add('active-view');
                     renderPostsList('postsListBlog');
                     renderTagPills('tagFilterBlog');
+                } else if (viewName === 'movie') {
+                    viewMovie.style.display = 'block';
+                    viewMovie.classList.add('active-view');
+                    if (previousView !== 'movie') movieFrame.src = 'movie.html';
+                    sizeMovieFrame();
+                    if (window.innerWidth <= 700) {
+                        window.requestAnimationFrame(() => {
+                            const frameRect = movieFrame.getBoundingClientRect();
+                            const headerBottom = $('.site-header').getBoundingClientRect().bottom;
+                            const viewportHeight = window.visualViewport?.height || window.innerHeight;
+                            const visibleCenter = headerBottom + (viewportHeight - headerBottom) / 2;
+                            const targetTop = window.scrollY + frameRect.top + frameRect.height / 2 - visibleCenter;
+                            window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+                        });
+                    }
                 } else if (viewName === 'about') {
                     viewAbout.style.display = 'block';
                     viewAbout.classList.add('active-view');
@@ -307,7 +341,7 @@
                 }
 
                 $$('.nav-links a').forEach(link => link.classList.remove('active'));
-                const navMap = { home: 'home', blog: 'blog', about: 'about', article: 'blog' };
+                const navMap = { home: 'home', blog: 'blog', movie: 'movie', about: 'about', article: 'blog' };
                 const activeNav = navMap[viewName] || 'home';
                 const navLink = document.querySelector(`.nav-links a[data-nav="${activeNav}"]`);
                 if (navLink) navLink.classList.add('active');
@@ -323,6 +357,7 @@
                     e.preventDefault();
                     if (nav === 'home') switchView('home');
                     if (nav === 'blog') switchView('blog');
+                    if (nav === 'movie') switchView('movie');
                     if (nav === 'about') switchView('about');
                 });
             });
