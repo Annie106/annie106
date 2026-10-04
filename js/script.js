@@ -184,7 +184,9 @@
             function renderTagPills(containerId) {
                 const container = document.getElementById(containerId);
                 if (!container) return;
-                const tags = getAllTags();
+                const tags = containerId === 'tagFilterHome'
+                    ? ['all', '置顶', '社交', '阅读', '随笔']
+                    : getAllTags();
                 container.innerHTML = tags.map(t =>
                     `<span class="tag-pill${t === activeTag ? ' active' : ''}" data-tag="${t}">${t === 'all' ? '全部' : t}</span>`
                 ).join('');
