@@ -1424,6 +1424,11 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
      ⑲ 播放 / 暂停
      ========================================================= */
   function togglePlay() {
+    /* 未选择视频时禁止播放，仅提示 */
+    if (index < 0 || !(video.currentSrc || video.src)) {
+      toast('请选择视频后播放');
+      return;
+    }
     if (video.paused) video.play().catch(() => {});
     else video.pause();
   }
