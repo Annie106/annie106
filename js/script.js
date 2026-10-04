@@ -196,8 +196,8 @@
                         activeTag = tag;
                         renderTagPills('tagFilterHome');
                         renderTagPills('tagFilterBlog');
-                        renderPostsList('postsListHome');
-                        renderPostsList('postsListBlog');
+                        renderPostsList('postsListHome', true);
+                        renderPostsList('postsListBlog', true);
                     });
                 });
             }
@@ -209,7 +209,7 @@
                 return posts.sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)));
             }
 
-            function renderPostsList(containerId) {
+            function renderPostsList(containerId, animate = false) {
                 const container = document.getElementById(containerId);
                 if (!container) return;
                 const posts = getFilteredPosts();
@@ -225,7 +225,7 @@
                     const viewCount = 18 + (p.id * 5);
 
                     return `
-                        <article class="task post-card" data-article-id="${p.id}" draggable="true">
+                        <article class="task post-card${animate ? ' post-card-enter' : ''}" data-article-id="${p.id}" draggable="true">
                             <div class="tags">
                                 <div class="tags-left">
                                     ${p.pinned ? '<span class="tag tag-pinned" title="置顶"><i class="ri-pushpin-2-line"></i></span>' : ''}

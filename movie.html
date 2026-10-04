@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<title>视频播放</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='6' fill='%234f8cff'/><path d='M9 6.5v11l9-5.5z' fill='white'/></svg>">
+<style>
+:root{
+  --bg:#0a0a0c; --panel:#141418; --line:#26262e;
+  --txt:#ececef; --dim:#8b8b96; --acc:#4f8cff; --danger:#ff6b6b;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{
+  height:100%;margin:0;background:var(--bg);color:var(--txt);overflow:hidden;
+  font:14px/1.65 system-ui,-apple-system,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+button{
+  font:inherit;color:var(--txt);cursor:pointer;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:9px;padding:7px 13px;
+  background:linear-gradient(135deg,#31313d 0%,#1e1e26 60%,#191920 100%);
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 2px 8px rgba(0,0,0,.35);
+  transition:.18s;
+}
+button:hover{
+  background:linear-gradient(135deg,#3d3d4c 0%,#27272f 60%,#202028 100%);
+  border-color:rgba(255,255,255,.18);
+}
+button:active{transform:scale(.97)}
+button.primary{
+  background:linear-gradient(135deg,#6aa1ff 0%,#4f8cff 45%,#3568d8 100%);
+  border-color:rgba(255,255,255,.22);
+  color:#fff;
+  box-shadow:0 1px 0 rgba(255,255,255,.28) inset,0 3px 12px rgba(79,140,255,.38);
+}
+button.primary:hover{
+  background:linear-gradient(135deg,#7aadff 0%,#5f97ff 45%,#3f74e6 100%);
+}
+
+/* ===== button-wrap 结构（无边框、无蓝色柔光） ===== */
+.button-wrap{
+  position:relative;
+  display:inline-block;
+}
+.button-wrap button{
+  position:relative;
+  z-index:2;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:10px 22px;
+  border:none;
+  border-radius:8px;
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.8px;
+  color:#fff;
+  background:#2a2a32;
+  cursor:pointer;
+  transition:transform .15s ease, background .15s ease;
+  box-shadow:none;
+}
+.button-wrap button svg{
+  width:16px;height:16px;display:block;pointer-events:none;fill:currentColor;
+}
+.button-wrap .button-shadow{
+  position:absolute;
+  z-index:1;
+  inset:0;
+  border-radius:8px;
+  background:#2a2a32;
+  filter:blur(8px);
+  opacity:.6;
+  transform:translateY(4px);
+  transition:transform .15s ease, opacity .15s ease;
+  pointer-events:none;
+}
+.button-wrap:hover button{
+  background:#33333d;
+  transform:translateY(-2px);
+}
+.button-wrap:hover .button-shadow{
+  transform:translateY(7px);
+  opacity:.85;
+}
+.button-wrap:active button{
+  transform:translateY(1px);
+  background:#232329;
+}
+.button-wrap:active .button-shadow{
+  transform:translateY(2px);
+  opacity:.5;
+}
+
+#stage{position:fixed;inset:0;background:#000;overflow:hidden}
+#player{width:100%;height:100%;object-fit:contain;background:#000;display:block;outline:none}
+
+/* 左上角水印 */
+#watermark{
+  position:absolute;top:16px;left:18px;z-index:12;
+  pointer-events:none;user-select:none;
+  font-size:15px;font-weight:800;letter-spacing:2.4px;
+  background:linear-gradient(100deg,
+              rgba(255,255,255,.72) 0%,
+              rgba(210,225,255,.55) 35%,
+              rgba(255,255,255,.28) 70%,
+              rgba(255,255,255,.14) 100%);
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;
+  text-shadow:0 1px 8px rgba(0,0,0,.55);
+  filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));
+}
+
+
+
+/* 中央加载动画 */
+#loadingBox{
+  position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  z-index:19;pointer-events:none;user-select:none;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+  opacity:0;transition:opacity .2s;
+}
+#loadingBox.show{opacity:1}
+.spinner{
+  width:46px;height:46px;
+  border:3px solid rgba(255,255,255,.12);
+  border-top-color:#4f8cff;
+  border-right-color:rgba(79,140,255,.6);
+  border-radius:50%;
+  animation:spin .9s linear infinite;
+  box-shadow:0 0 24px rgba(79,140,255,.35);
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{
+  font-size:12.5px;
+  color:rgba(255,255,255,.7);
+  text-shadow:0 1px 4px rgba(0,0,0,.85);
+  letter-spacing:.6px;
+}
+
+#playIcon{
+  position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%) scale(.72);
+  z-index:18;pointer-events:none;user-select:none;
+  width:92px;height:92px;display:grid;place-items:center;
+  border-radius:50%;
+  color:#fff;
+  background:linear-gradient(135deg,rgba(255,255,255,.22),rgba(255,255,255,.06));
+  border:1px solid rgba(255,255,255,.22);
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  opacity:0;transition:opacity .22s,transform .22s;
+}
+#playIcon.persist{opacity:.92;transform:translate(-50%,-50%) scale(1)}
+
+/* 中央播放 / 暂停图标（checkbox 切换组件） */
+#playIcon .container{
+  position:relative;
+  width:40px;height:40px;
+  display:grid;place-items:center;
+}
+#playIcon .container input{display:none}
+#playIcon .container svg{
+  position:absolute;
+  height:38px;
+  width:auto;
+  display:block;
+  fill:currentColor;
+  transition:opacity .2s ease, transform .2s ease;
+}
+#playIcon .container .play{opacity:1;transform:scale(1)}
+#playIcon .container .pause{opacity:0;transform:scale(.6)}
+#playIcon.show-pause .container .play{opacity:0;transform:scale(.6)}
+#playIcon.show-pause .container .pause{opacity:1;transform:scale(1)}
+
+#bar{
+  position:absolute;left:0;right:0;bottom:0;z-index:15;
+  display:flex;flex-direction:column;gap:8px;
+  padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top,rgba(0,0,0,.9),rgba(0,0,0,.5) 60%,transparent);
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+#bar.show{opacity:1;pointer-events:auto}
+
+body.mobile-mode .icon-btn{width:44px;height:44px}
+body.mobile-mode .icon-btn svg{width:20px;height:20px}
+body.mobile-mode .icon-btn.big svg{width:24px;height:24px}
+body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
+
+#progressRow{display:flex;align-items:center;gap:10px;padding:0 2px}
+#timeCurrent,#timeTotal{
+  font-size:12px;color:#c3c3ce;
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 1px 4px rgba(0,0,0,.9);
+  flex:none;min-width:44px;
+}
+#timeCurrent{text-align:right}
+#timeTotal{text-align:left}
+
+#progressBar{flex:1;height:16px;position:relative;cursor:pointer;touch-action:none}
+#progressBar::before{
+  content:"";position:absolute;left:0;right:0;top:50%;
+  transform:translateY(-50%);
+  height:4px;border-radius:2px;
+  background:rgba(255,255,255,.18);
+  transition:height .15s;
+}
+#progressBuffer{
+  position:absolute;left:0;top:50%;
+  transform:translateY(-50%);
+  height:4px;border-radius:2px;width:0;
+  background:rgba(255,255,255,.3);
+  transition:height .15s;
+}
+#progressPlayed{
+  position:absolute;left:0;top:50%;
+  transform:translateY(-50%);
+  height:4px;border-radius:2px;width:0;
+  background:linear-gradient(90deg,#4f8cff,#6aa1ff);
+  box-shadow:0 0 8px rgba(79,140,255,.5);
+  transition:height .15s;
+}
+#progressThumb{
+  position:absolute;left:0;top:50%;
+  width:13px;height:13px;border-radius:50%;
+  background:linear-gradient(135deg,#ffffff,#c9d8ff);
+  transform:translate(-50%,-50%) scale(.6);
+  box-shadow:0 2px 8px rgba(0,0,0,.6),0 0 0 1px rgba(79,140,255,.6);
+  opacity:0;
+  transition:opacity .15s,transform .15s;
+  pointer-events:none;
+}
+#progressBar:hover::before,
+#progressBar:hover #progressBuffer,
+#progressBar:hover #progressPlayed,
+#progressBar.dragging::before,
+#progressBar.dragging #progressBuffer,
+#progressBar.dragging #progressPlayed{height:6px}
+#progressBar:hover #progressThumb,
+#progressBar.dragging #progressThumb{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#progressBar.dragging #progressThumb{transform:translate(-50%,-50%) scale(1.2)}
+
+#controlsRow{display:flex;align-items:center;gap:8px}
+
+.icon-btn{
+  width:38px;height:38px;flex:none;display:grid;place-items:center;padding:0;
+  color:#fff;line-height:1;
+  border:1px solid rgba(255,255,255,.20);
+  border-radius:10px;
+  background:linear-gradient(135deg,
+              rgba(255,255,255,.24) 0%,
+              rgba(255,255,255,.10) 45%,
+              rgba(255,255,255,.04) 100%);
+  box-shadow:0 1px 0 rgba(255,255,255,.22) inset,0 3px 12px rgba(0,0,0,.4);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  transition:.18s;
+}
+.icon-btn:hover{
+  background:linear-gradient(135deg,
+              rgba(255,255,255,.38) 0%,
+              rgba(255,255,255,.18) 45%,
+              rgba(255,255,255,.08) 100%);
+  border-color:rgba(255,255,255,.34);
+}
+.icon-btn:active{transform:scale(.95)}
+.icon-btn svg{width:18px;height:18px;display:block;pointer-events:none}
+.icon-btn.big svg{width:20px;height:20px}
+
+#btnSpeed{
+  width:44px;height:38px;flex:none;
+  display:grid;place-items:center;padding:0;
+  font-size:13px;font-weight:700;color:#fff;letter-spacing:.3px;
+  border:1px solid rgba(255,255,255,.20);
+  border-radius:10px;
+  background:linear-gradient(135deg,
+              rgba(255,255,255,.24) 0%,
+              rgba(255,255,255,.10) 45%,
+              rgba(255,255,255,.04) 100%);
+  box-shadow:0 1px 0 rgba(255,255,255,.22) inset,0 3px 12px rgba(0,0,0,.4);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  transition:.18s;
+}
+#btnSpeed:hover{
+  background:linear-gradient(135deg,
+              rgba(255,255,255,.38) 0%,
+              rgba(255,255,255,.18) 45%,
+              rgba(255,255,255,.08) 100%);
+  border-color:rgba(255,255,255,.34);
+}
+#btnSpeed.active{
+  background:linear-gradient(135deg,#6aa1ff 0%,#4f8cff 45%,#3568d8 100%);
+  border-color:rgba(255,255,255,.28);
+  box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 3px 12px rgba(79,140,255,.45);
+}
+
+#nowTitle{
+  flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-size:13.5px;color:#e9e9f0;text-shadow:0 1px 4px rgba(0,0,0,.85);
+  padding:0 4px;
+}
+
+#volBox{position:relative;flex:none}
+#volSlider{
+  position:absolute;bottom:calc(100% + 12px);right:-6px;
+  padding:13px 14px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.15);
+  background:linear-gradient(135deg,rgba(48,48,58,.97),rgba(26,26,32,.97));
+  box-shadow:0 10px 30px rgba(0,0,0,.6);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  opacity:0;pointer-events:none;
+  transform:translateY(6px);
+  transition:opacity .2s,transform .2s;
+}
+#volSlider::before{
+  content:"";position:absolute;left:0;right:0;bottom:-14px;height:14px;
+}
+#volBox:hover #volSlider,
+#volBox.open #volSlider{
+  opacity:1;pointer-events:auto;transform:translateY(0);
+}
+#volRange{
+  -webkit-appearance:none;appearance:none;
+  display:block;width:112px;height:4px;margin:0;
+  border-radius:2px;outline:none;cursor:pointer;
+  background:linear-gradient(90deg,
+              #4f8cff 0%,
+              #6aa1ff var(--v,100%),
+              rgba(255,255,255,.18) var(--v,100%),
+              rgba(255,255,255,.18) 100%);
+}
+#volRange::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:14px;height:14px;border-radius:50%;border:none;
+  background:linear-gradient(135deg,#ffffff,#c9d8ff);
+  box-shadow:0 2px 8px rgba(0,0,0,.55),0 0 0 1px rgba(79,140,255,.55);
+  cursor:pointer;transition:transform .15s;
+}
+#volRange::-webkit-slider-thumb:hover{transform:scale(1.18)}
+#volRange::-moz-range-track{
+  height:4px;border-radius:2px;background:rgba(255,255,255,.18);
+}
+#volRange::-moz-range-progress{
+  height:4px;border-radius:2px;
+  background:linear-gradient(90deg,#4f8cff,#6aa1ff);
+}
+#volRange::-moz-range-thumb{
+  width:14px;height:14px;border-radius:50%;border:none;
+  background:linear-gradient(135deg,#ffffff,#c9d8ff);
+  box-shadow:0 2px 8px rgba(0,0,0,.55),0 0 0 1px rgba(79,140,255,.55);
+  cursor:pointer;
+}
+
+#speedBox{position:relative;flex:none}
+#speedMenu{
+  position:absolute;bottom:calc(100% + 12px);left:50%;
+  transform:translateX(-50%) translateY(6px);
+  padding:6px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.15);
+  background:linear-gradient(135deg,rgba(48,48,58,.97),rgba(26,26,32,.97));
+  box-shadow:0 10px 30px rgba(0,0,0,.6);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  opacity:0;pointer-events:none;
+  transition:opacity .2s,transform .2s;
+  display:flex;flex-direction:column;gap:2px;
+  min-width:92px;
+}
+#speedMenu::before{
+  content:"";position:absolute;left:0;right:0;bottom:-14px;height:14px;
+}
+#speedBox.open #speedMenu{
+  opacity:1;pointer-events:auto;
+  transform:translateX(-50%) translateY(0);
+}
+#speedMenu button{
+  width:100%;text-align:center;padding:7px 10px;
+  border:none;border-radius:7px;
+  background:transparent;
+  font-size:13px;color:#cfcfd8;
+  box-shadow:none;
+  letter-spacing:.4px;
+}
+#speedMenu button:hover{
+  background:rgba(255,255,255,.09);color:#fff;
+}
+#speedMenu button.active{
+  background:linear-gradient(135deg,rgba(79,140,255,.45),rgba(79,140,255,.15));
+  color:#fff;font-weight:700;
+}
+
+#scrim{
+  position:absolute;inset:0;z-index:25;background:rgba(0,0,0,.5);
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+#scrim.show{opacity:1;pointer-events:auto}
+
+#panel{
+  position:absolute;top:0;right:0;bottom:0;z-index:30;
+  width:min(360px,88vw);
+  background:linear-gradient(180deg,#181820 0%,#131319 55%,#101015 100%);
+  border-left:1px solid var(--line);
+  display:flex;flex-direction:column;
+  transform:translateX(101%);transition:transform .28s cubic-bezier(.4,0,.2,1);
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:env(safe-area-inset-bottom);
+  box-shadow:-12px 0 36px rgba(0,0,0,.5);
+}
+#panel.open{transform:none}
+.p-head{
+  display:flex;align-items:center;gap:10px;flex:none;
+  padding:13px 14px;border-bottom:1px solid var(--line);font-weight:600;
+  background:linear-gradient(90deg,rgba(79,140,255,.12),transparent 70%);
+}
+.p-head span{flex:1}
+#list{list-style:none;margin:0;padding:6px 0;overflow-y:auto;flex:1}
+#list .empty{padding:26px 16px;text-align:center;color:var(--dim);font-size:13px}
+.item{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;
+  border-left:3px solid transparent;transition:background .15s;
+}
+.item:hover{background:linear-gradient(90deg,rgba(255,255,255,.07),rgba(255,255,255,.02))}
+.item.active{
+  background:linear-gradient(90deg,rgba(79,140,255,.22),rgba(79,140,255,.04));
+  border-left-color:var(--acc);
+}
+.item .idx{width:18px;flex:none;text-align:center;color:var(--dim);font-size:12px}
+.item.active .idx{color:var(--acc);font-weight:700}
+.item .meta{flex:1;min-width:0}
+.item .nm{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 联系我们 */
+.p-foot{
+  flex:none;
+  padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--line);
+  background:linear-gradient(180deg,transparent,rgba(0,0,0,.25));
+}
+.contact-btn{
+  display:block;
+  width:100%;
+  padding:10px 12px;
+  font-size:14px;
+  font-weight:500;
+  text-align:center;
+  border-radius:10px;
+  background:linear-gradient(135deg,rgba(79,140,255,.22),rgba(79,140,255,.08));
+  border:1px solid rgba(79,140,255,.35);
+  color:#a8c4ff;
+  cursor:pointer;
+  letter-spacing:.5px;
+  transition:.18s;
+}
+.contact-btn:hover{
+  background:linear-gradient(135deg,rgba(79,140,255,.42),rgba(79,140,255,.18));
+  border-color:rgba(79,140,255,.6);
+  color:#fff;
+}
+.contact-btn:active{transform:scale(.98)}
+
+#overlay{
+  position:absolute;inset:0;z-index:20;
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:24px;overflow:auto;
+  background:radial-gradient(circle at 50% 20%,#17171d 0%,#0a0a0c 72%);
+}
+#overlay[hidden]{display:none}
+.ov-card{
+  width:min(640px,100%);
+  margin:auto 0;
+  animation:pop .22s ease;
+}
+@keyframes pop{from{opacity:0;transform:translateY(10px)}}
+.ov-ico{font-size:30px;line-height:1;margin-bottom:10px}
+.ov-card h2{margin:0 0 9px;font-size:18px;font-weight:650}
+.ov-reason{margin:0 0 16px;color:#b9b9c4;font-size:13.5px;line-height:1.65}
+
+.ov-scenarios{
+  border-top:1px solid var(--line);
+  padding-top:14px;
+}
+.ov-sec-title{
+  font-size:12px;font-weight:600;
+  color:var(--dim);letter-spacing:.6px;
+  margin:0 0 10px;
+}
+.ov-scenario{
+  border:1px solid var(--line);
+  border-radius:10px;
+  margin-bottom:8px;
+  overflow:hidden;
+  background:#101015;
+  transition:border-color .15s;
+}
+.ov-scenario:hover{border-color:#35353f}
+.ov-scenario[open]{
+  background:linear-gradient(135deg,#15151c,#101015);
+  border-color:#33333d;
+}
+.ov-scenario summary{
+  display:flex;align-items:center;gap:9px;
+  padding:11px 13px;
+  cursor:pointer;
+  font-size:13.5px;
+  list-style:none;
+  user-select:none;
+  transition:background .15s;
+}
+.ov-scenario summary:hover{background:rgba(255,255,255,.03)}
+.ov-scenario summary::-webkit-details-marker{display:none}
+.ov-scenario summary::after{
+  content:"▸";
+  margin-left:auto;
+  color:var(--dim);
+  font-size:11px;
+  transition:transform .2s;
+}
+.ov-scenario[open] summary::after{transform:rotate(90deg)}
+.sc-icon{font-size:15px;line-height:1}
+.sc-title{flex:1;font-weight:500}
+.sc-badge{
+  font-size:10px;
+  padding:1px 7px;
+  border-radius:20px;
+  background:linear-gradient(135deg,rgba(79,140,255,.35),rgba(79,140,255,.15));
+  color:#a8c4ff;
+  border:1px solid rgba(79,140,255,.4);
+  font-weight:600;
+  letter-spacing:.3px;
+  margin-right:4px;
+}
+.sc-badge.warn{
+  background:linear-gradient(135deg,rgba(255,107,107,.35),rgba(255,107,107,.15));
+  color:#ffc0c0;
+  border-color:rgba(255,107,107,.4);
+}
+.sc-body{
+  padding:2px 14px 14px 36px;
+  color:#b9b9c4;
+  font-size:13px;
+}
+.sc-body p{margin:0 0 10px}
+.sc-body ol{margin:0;padding-left:18px}
+.sc-body ol li{margin-bottom:8px;line-height:1.65}
+.sc-body ol li::marker{color:var(--acc)}
+.sc-quote{
+  display:block;
+  margin:6px 0 4px;
+  padding:9px 12px;
+  border-left:3px solid var(--acc);
+  background:rgba(79,140,255,.08);
+  border-radius:0 8px 8px 0;
+  color:#dbe5ff;
+  font-size:13px;
+  line-height:1.6;
+  user-select:text;
+  -webkit-user-select:text;
+}
+
+.ov-detail{
+  margin-top:14px;padding:8px 10px;border-radius:8px;
+  background:#0d0d11;border:1px solid var(--line);
+  font:12px/1.6 ui-monospace,Menlo,Consolas,monospace;
+  color:#7d7d88;
+  word-break:break-all;
+  white-space:pre-wrap;
+}
+.ov-btns{display:flex;flex-wrap:wrap;gap:14px;margin-top:18px;align-items:center}
+
+#imgLoadingOverlay{
+  position:fixed;inset:0;z-index:9999;
+  background:#000;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+#imgLoadingOverlay[hidden]{display:none}
+#imgLoadingOverlay img{
+  max-width:100%;max-height:100%;
+  object-fit:contain;
+  display:block;
+}
+#imgLoadingOverlay .hint{
+  position:absolute;bottom:24px;left:0;right:0;
+  text-align:center;color:#8b8b96;font-size:13px;
+  pointer-events:none;
+}
+
+#toast{
+  position:fixed;left:50%;bottom:110px;z-index:100;
+  transform:translate(-50%,10px);
+  background:linear-gradient(135deg,rgba(48,48,58,.97),rgba(26,26,32,.97));
+  border:1px solid rgba(255,255,255,.14);
+  color:#fff;font-size:13px;padding:8px 16px;border-radius:20px;
+  opacity:0;pointer-events:none;transition:.22s;
+  box-shadow:0 6px 22px rgba(0,0,0,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <video id="player" playsinline preload="metadata"></video>
+
+  <div id="watermark">RH 工作室</div>
+
+  <!-- 中央加载动画 -->
+  <div id="loadingBox">
+    <div class="spinner"></div>
+    <div class="loading-text">加载中…</div>
+  </div>
+
+  <!-- 中央播放 / 暂停图标 -->
+  <div id="playIcon">
+    <label class="container">
+      <input type="checkbox" />
+      <svg class="play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" aria-hidden="true">
+        <path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/>
+      </svg>
+      <svg class="pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" aria-hidden="true">
+        <path d="M48 64C21.5 64 0 85.5 0 112V400c0 26.5 21.5 48 48 48H80c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48H48zm192 0c-26.5 0-48 21.5-48 48V400c0 26.5 21.5 48 48 48h32c26.5 0 48-21.5 48-48V112c0-26.5-21.5-48-48-48H240z"/>
+      </svg>
+    </label>
+  </div>
+
+  <div id="bar">
+    <div id="progressRow">
+      <span id="timeCurrent">00:00</span>
+      <div id="progressBar">
+        <div id="progressBuffer"></div>
+        <div id="progressPlayed"></div>
+        <div id="progressThumb"></div>
+      </div>
+      <span id="timeTotal">00:00</span>
+    </div>
+
+    <div id="controlsRow">
+      <button class="icon-btn" id="btnList" title="视频列表" aria-label="视频列表">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="4" y1="7" x2="20" y2="7"/>
+          <line x1="4" y1="12" x2="20" y2="12"/>
+          <line x1="4" y1="17" x2="20" y2="17"/>
+        </svg>
+      </button>
+      <div id="nowTitle">未选择视频</div>
+
+      <button class="icon-btn big" id="btnPrev" title="上一个" aria-label="上一个">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M7 5h2v14H7z"/>
+          <path d="M20 5v14L9 12z"/>
+        </svg>
+      </button>
+
+      <button class="icon-btn big" id="btnPlay" title="播放/暂停 (双击画面)" aria-label="播放/暂停">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l14-8z"/></svg>
+      </button>
+
+      <button class="icon-btn big" id="btnNext" title="下一个" aria-label="下一个">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M15 5h2v14h-2z"/>
+          <path d="M4 5v14l11-7z"/>
+        </svg>
+      </button>
+
+      <div id="speedBox">
+        <button id="btnSpeed" title="播放速度">1.0x</button>
+        <div id="speedMenu">
+          <button data-rate="0.5">0.5x</button>
+          <button data-rate="0.75">0.75x</button>
+          <button data-rate="1" class="active">1.0x</button>
+          <button data-rate="1.25">1.25x</button>
+          <button data-rate="1.5">1.5x</button>
+          <button data-rate="2">2.0x</button>
+        </div>
+      </div>
+
+      <div id="volBox">
+        <button class="icon-btn big" id="btnMute" title="音量" aria-label="音量">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M4 9v6h4l5 4V5L8 9H4z"/>
+            <path d="M16 7.5a5 5 0 010 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M18.5 4.5a9 9 0 010 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div id="volSlider">
+          <input type="range" id="volRange" min="0" max="100" value="100"
+                 aria-label="音量" step="1">
+        </div>
+      </div>
+
+      <button class="icon-btn big" id="btnFull" title="全屏 (F)" aria-label="全屏">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 9V4h5"/>
+          <path d="M20 9V4h-5"/>
+          <path d="M4 15v5h5"/>
+          <path d="M20 15v5h-5"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="scrim"></div>
+
+  <aside id="panel">
+    <div class="p-head">
+      <span>视频列表</span>
+      <button class="icon-btn" id="btnClose" style="width:30px;height:30px" aria-label="关闭">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="6" y1="6" x2="18" y2="18"/>
+          <line x1="18" y1="6" x2="6" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <ul id="list"></ul>
+    <div class="p-foot">
+      <button class="contact-btn" id="btnContact" type="button">联系我们</button>
+    </div>
+  </aside>
+
+  <div id="overlay" hidden>
+    <div class="ov-card">
+      <div class="ov-ico" id="ovIcon">⚠️</div>
+      <h2 id="ovTitle">视频加载失败</h2>
+      <p class="ov-reason" id="ovReason"></p>
+      <div class="ov-scenarios" id="ovScenarios"></div>
+      <div class="ov-detail" id="ovDetail" hidden></div>
+      <div class="ov-btns" id="ovBtns"></div>
+    </div>
+  </div>
+</div>
+
+<div id="imgLoadingOverlay" hidden>
+  <img id="imgLoadingEl" alt="">
+  <div class="hint">正在判断问题…</div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =========================================================
+     ① 视频直链列表
+     ========================================================= */
+  const VIDEO_LIST = [
+    { name: '唐人街探案1900 4k', url: 'https://links.8uid.com/d/17f7e7a38d3b789c28df3a23266193b8' },
+    { name: '涉过愤怒的海 4k', url: 'https://links.8uid.com/d/6e79d2c67770da42ec09d209c12914de' },
+    { name: '疯狂动物城2', url: ' https://links.8uid.com/d/f203c2566e63fb0b4c8b5f2038c58c97' },
+    { name: '花木兰', url: '  https://links.8uid.com/d/bbe987ca4f8ebcd9ff93f9761c2f6c32' },
+    { name: '流浪地球2', url: 'https://links.8uid.com/d/e67ba483c20b2206326ad366b7927a8b' },
+    { name: '痴迷', url: 'https://links.8uid.com/d/4f2651f105b2b1ab7abfa76f31004f6d ' },
+    { name: '视频 2', url: 'https://links.8uid.com/d/e41689ac5b8eaa73f943e45f3a42a321' },
+  ];
+
+  const PROBE_IMAGE_URL = 'https://links.8uid.com/d/5f32af891af0e4462dc5c62d937ac8cf';
+  const CONTACT_URL = 'https://annie106.github.io/annie106';
+
+  /* =========================================================
+     ② 元素引用
+     ========================================================= */
+  const $ = id => document.getElementById(id);
+  const video    = $('player'),  stage  = $('stage'),  bar    = $('bar');
+  const nowTitle = $('nowTitle'),panel  = $('panel'),  scrim  = $('scrim');
+  const listEl   = $('list'),    overlay= $('overlay'),ovIcon = $('ovIcon');
+  const ovTitle  = $('ovTitle'), ovReason=$('ovReason'),ovScenarios = $('ovScenarios');
+  const ovDetail = $('ovDetail'),ovBtns = $('ovBtns');
+  const btnFull  = $('btnFull'), btnPlay = $('btnPlay'), playIcon = $('playIcon');
+  const volBox   = $('volBox'),  volRange= $('volRange'),btnMute = $('btnMute');
+  const speedBox = $('speedBox'),btnSpeed= $('btnSpeed'),speedMenu = $('speedMenu');
+  const progressBar    = $('progressBar');
+  const progressBuffer = $('progressBuffer');
+  const progressPlayed = $('progressPlayed');
+  const progressThumb  = $('progressThumb');
+  const timeCurrent    = $('timeCurrent');
+  const timeTotal      = $('timeTotal');
+
+  const imgLoadingOverlay = $('imgLoadingOverlay');
+  const imgLoadingEl      = $('imgLoadingEl');
+
+  const loadingBox   = $('loadingBox');
+
+  /* =========================================================
+     ③ 全局状态
+     ========================================================= */
+  const HIDE_DELAY = 700;           // 桌面端：鼠标停止移动后 0.7 秒自动隐藏
+  const MOBILE_HIDE_DELAY = 7000;   // 移动端：单击显示功能栏后 7 秒自动隐藏
+  const HOT_ZONE = 170;             // 距底部多少像素内视为“靠近功能栏”（桌面端）
+  const VIDEO_TRACK_CHECK_DELAY = 3000;
+  const DOUBLE_TAP_DELAY = 280;
+
+  const IS_LOCAL_FILE = (location.protocol === 'file:');
+
+  let isMobile = false;
+  let barTimer = 0;
+  let dragging = false;
+  let dragRatio = 0;
+  let volPanelOpen   = false;
+  let speedPanelOpen = false;
+  let volWarned = false;
+  let switching = false;
+  let timedOut  = false;
+  let currentRate = 1.0;
+  let index   = -1;
+  let lastUrl = '';
+  let watchdog = 0;
+  let videoTrackTimer = 0;
+  let noVideoTrackShown = false;
+
+  let lastTapTime = 0;
+  let tapTimer = 0;
+  let pauseIconTimer = 0;
+
+  /* =========================================================
+     ④ 移动端判断
+     ========================================================= */
+  function detectMobile() {
+    const ua = navigator.userAgent || '';
+    if (/android|iphone|ipod|ipad|blackberry|iemobile|opera mini|mobile|windows phone|webos|kindle|silk/i.test(ua)) return true;
+    if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return true;
+    if (window.innerWidth <= 768) return true;
+    return false;
+  }
+
+  function applyMobileMode() {
+    const mobile = detectMobile();
+    document.body.classList.toggle('mobile-mode', mobile);
+    if (mobile === isMobile) return;
+    isMobile = mobile;
+  }
+
+  applyMobileMode();
+
+  let resizeRaf = 0;
+  window.addEventListener('resize', () => {
+    if (resizeRaf) return;
+    resizeRaf = requestAnimationFrame(() => {
+      resizeRaf = 0;
+      applyMobileMode();
+    });
+  }, { passive: true });
+
+  window.addEventListener('orientationchange', () => {
+    setTimeout(applyMobileMode, 150);
+  }, { passive: true });
+
+  /* =========================================================
+     ⑤ 图标
+     ========================================================= */
+  const SVG = {
+    play:  '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l14-8z"/></svg>',
+    pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>',
+    volHigh: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 7.5a5 5 0 010 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 4.5a9 9 0 010 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    volLow: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9.5a3 3 0 010 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    mute:  '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h4l5 4V5L8 9H4z"/><line x1="17" y1="9" x2="22" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="22" y1="9" x2="17" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    fsEnter: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/></svg>',
+    fsExit:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4"/><path d="M15 4v5h5"/><path d="M9 20v-5H4"/><path d="M15 20v-5h5"/></svg>'
+  };
+
+  /* 刷新图标 SVG */
+  const REFRESH_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"></path><path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"></path></svg>';
+
+  /* 列表图标 SVG */
+  const LIST_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/></svg>';
+
+  let playlist = VIDEO_LIST.map(item => ({
+    name: item.name || item.url,
+    url: item.url
+  }));
+
+  /* =========================================================
+     ⑥ 工具
+     ========================================================= */
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function mkBtn(text, cls, onClick) {
+    const b = el('button', cls, text);
+    b.type = 'button';
+    b.addEventListener('click', onClick);
+    return b;
+  }
+  /* 创建 button-wrap 结构（按钮 + 阴影层） */
+  function mkShadowBtn(text, svg, onClick) {
+    const wrap = el('div', 'button-wrap');
+    const b = el('button');
+    b.type = 'button';
+    b.innerHTML = svg + '<span>' + text + '</span>';
+    b.addEventListener('click', onClick);
+    const shadow = el('div', 'button-shadow');
+    wrap.appendChild(b);
+    wrap.appendChild(shadow);
+    return wrap;
+  }
+  /* 刷新按钮 */
+  function mkRefreshBtn(text, onClick) {
+    return mkShadowBtn(text, REFRESH_SVG, onClick);
+  }
+  /* 列表按钮 */
+  function mkListBtn(text, onClick) {
+    return mkShadowBtn(text, LIST_SVG, onClick);
+  }
+  let toastTimer = 0;
+  function toast(msg) {
+    let t = $('toast');
+    if (!t) { t = el('div'); t.id = 'toast'; document.body.appendChild(t); }
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1700);
+  }
+  function fmtTime(s) {
+    if (!isFinite(s) || s < 0) s = 0;
+    s = Math.floor(s);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+    return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+  }
+
+  /* =========================================================
+     ⑦ 场景定义
+     ========================================================= */
+  const SCENARIOS = {
+    nodecode: {
+      icon: '🔇',
+      title: '视频无法解码 · 只有声音没有画面',
+      desc: '视频的声音部分可以正常播放，但画面部分你的浏览器无法显示。这通常是因为这个视频使用了比较特殊的压缩格式（比如 H.265 / HEVC），你当前用的浏览器不支持。这不是你的网络问题，也不是链接失效，这个视频在有些设备上是能正常播放的。',
+      steps: [
+        '你可以尝试换一个浏览器再打开，比如 Chrome、Edge、Firefox、Safari 等主流浏览器，或者换一台设备再试。',
+        '如果换了浏览器还是只有声音没画面，说明这个视频的格式确实比较特殊。可以把下面这句话复制下来发给分享者：',
+        '<span class="sc-quote">你好，这个视频在我这边只能听到声音，看不到画面，能麻烦换成 MP4（H.264）格式重新上传一下吗？</span>'
+      ]
+    },
+    captcha: {
+      icon: '🛡️',
+      title: '需要人机验证',
+      desc: '遇到错误，网络层面被拦截。可能是短时间内多次访问触发了服务商的人机验证机制。',
+      steps: [
+        '点击下方「打开直链完成验证」，在新窗口中完成人机验证（勾选、拼图、滑块等）。',
+        '验证成功后回到本页面，点击「已完成验证，重新加载」。',
+        '如果验证通过后仍无法播放，等待几分钟后重试；一直不行，说明不是验证问题，看下面其他情况。'
+      ]
+    },
+    region: {
+      icon: '📍',
+      title: '当前地区可能无法访问',
+      desc: '无法加载，说明网络层面被拦截。该链接在部分地区（如福建、重庆等）可能存在网络屏蔽。',
+      steps: [
+        '如果你当前在福建、重庆等地区，尝试切换网络：从 Wi-Fi 切换到手机流量，或更换不同运营商的网络。',
+        '使用可靠的 VPN 或代理后重试。',
+        '请其他地区的朋友帮忙测试，确认是否只是地区性屏蔽。',
+        '如果在公司或校园网内，防火墙也可能拦截，可尝试使用个人网络。'
+      ]
+    },
+    disabled: {
+      icon: '🔗',
+      title: '链接已失效',
+      desc: '图片可以正常加载（网络正常），但当前视频链接返回的内容不是有效的视频文件。分享者可能停用了这个链接，或者链接已经过期失效。',
+      steps: [
+        '联系分享者，确认链接是否已被停用，有没有新的替代链接。',
+        '如果这是你自己上传的链接，登录服务商后台检查链接状态和有效期。',
+        '尝试使用其他可用的备用链接。'
+      ]
+    },
+    aborted: {
+      icon: '⏸️',
+      title: '播放被中断',
+      desc: '视频加载过程被中断了，通常是切换视频或网络抖动导致的。',
+      steps: [
+        '点击「重新加载」，或者在列表里重新点一次这个视频。',
+        '如果频繁出现，检查网络是否稳定。'
+      ]
+    }
+  };
+
+  /* =========================================================
+     ⑧ 视频轨检测（黑屏只有声音）
+     ========================================================= */
+  function clearVideoTrackCheck() {
+    clearTimeout(videoTrackTimer);
+    videoTrackTimer = 0;
+  }
+
+  function scheduleVideoTrackCheck() {
+    clearVideoTrackCheck();
+    if (noVideoTrackShown) return;
+
+    videoTrackTimer = setTimeout(() => {
+      videoTrackTimer = 0;
+      const playing = !video.paused && !video.ended;
+      const playedSome = video.currentTime > 0.5;
+      const hasData = video.readyState >= 2;
+      const noVideo = video.videoWidth === 0 || video.videoHeight === 0;
+
+      if (playing && playedSome && hasData && noVideo) {
+        noVideoTrackShown = true;
+        video.pause();
+        renderErrorUI('nodecode', video.error ? video.error.code : 0, false, lastUrl, null);
+      }
+    }, VIDEO_TRACK_CHECK_DELAY);
+  }
+
+  /* =========================================================
+     ⑨ 地区检测
+     ========================================================= */
+  async function detectRegion() {
+    if (IS_LOCAL_FILE) return '';
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 2500);
+      const res = await fetch('https://api.ip.sb/geoip', {
+        signal: ctrl.signal,
+        cache: 'no-store',
+        mode: 'cors'
+      });
+      clearTimeout(timer);
+      if (!res.ok) return '';
+      const data = await res.json();
+      return String(data.region || data.city || data.region_code || data.country || '');
+    } catch (e) {
+      return '';
+    }
+  }
+
+  const REGION_RE = /福建|重庆|Fujian|Chongqing/i;
+
+  /* =========================================================
+     ⑩ 全屏图片加载过渡 + 判断
+     ========================================================= */
+  function showImageThenDecide(videoUrl, code, wasTimeout) {
+    imgLoadingOverlay.hidden = false;
+    imgLoadingEl.removeAttribute('src');
+
+    const bust = (PROBE_IMAGE_URL.indexOf('?') > -1 ? '&' : '?') +
+                 '_t=' + Date.now() +
+                 '_r=' + Math.random().toString(36).slice(2);
+    imgLoadingEl.src = PROBE_IMAGE_URL + bust;
+
+    let settled = false;
+
+    const finish = (imageOk) => {
+      if (settled) return;
+      settled = true;
+
+      imgLoadingEl.onload = null;
+      imgLoadingEl.onerror = null;
+      try { imgLoadingEl.removeAttribute('src'); } catch (e) {}
+      imgLoadingOverlay.hidden = true;
+
+      if (imageOk) {
+        renderErrorUI('disabled', code, wasTimeout, videoUrl, null);
+      } else {
+        detectRegion().then(function (region) {
+          if (REGION_RE.test(region)) {
+            renderErrorUI('region', code, wasTimeout, videoUrl, null);
+          } else {
+            renderErrorUI('captcha', code, wasTimeout, videoUrl, null);
+          }
+        });
+      }
+    };
+
+    imgLoadingEl.onload = () => finish(true);
+    imgLoadingEl.onerror = () => finish(false);
+
+    setTimeout(() => {
+      if (!settled) finish(false);
+    }, 12000);
+  }
+
+  /* =========================================================
+     ⑪ 普通错误面板
+     ========================================================= */
+  function renderErrorUI(priority, code, wasTimeout, url, probe) {
+    hideLoading();
+    const sc = SCENARIOS[priority];
+
+    overlay.hidden = false;
+    ovIcon.textContent = sc.icon;
+    ovTitle.textContent = sc.title;
+    ovReason.textContent = sc.desc;
+
+    ovScenarios.innerHTML = '';
+    const h = el('h3', 'ov-sec-title', '可能的原因与解决办法');
+    ovScenarios.appendChild(h);
+
+    const order = ['disabled', 'captcha', 'region', 'nodecode', 'aborted'];
+    order.splice(order.indexOf(priority), 1);
+    order.unshift(priority);
+
+    order.forEach(key => {
+      const s = SCENARIOS[key];
+      if (!s) return;
+      const details = el('details', 'ov-scenario');
+      if (key === priority) details.open = true;
+
+      const summary = el('summary');
+      summary.appendChild(el('span', 'sc-icon', s.icon));
+      summary.appendChild(el('span', 'sc-title', s.title));
+      if (key === priority) {
+        const badge = el('span', 'sc-badge' + (priority === 'nodecode' ? ' warn' : ''), '参考');
+        summary.appendChild(badge);
+      }
+      details.appendChild(summary);
+
+      const body = el('div', 'sc-body');
+      body.appendChild(el('p', null, s.desc));
+
+      if (s.steps && s.steps.length) {
+        const ol = el('ol');
+        s.steps.forEach(step => {
+          const li = el('li');
+          li.innerHTML = step;
+          ol.appendChild(li);
+        });
+        body.appendChild(ol);
+      }
+
+      details.appendChild(body);
+      ovScenarios.appendChild(details);
+    });
+
+    ovBtns.innerHTML = '';
+
+    if (priority === 'captcha') {
+      ovBtns.appendChild(mkBtn('打开直链完成验证', 'primary', () => {
+        if (url) window.open(url, '_blank', 'noopener');
+      }));
+      ovBtns.appendChild(mkRefreshBtn('重新加载', () => {
+        if (index >= 0) loadOnly(index);
+      }));
+    } else {
+      ovBtns.appendChild(mkRefreshBtn('重新加载', () => {
+        if (index >= 0) loadOnly(index);
+      }));
+      if (playlist.length > 1) {
+        /* 换一个视频：打开视频列表面板 */
+        ovBtns.appendChild(mkListBtn('换一个视频', () => {
+          setPanel(true);
+        }));
+      }
+    }
+
+    const parts = [];
+    if (code) {
+      const names = { 1: 'ABORTED', 2: 'NETWORK', 3: 'DECODE', 4: 'SRC_NOT_SUPPORTED' };
+      parts.push('MediaError ' + code + (names[code] ? ' (' + names[code] + ')' : ''));
+    }
+    if (priority === 'nodecode') {
+      parts.push('画面未能显示，建议换浏览器或换 MP4 格式的视频');
+    }
+    if (video.networkState != null) {
+      const ns = { 0: 'NETWORK_EMPTY', 1: 'NETWORK_IDLE', 2: 'NETWORK_LOADING', 3: 'NETWORK_NO_SOURCE' };
+      parts.push('network=' + (ns[video.networkState] || video.networkState));
+    }
+    if (wasTimeout) parts.push('超时(60s)');
+
+    if (parts.length) {
+      ovDetail.textContent = parts.join('  ·  ');
+      ovDetail.hidden = false;
+    } else {
+      ovDetail.hidden = true;
+    }
+  }
+
+  /* =========================================================
+     ⑫ 错误入口
+     ========================================================= */
+  function showVideoError(priorityOverride) {
+    clearTimeout(watchdog);
+    clearVideoTrackCheck();
+    hidePlayIcon();
+    if (!(video.currentSrc || video.src)) return;
+
+    const url  = lastUrl || video.currentSrc || video.src || '';
+    const err  = video.error;
+    const code = err ? err.code : 0;
+    const wasTimeout = timedOut;
+    timedOut = false;
+
+    overlay.hidden = true;
+    imgLoadingOverlay.hidden = true;
+
+    if (priorityOverride) {
+      renderErrorUI(priorityOverride, code, wasTimeout, url, null);
+      return;
+    }
+
+    if (code === 1) {
+      renderErrorUI('aborted', code, wasTimeout, url, null);
+      return;
+    }
+
+    if (code === 3) {
+      renderErrorUI('nodecode', code, wasTimeout, url, null);
+      return;
+    }
+
+    showImageThenDecide(url, code, wasTimeout);
+  }
+
+  function hideOverlay() {
+    overlay.hidden = true;
+    imgLoadingOverlay.hidden = true;
+  }
+
+  /* =========================================================
+     ⑬ 加载动画控制
+     ========================================================= */
+  function showLoading() {
+    loadingBox.classList.add('show');
+  }
+  function hideLoading() {
+    loadingBox.classList.remove('show');
+  }
+
+
+
+  /* =========================================================
+     ⑮ 中央图标
+     ========================================================= */
+  function hidePlayIcon() {
+    clearTimeout(pauseIconTimer);
+    playIcon.classList.remove('persist');
+  }
+  /* 暂停时显示中央图标（播放三角） */
+  function showPauseIcon() {
+    void playIcon.offsetWidth;
+    playIcon.classList.add('persist');
+    playIcon.classList.remove('show-pause');
+  }
+
+  /* =========================================================
+     ⑯ 进度条
+     ========================================================= */
+  function updateProgress() {
+    const d = video.duration;
+    if (!d || !isFinite(d) || d <= 0) {
+      progressPlayed.style.width = '0%';
+      progressThumb.style.left = '0%';
+      timeCurrent.textContent = '00:00';
+      timeTotal.textContent = '00:00';
+      return;
+    }
+    const ratio = dragging ? dragRatio : Math.max(0, Math.min(1, video.currentTime / d));
+    const pct = (ratio * 100).toFixed(3) + '%';
+    progressPlayed.style.width = pct;
+    progressThumb.style.left = pct;
+    timeCurrent.textContent = fmtTime(ratio * d);
+    timeTotal.textContent = fmtTime(d);
+  }
+
+  function updateBuffer() {
+    const d = video.duration;
+    if (!d || !isFinite(d) || d <= 0 || !video.buffered.length) {
+      progressBuffer.style.width = '0%';
+      return;
+    }
+    let end = 0;
+    try { end = video.buffered.end(video.buffered.length - 1); } catch (e) { end = 0; }
+    const ratio = Math.max(0, Math.min(1, end / d));
+    progressBuffer.style.width = (ratio * 100).toFixed(3) + '%';
+  }
+
+  function ratioFromEvent(e) {
+    const rect = progressBar.getBoundingClientRect();
+    if (rect.width <= 0) return 0;
+    return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  }
+
+  function seekTo(ratio) {
+    const d = video.duration;
+    if (!d || !isFinite(d) || d <= 0) return;
+    dragRatio = ratio;
+    try { video.currentTime = ratio * d; } catch (e) {}
+    updateProgress();
+  }
+
+  progressBar.addEventListener('pointerdown', e => {
+    if (!video.duration || !isFinite(video.duration)) return;
+    e.preventDefault();
+    dragging = true;
+    progressBar.classList.add('dragging');
+    try { progressBar.setPointerCapture(e.pointerId); } catch (err) {}
+    showBar();
+    clearTimeout(barTimer);
+    seekTo(ratioFromEvent(e));
+  });
+  progressBar.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    seekTo(ratioFromEvent(e));
+  });
+  function endDrag(e) {
+    if (!dragging) return;
+    dragging = false;
+    progressBar.classList.remove('dragging');
+    try { progressBar.releasePointerCapture(e.pointerId); } catch (err) {}
+    scheduleHide(HIDE_DELAY);
+  }
+  progressBar.addEventListener('pointerup', endDrag);
+  progressBar.addEventListener('pointercancel', endDrag);
+  progressBar.addEventListener('click', e => e.stopPropagation());
+
+  video.addEventListener('timeupdate', updateProgress);
+  video.addEventListener('progress', updateBuffer);
+  video.addEventListener('loadedmetadata', () => { updateProgress(); updateBuffer(); });
+  video.addEventListener('durationchange', () => { updateProgress(); updateBuffer(); });
+  video.addEventListener('seeked', updateProgress);
+
+  /* =========================================================
+     ⑰ 播放速度
+     ========================================================= */
+  function setRate(rate, silent) {
+    rate = Number(rate);
+    if (!isFinite(rate) || rate <= 0) rate = 1;
+    currentRate = rate;
+    video.playbackRate = rate;
+
+    btnSpeed.textContent = (rate === 1 ? '1.0x' : rate + 'x');
+    btnSpeed.classList.toggle('active', rate !== 1 || speedPanelOpen);
+
+    Array.from(speedMenu.children).forEach(b => {
+      const r = Number(b.dataset.rate);
+      b.classList.toggle('active', Math.abs(r - rate) < 0.001);
+    });
+
+    if (!silent && rate !== 1) toast('播放速度 ' + btnSpeed.textContent);
+  }
+
+  speedMenu.addEventListener('click', e => {
+    const b = e.target.closest('button[data-rate]');
+    if (!b) return;
+    e.stopPropagation();
+    setRate(b.dataset.rate);
+    setSpeedPanel(false);
+  });
+
+  function setSpeedPanel(open) {
+    speedPanelOpen = open;
+    speedBox.classList.toggle('open', open);
+    btnSpeed.classList.toggle('active', open || currentRate !== 1);
+    if (open) { showBar(); clearTimeout(barTimer); }
+    else { scheduleHide(400); }
+  }
+
+  btnSpeed.addEventListener('click', e => {
+    e.stopPropagation();
+    setVolPanel(false);
+    setSpeedPanel(!speedPanelOpen);
+  });
+
+  /* =========================================================
+     ⑱ 音量
+     ========================================================= */
+  function paintVolume() {
+    const v = video.muted ? 0 : video.volume;
+    const pct = Math.round(v * 100);
+    volRange.value = pct;
+    volRange.style.setProperty('--v', pct + '%');
+
+    if (v <= 0.001)      btnMute.innerHTML = SVG.mute;
+    else if (v < 0.5)    btnMute.innerHTML = SVG.volLow;
+    else                 btnMute.innerHTML = SVG.volHigh;
+
+    btnMute.title = v <= 0.001 ? '取消静音' : '静音';
+  }
+
+  function applyVolume(v, fromUser) {
+    v = Math.max(0, Math.min(1, v));
+    video.muted = v <= 0.001;
+    try { video.volume = v; } catch (e) {}
+    if (fromUser && !volWarned && v > 0.001) {
+      if (Math.abs(video.volume - v) > 0.05) {
+        volWarned = true;
+        toast('当前设备不支持网页调节音量，请用设备音量键');
+      }
+    }
+    paintVolume();
+  }
+
+  function setVolPanel(open) {
+    volPanelOpen = open;
+    volBox.classList.toggle('open', open);
+    if (open) { showBar(); clearTimeout(barTimer); }
+    else { scheduleHide(400); }
+  }
+
+  volRange.addEventListener('input', () => {
+    applyVolume(Number(volRange.value) / 100, true);
+  });
+
+  btnMute.addEventListener('click', e => {
+    e.stopPropagation();
+    setSpeedPanel(false);
+    if (isMobile) {
+      setVolPanel(!volPanelOpen);
+    } else {
+      if (video.muted || video.volume <= 0.001) {
+        applyVolume(video.volume > 0.001 ? video.volume : 0.6, false);
+      } else {
+        video.muted = true;
+        paintVolume();
+      }
+      setVolPanel(true);
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (!volBox.contains(e.target)) setVolPanel(false);
+    if (!speedBox.contains(e.target)) setSpeedPanel(false);
+  });
+
+  video.addEventListener('volumechange', paintVolume);
+
+  /* =========================================================
+     ⑲ 播放 / 暂停
+     ========================================================= */
+  function togglePlay() {
+    if (video.paused) video.play().catch(() => {});
+    else video.pause();
+  }
+  function updatePlayBtn() {
+    btnPlay.innerHTML = video.paused ? SVG.play : SVG.pause;
+  }
+
+  video.addEventListener('play', () => {
+    clearTimeout(pauseIconTimer);
+    updatePlayBtn();
+    hidePlayIcon();
+    scheduleVideoTrackCheck();
+  });
+
+  video.addEventListener('pause', () => {
+    updatePlayBtn();
+    clearVideoTrackCheck();
+    hideLoading();
+    if (switching) return;
+    if (noVideoTrackShown) return;
+
+    clearTimeout(pauseIconTimer);
+    pauseIconTimer = setTimeout(() => {
+      if (video.paused && !switching && !noVideoTrackShown) {
+        showPauseIcon();
+      }
+    }, 180);
+  });
+
+  video.addEventListener('ended', () => {
+    updatePlayBtn();
+    clearVideoTrackCheck();
+    hideLoading();
+    showPauseIcon();
+  });
+
+  video.addEventListener('seeked', () => {
+    if (!video.paused) scheduleVideoTrackCheck();
+  });
+
+  /* =========================================================
+     ⑳ 加载动画事件绑定
+     ========================================================= */
+  video.addEventListener('loadstart', showLoading);
+  video.addEventListener('waiting',   showLoading);
+  video.addEventListener('seeking',   showLoading);
+  video.addEventListener('stalled',   showLoading);
+
+  video.addEventListener('loadeddata', hideLoading);
+  video.addEventListener('canplay',    hideLoading);
+  video.addEventListener('playing',    hideLoading);
+  video.addEventListener('seeked',     hideLoading);
+  video.addEventListener('error',      hideLoading);
+  video.addEventListener('abort',      hideLoading);
+
+  /* =========================================================
+     ㉑ 舞台点击
+        移动端：单击 → 切换功能栏显示/隐藏；显示后 7 秒自动隐藏
+        桌面端：单击 → 切换工具栏显示 / 隐藏
+        双击（两端）：暂停 / 播放
+     ========================================================= */
+  stage.addEventListener('click', e => {
+    if (e.target !== video) return;
+
+    const now = Date.now();
+    const isDoubleTap = (now - lastTapTime) < DOUBLE_TAP_DELAY;
+
+    if (isDoubleTap) {
+      clearTimeout(tapTimer);
+      lastTapTime = 0;
+      togglePlay();
+    } else {
+      lastTapTime = now;
+      clearTimeout(tapTimer);
+      tapTimer = setTimeout(() => {
+        tapTimer = 0;
+        lastTapTime = 0;
+
+        if (isMobile) {
+          /* 移动端：单击切换功能栏显示/隐藏；显示后 7 秒自动隐藏 */
+          if (bar.classList.contains('show')) {
+            clearTimeout(barTimer);
+            bar.classList.remove('show');
+          } else {
+            showBar();
+            scheduleHide(MOBILE_HIDE_DELAY);
+          }
+        } else {
+          /* 桌面端：单击切换工具栏显示 / 隐藏 */
+          if (bar.classList.contains('show')) {
+            clearTimeout(barTimer);
+            bar.classList.remove('show');
+          } else {
+            showBar();
+            scheduleHide(HIDE_DELAY);
+          }
+        }
+      }, DOUBLE_TAP_DELAY);
+    }
+  });
+
+  btnPlay.addEventListener('click', () => {
+    togglePlay();
+    showBar();
+    scheduleHide(HIDE_DELAY);
+  });
+
+  /* =========================================================
+     ㉒ 列表
+     ========================================================= */
+  function renderList() {
+    listEl.innerHTML = '';
+    if (!playlist.length) {
+      listEl.appendChild(el('li', 'empty', '没有视频可播放'));
+      return;
+    }
+    playlist.forEach((item, i) => {
+      const li = el('li', 'item' + (i === index ? ' active' : ''));
+      li.dataset.i = i;
+      li.appendChild(el('span', 'idx', String(i + 1)));
+      const meta = el('div', 'meta');
+      meta.appendChild(el('div', 'nm', item.name));
+      li.appendChild(meta);
+      listEl.appendChild(li);
+    });
+  }
+
+  /* =========================================================
+     ㉓ 加载视频
+     ========================================================= */
+  function loadOnly(i) {
+    if (i < 0 || i >= playlist.length) return;
+    index = i;
+    const item = playlist[i];
+    lastUrl = item.url;
+
+    renderList();
+    nowTitle.textContent = item.name;
+    document.title = item.name + ' · 播放器';
+
+    hideOverlay();
+    hidePlayIcon();
+    clearTimeout(watchdog);
+    clearTimeout(pauseIconTimer);
+    clearVideoTrackCheck();
+    timedOut = false;
+    noVideoTrackShown = false;
+
+    showLoading();
+
+    switching = true;
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    switching = false;
+
+    progressPlayed.style.width = '0%';
+    progressBuffer.style.width = '0%';
+    progressThumb.style.left = '0%';
+    timeCurrent.textContent = '00:00';
+    timeTotal.textContent = '00:00';
+
+    video.src = item.url;
+    try { video.playbackRate = currentRate; } catch (e) {}
+    video.load();
+
+    try { video.pause(); } catch (e) {}
+
+    updatePlayBtn();
+
+    const onMeta = () => {
+      video.removeEventListener('loadedmetadata', onMeta);
+      if (!video.paused) {
+        try { video.pause(); } catch (e) {}
+      }
+      updateProgress();
+      updateBuffer();
+      setTimeout(() => {
+        if (video.paused && !noVideoTrackShown) showPauseIcon();
+      }, 60);
+    };
+    video.addEventListener('loadedmetadata', onMeta);
+
+    watchdog = setTimeout(() => {
+      if (video.readyState < 1) {
+        timedOut = true;
+        showVideoError();
+      }
+    }, 60000);
+  }
+
+  /* =========================================================
+     ㉔ 事件：加载相关
+     ========================================================= */
+  video.addEventListener('loadedmetadata', () => {
+    clearTimeout(watchdog);
+    updateProgress();
+    updateBuffer();
+  });
+  video.addEventListener('loadeddata', () => clearTimeout(watchdog));
+  video.addEventListener('canplay',    () => clearTimeout(watchdog));
+  video.addEventListener('playing',    () => clearTimeout(watchdog));
+  video.addEventListener('suspend',    () => {
+    if (video.readyState >= 1) clearTimeout(watchdog);
+  });
+  video.addEventListener('progress',   () => {
+    if (video.readyState >= 1 || video.buffered.length > 0) clearTimeout(watchdog);
+  });
+
+  video.addEventListener('error', () => {
+    clearTimeout(watchdog);
+    clearVideoTrackCheck();
+    hidePlayIcon();
+    if (!(video.currentSrc || video.src)) return;
+    showVideoError();
+  });
+
+  video.addEventListener('ended', () => {
+    if (index + 1 < playlist.length) loadOnly(index + 1);
+  });
+
+  /* =========================================================
+     ㉕ 抽屉
+     ========================================================= */
+  function setPanel(open) {
+    panel.classList.toggle('open', open);
+    scrim.classList.toggle('show', open);
+    if (open) { showBar(); hideOverlay(); }
+    else { scheduleHide(400); }
+  }
+  $('btnList').addEventListener('click', () => setPanel(!panel.classList.contains('open')));
+  $('btnClose').addEventListener('click', () => setPanel(false));
+  scrim.addEventListener('click', () => setPanel(false));
+
+  $('btnContact').addEventListener('click', () => {
+    window.open(CONTACT_URL, '_blank', 'noopener');
+  });
+
+  /* =========================================================
+     ㉖ 工具栏
+     ========================================================= */
+  function showBar() {
+    clearTimeout(barTimer);
+    bar.classList.add('show');
+  }
+  function scheduleHide(delay) {
+    clearTimeout(barTimer);
+    if (panel.classList.contains('open')) return;
+    if (volPanelOpen || speedPanelOpen) return;
+    if (dragging) return;
+    /* 移动端统一使用 7 秒延迟；桌面端使用传入的延迟 */
+    const actualDelay = isMobile ? MOBILE_HIDE_DELAY : delay;
+    barTimer = setTimeout(() => bar.classList.remove('show'), actualDelay);
+  }
+
+  /* 判断鼠标是否靠近底部功能栏（在栏上或距底部 HOT_ZONE 内）——仅桌面端 */
+  function isNearBar(e) {
+    if (!e) return false;
+    if (e.target && bar.contains(e.target)) return true;
+    const rect = bar.getBoundingClientRect();
+    if (rect.height <= 0) return false;
+    return e.clientY >= rect.top - 40;
+  }
+
+  /* 桌面端：鼠标移动显示功能栏，停止 0.7 秒后隐藏；靠近功能栏时不隐藏 */
+  stage.addEventListener('mousemove', e => {
+    if (isMobile) return;
+    showBar();
+    if (isNearBar(e)) {
+      clearTimeout(barTimer);
+    } else {
+      scheduleHide(HIDE_DELAY);
+    }
+  }, { passive: true });
+
+  /* 桌面端鼠标进入功能栏：保持显示；离开后重新计时 */
+  bar.addEventListener('mouseenter', () => {
+    if (isMobile) return;
+    clearTimeout(barTimer);
+  });
+  bar.addEventListener('mouseleave', () => {
+    if (isMobile) return;
+    scheduleHide(HIDE_DELAY);
+  });
+
+  /* 移动端：点击功能栏任意位置重新计时 */
+  bar.addEventListener('click', () => {
+    if (!isMobile) return;
+    scheduleHide(MOBILE_HIDE_DELAY);
+  });
+
+  /* =========================================================
+     ㉗ 全屏
+     ========================================================= */
+  function getFsEl() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+  }
+  async function toggleFull() {
+    try {
+      if (!getFsEl()) {
+        if (stage.requestFullscreen) await stage.requestFullscreen();
+        else if (stage.webkitRequestFullscreen) stage.webkitRequestFullscreen();
+        else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
+      } else {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      }
+    } catch (e) {
+      toast('无法进入全屏，请用视频自带的按钮');
+    }
+  }
+  btnFull.addEventListener('click', toggleFull);
+
+  ['fullscreenchange', 'webkitfullscreenchange'].forEach(ev =>
+    document.addEventListener(ev, () => {
+      const on = !!getFsEl();
+      btnFull.innerHTML = on ? SVG.fsExit : SVG.fsEnter;
+      btnFull.title = on ? '退出全屏 (F)' : '全屏 (F)';
+      document.body.classList.toggle('in-fullscreen', on);
+
+      showBar();
+      scheduleHide(HIDE_DELAY);
+    })
+  );
+
+  /* =========================================================
+     ㉘ 上一个 / 下一个 / 列表点击
+     ========================================================= */
+  $('btnPrev').addEventListener('click', () => {
+    if (index > 0) loadOnly(index - 1); else toast('已经是第一个了');
+  });
+  $('btnNext').addEventListener('click', () => {
+    if (index < playlist.length - 1) loadOnly(index + 1); else toast('已经是最后一个了');
+  });
+  listEl.addEventListener('click', e => {
+    const item = e.target.closest('.item');
+    if (!item) return;
+    loadOnly(Number(item.dataset.i));
+    if (isMobile) setPanel(false);
+  });
+
+  /* =========================================================
+     ㉙ 快捷键
+     ========================================================= */
+  document.addEventListener('keydown', e => {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'textarea' || tag === 'input') return;
+
+    if (e.code === 'Space') {
+      e.preventDefault();
+      togglePlay();
+      showBar();
+      scheduleHide(HIDE_DELAY);
+    } else if (e.key === 'f' || e.key === 'F') {
+      e.preventDefault();
+      toggleFull();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (video.duration && isFinite(video.duration)) {
+        video.currentTime = Math.max(0, video.currentTime - 5);
+        showBar();
+        scheduleHide(HIDE_DELAY);
+      }
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      if (video.duration && isFinite(video.duration)) {
+        video.currentTime = Math.min(video.duration, video.currentTime + 5);
+        showBar();
+        scheduleHide(HIDE_DELAY);
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      applyVolume((video.muted ? 0 : video.volume) + 0.05, true);
+      showBar();
+      setVolPanel(true);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      applyVolume((video.muted ? 0 : video.volume) - 0.05, true);
+      showBar();
+      setVolPanel(true);
+    } else if (e.key === 'm' || e.key === 'M') {
+      e.preventDefault();
+      if (video.muted || video.volume <= 0.001) applyVolume(video.volume > 0.001 ? video.volume : 0.6, false);
+      else { video.muted = true; paintVolume(); }
+      showBar();
+      setVolPanel(true);
+    } else if (e.key === 'j' || e.key === 'J') {
+      if (video.duration && isFinite(video.duration)) {
+        video.currentTime = Math.max(0, video.currentTime - 10);
+        showBar();
+        scheduleHide(HIDE_DELAY);
+      }
+    } else if (e.key === 'l' || e.key === 'L') {
+      if (video.duration && isFinite(video.duration)) {
+        video.currentTime = Math.min(video.duration, video.currentTime + 10);
+        showBar();
+        scheduleHide(HIDE_DELAY);
+      }
+    }
+  });
+
+  /* =========================================================
+     ㉚ 启动
+     ========================================================= */
+  renderList();
+  updatePlayBtn();
+  paintVolume();
+  setRate(1, true);
+  btnFull.innerHTML = SVG.fsEnter;
+
+  if (playlist.length) {
+    loadOnly(0);
+  } else {
+    overlay.hidden = false;
+    ovIcon.textContent = '🎬';
+    ovTitle.textContent = '没有视频';
+    ovReason.textContent = '请在 HTML 源码顶部的 VIDEO_LIST 数组中添加新视频链接。';
+    ovScenarios.innerHTML = '';
+    ovDetail.hidden = true;
+    ovBtns.innerHTML = '';
+    ovBtns.appendChild(mkBtn('打开视频列表', 'primary', () => setPanel(true)));
+  }
+
+  setTimeout(() => {
+    showBar();
+    scheduleHide(2600);
+  }, 400);
+})();
+</script>
+</body>
+</html>
