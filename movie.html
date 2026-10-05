@@ -8,8 +8,8 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='6' fill='%234f8cff'/><path d='M9 6.5v11l9-5.5z' fill='white'/></svg>">
 <style>
 :root{
-  --bg:#0a0a0c; --panel:#141418; --line:#26262e;
-  --txt:#ececef; --dim:#8b8b96; --acc:#4f8cff; --danger:#ff6b6b;
+  --bg:#ffffff; --panel:#ffffff; --line:#eaeaea;
+  --txt:#1a1a1a; --dim:#777777; --acc:#1a1a1a; --danger:#d14b4b;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{
@@ -18,25 +18,26 @@ html,body{
 }
 button{
   font:inherit;color:var(--txt);cursor:pointer;
-  border:1px solid rgba(255,255,255,.10);
+  border:1px solid var(--line);
   border-radius:9px;padding:7px 13px;
-  background:linear-gradient(135deg,#31313d 0%,#1e1e26 60%,#191920 100%);
-  box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 2px 8px rgba(0,0,0,.35);
+  background:#fff;
+  box-shadow:0 1px 2px rgba(0,0,0,.03);
   transition:.18s;
 }
 button:hover{
-  background:linear-gradient(135deg,#3d3d4c 0%,#27272f 60%,#202028 100%);
-  border-color:rgba(255,255,255,.18);
+  background:#f7f7f7;
+  border-color:#d8d8d8;
 }
 button:active{transform:scale(.97)}
 button.primary{
-  background:linear-gradient(135deg,#6aa1ff 0%,#4f8cff 45%,#3568d8 100%);
-  border-color:rgba(255,255,255,.22);
+  background:#111;
+  border-color:#111;
   color:#fff;
-  box-shadow:0 1px 0 rgba(255,255,255,.28) inset,0 3px 12px rgba(79,140,255,.38);
+  box-shadow:0 2px 8px rgba(0,0,0,.12);
 }
 button.primary:hover{
-  background:linear-gradient(135deg,#7aadff 0%,#5f97ff 45%,#3f74e6 100%);
+  background:#333;
+  border-color:#333;
 }
 
 /* ===== button-wrap 结构（无边框、无蓝色柔光） ===== */
@@ -127,12 +128,12 @@ button.primary:hover{
 #loadingBox.show{opacity:1}
 .spinner{
   width:46px;height:46px;
-  border:3px solid rgba(255,255,255,.12);
-  border-top-color:#4f8cff;
-  border-right-color:rgba(79,140,255,.6);
+  border:3px solid rgba(255,255,255,.2);
+  border-top-color:#fff;
+  border-right-color:rgba(255,255,255,.65);
   border-radius:50%;
   animation:spin .9s linear infinite;
-  box-shadow:0 0 24px rgba(79,140,255,.35);
+  box-shadow:0 0 24px rgba(255,255,255,.12);
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-text{
@@ -220,16 +221,16 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
   position:absolute;left:0;top:50%;
   transform:translateY(-50%);
   height:4px;border-radius:2px;width:0;
-  background:linear-gradient(90deg,#4f8cff,#6aa1ff);
-  box-shadow:0 0 8px rgba(79,140,255,.5);
+  background:linear-gradient(90deg,#fff,#d8d8d8);
+  box-shadow:0 0 8px rgba(255,255,255,.25);
   transition:height .15s;
 }
 #progressThumb{
   position:absolute;left:0;top:50%;
   width:13px;height:13px;border-radius:50%;
-  background:linear-gradient(135deg,#ffffff,#c9d8ff);
+  background:linear-gradient(135deg,#ffffff,#d8d8d8);
   transform:translate(-50%,-50%) scale(.6);
-  box-shadow:0 2px 8px rgba(0,0,0,.6),0 0 0 1px rgba(79,140,255,.6);
+  box-shadow:0 2px 8px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.55);
   opacity:0;
   transition:opacity .15s,transform .15s;
   pointer-events:none;
@@ -292,9 +293,9 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
   border-color:rgba(255,255,255,.34);
 }
 #btnSpeed.active{
-  background:linear-gradient(135deg,#6aa1ff 0%,#4f8cff 45%,#3568d8 100%);
+  background:linear-gradient(135deg,#555,#222);
   border-color:rgba(255,255,255,.28);
-  box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 3px 12px rgba(79,140,255,.45);
+  box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 3px 12px rgba(0,0,0,.35);
 }
 
 #nowTitle{
@@ -328,16 +329,16 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
   display:block;width:112px;height:4px;margin:0;
   border-radius:2px;outline:none;cursor:pointer;
   background:linear-gradient(90deg,
-              #4f8cff 0%,
-              #6aa1ff var(--v,100%),
+              #fff 0%,
+              #ddd var(--v,100%),
               rgba(255,255,255,.18) var(--v,100%),
               rgba(255,255,255,.18) 100%);
 }
 #volRange::-webkit-slider-thumb{
   -webkit-appearance:none;appearance:none;
   width:14px;height:14px;border-radius:50%;border:none;
-  background:linear-gradient(135deg,#ffffff,#c9d8ff);
-  box-shadow:0 2px 8px rgba(0,0,0,.55),0 0 0 1px rgba(79,140,255,.55);
+  background:linear-gradient(135deg,#ffffff,#d8d8d8);
+  box-shadow:0 2px 8px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.5);
   cursor:pointer;transition:transform .15s;
 }
 #volRange::-webkit-slider-thumb:hover{transform:scale(1.18)}
@@ -346,12 +347,12 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
 }
 #volRange::-moz-range-progress{
   height:4px;border-radius:2px;
-  background:linear-gradient(90deg,#4f8cff,#6aa1ff);
+  background:linear-gradient(90deg,#fff,#d8d8d8);
 }
 #volRange::-moz-range-thumb{
   width:14px;height:14px;border-radius:50%;border:none;
-  background:linear-gradient(135deg,#ffffff,#c9d8ff);
-  box-shadow:0 2px 8px rgba(0,0,0,.55),0 0 0 1px rgba(79,140,255,.55);
+  background:linear-gradient(135deg,#ffffff,#d8d8d8);
+  box-shadow:0 2px 8px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.5);
   cursor:pointer;
 }
 
@@ -389,7 +390,7 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
   background:rgba(255,255,255,.09);color:#fff;
 }
 #speedMenu button.active{
-  background:linear-gradient(135deg,rgba(79,140,255,.45),rgba(79,140,255,.15));
+  background:rgba(255,255,255,.16);
   color:#fff;font-weight:700;
 }
 
@@ -402,43 +403,54 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
 #panel{
   position:absolute;top:0;right:0;bottom:0;z-index:30;
   width:min(360px,88vw);
-  background:linear-gradient(180deg,#181820 0%,#131319 55%,#101015 100%);
+  background:#fff;
   border-left:1px solid var(--line);
   display:flex;flex-direction:column;
   transform:translateX(101%);transition:transform .28s cubic-bezier(.4,0,.2,1);
   padding-top:env(safe-area-inset-top);
   padding-bottom:env(safe-area-inset-bottom);
-  box-shadow:-12px 0 36px rgba(0,0,0,.5);
+  box-shadow:-12px 0 36px rgba(0,0,0,.12);
 }
 #panel.open{transform:none}
 .p-head{
   display:flex;align-items:center;gap:10px;flex:none;
-  padding:13px 14px;border-bottom:1px solid var(--line);font-weight:600;
-  background:linear-gradient(90deg,rgba(79,140,255,.12),transparent 70%);
+  padding:16px;border-bottom:1px solid var(--line);font-weight:600;
+  background:#fff;
 }
-.p-head span{flex:1}
-#list{list-style:none;margin:0;padding:6px 0;overflow-y:auto;flex:1}
+.p-heading{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.p-kicker{color:#999;font-size:10px;font-weight:500;letter-spacing:.09em}
+.p-heading strong{font-size:15px;font-weight:650}
+.music-control-btn{
+  flex:none;padding:6px 9px;font-size:12px;white-space:nowrap;
+  border-radius:7px;color:#333;background:#fff;box-shadow:none;
+}
+#panel .icon-btn{
+  color:#555;border:1px solid #eaeaea;background:#fff;box-shadow:none;
+}
+#panel .icon-btn:hover,.music-control-btn:hover{background:#f5f5f5;border-color:#ddd}
+.music-control-btn:disabled{cursor:default;opacity:.65}
+#list{list-style:none;margin:0;padding:10px 0;overflow-y:auto;flex:1}
 #list .empty{padding:26px 16px;text-align:center;color:var(--dim);font-size:13px}
 .item{
-  display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;
+  display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;
   border-left:3px solid transparent;transition:background .15s;
 }
-.item:hover{background:linear-gradient(90deg,rgba(255,255,255,.07),rgba(255,255,255,.02))}
+.item:hover{background:#f7f7f7}
 .item.active{
-  background:linear-gradient(90deg,rgba(79,140,255,.22),rgba(79,140,255,.04));
+  background:#f5f5f5;
   border-left-color:var(--acc);
 }
 .item .idx{width:18px;flex:none;text-align:center;color:var(--dim);font-size:12px}
-.item.active .idx{color:var(--acc);font-weight:700}
+.item.active .idx{color:#1a1a1a;font-weight:700}
 .item .meta{flex:1;min-width:0}
 .item .nm{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* 联系我们 */
 .p-foot{
   flex:none;
-  padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+  padding:14px 16px calc(14px + env(safe-area-inset-bottom));
   border-top:1px solid var(--line);
-  background:linear-gradient(180deg,transparent,rgba(0,0,0,.25));
+  background:#fff;
 }
 .contact-btn{
   display:block;
@@ -447,26 +459,29 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
   font-size:14px;
   font-weight:500;
   text-align:center;
-  border-radius:10px;
-  background:linear-gradient(135deg,rgba(79,140,255,.22),rgba(79,140,255,.08));
-  border:1px solid rgba(79,140,255,.35);
-  color:#a8c4ff;
+  border-radius:9px;
+  background:#111;
+  border:1px solid #111;
+  color:#fff;
   cursor:pointer;
   letter-spacing:.5px;
   transition:.18s;
 }
 .contact-btn:hover{
-  background:linear-gradient(135deg,rgba(79,140,255,.42),rgba(79,140,255,.18));
-  border-color:rgba(79,140,255,.6);
+  background:#333;
+  border-color:#333;
   color:#fff;
 }
 .contact-btn:active{transform:scale(.98)}
 
 #overlay{
+  --line:#383838;
+  --dim:#b8b8b8;
   position:absolute;inset:0;z-index:20;
   display:flex;align-items:flex-start;justify-content:center;
   padding:24px;overflow:auto;
-  background:radial-gradient(circle at 50% 20%,#17171d 0%,#0a0a0c 72%);
+  background:radial-gradient(circle at 50% 20%,#282828 0%,#111 72%);
+  color:#f2f2f2;
 }
 #overlay[hidden]{display:none}
 .ov-card{
@@ -493,14 +508,11 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
   border-radius:10px;
   margin-bottom:8px;
   overflow:hidden;
-  background:#101015;
+  background:#171717;
   transition:border-color .15s;
 }
 .ov-scenario:hover{border-color:#35353f}
-.ov-scenario[open]{
-  background:linear-gradient(135deg,#15151c,#101015);
-  border-color:#33333d;
-}
+.ov-scenario[open]{background:#202020;border-color:#444}
 .ov-scenario summary{
   display:flex;align-items:center;gap:9px;
   padding:11px 13px;
@@ -526,9 +538,9 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
   font-size:10px;
   padding:1px 7px;
   border-radius:20px;
-  background:linear-gradient(135deg,rgba(79,140,255,.35),rgba(79,140,255,.15));
-  color:#a8c4ff;
-  border:1px solid rgba(79,140,255,.4);
+  background:rgba(255,255,255,.1);
+  color:#e5e5e5;
+  border:1px solid rgba(255,255,255,.18);
   font-weight:600;
   letter-spacing:.3px;
   margin-right:4px;
@@ -546,15 +558,15 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
 .sc-body p{margin:0 0 10px}
 .sc-body ol{margin:0;padding-left:18px}
 .sc-body ol li{margin-bottom:8px;line-height:1.65}
-.sc-body ol li::marker{color:var(--acc)}
+.sc-body ol li::marker{color:#bdbdbd}
 .sc-quote{
   display:block;
   margin:6px 0 4px;
   padding:9px 12px;
-  border-left:3px solid var(--acc);
-  background:rgba(79,140,255,.08);
+  border-left:3px solid #aaa;
+  background:rgba(255,255,255,.06);
   border-radius:0 8px 8px 0;
-  color:#dbe5ff;
+  color:#eee;
   font-size:13px;
   line-height:1.6;
   user-select:text;
@@ -565,7 +577,7 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
   margin-top:14px;padding:8px 10px;border-radius:8px;
   background:#0d0d11;border:1px solid var(--line);
   font:12px/1.6 ui-monospace,Menlo,Consolas,monospace;
-  color:#7d7d88;
+  color:#b8b8b8;
   word-break:break-all;
   white-space:pre-wrap;
 }
@@ -708,7 +720,11 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
 
   <aside id="panel">
     <div class="p-head">
-      <span>视频列表</span>
+      <div class="p-heading">
+        <span class="p-kicker">RH STUDIO · VIDEO</span>
+        <strong>视频列表</strong>
+      </div>
+      <button class="music-control-btn" id="btnDisableMusic" type="button">关闭背景音乐</button>
       <button class="icon-btn" id="btnClose" style="width:30px;height:30px" aria-label="关闭">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <line x1="6" y1="6" x2="18" y2="18"/>
@@ -764,6 +780,10 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
      ========================================================= */
   const $ = id => document.getElementById(id);
   const video    = $('player'),  stage  = $('stage'),  bar    = $('bar');
+  const pauseParentBackgroundMusic = () => {
+    window.parent.postMessage({ type: 'background-music-pause' }, '*');
+  };
+  video.addEventListener('play', pauseParentBackgroundMusic);
   const nowTitle = $('nowTitle'),panel  = $('panel'),  scrim  = $('scrim');
   const listEl   = $('list'),    overlay= $('overlay'),ovIcon = $('ovIcon');
   const ovTitle  = $('ovTitle'), ovReason=$('ovReason'),ovScenarios = $('ovScenarios');
@@ -931,21 +951,21 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
   const SCENARIOS = {
     nodecode: {
       icon: '🔇',
-      title: '视频无法解码 · 只有声音没有画面',
-      desc: '视频的声音部分可以正常播放，但画面部分你的浏览器无法显示。这通常是因为这个视频使用了比较特殊的压缩格式（比如 H.265 / HEVC），你当前用的浏览器不支持。这不是你的网络问题，也不是链接失效，这个视频在有些设备上是能正常播放的。',
+      title: '你的浏览器不支持此视频',
+      desc: '视频的声音部分可以正常播放，但画面部分你的浏览器无法显示。这通常是因为这个视频使用H.265 / HEVC的格式，你当前使用的浏览器不支持。',
       steps: [
-        '你可以尝试换一个浏览器再打开，比如 Chrome、Edge、Firefox、Safari 等主流浏览器，或者换一台设备再试。',
-        '如果换了浏览器还是只有声音没画面，说明这个视频的格式确实比较特殊。可以把下面这句话复制下来发给分享者：',
-        '<span class="sc-quote">你好，这个视频在我这边只能听到声音，看不到画面，能麻烦换成 MP4（H.264）格式重新上传一下吗？</span>'
+        '使用Chrome等主流浏览器，或者换一台设备再试。',
+        '如果更换浏览器后仍然无法显示画面，请使用Chrome浏览器。',
+        //#endregion'<span class="sc-quote">你好，这个视频在我这边只能听到声音，看不到画面，能麻烦换成 MP4（H.264）格式重新上传一下吗？</span>'
       ]
     },
     captcha: {
-      icon: '🛡️',
+      icon: '✖',
       title: '需要人机验证',
-      desc: '遇到错误，网络层面被拦截。可能是短时间内多次访问触发了服务商的人机验证机制。',
+      desc: '遇到错误，请求被拦截。可能是短时间内多次访问触发了服务商的人机验证机制。',
       steps: [
         '点击下方「打开直链完成验证」，在新窗口中完成人机验证（勾选、拼图、滑块等）。',
-        '验证成功后回到本页面，点击「已完成验证，重新加载」。',
+        '验证成功后回到本页面，点击「重新加载」。',
         '如果验证通过后仍无法播放，等待几分钟后重试；一直不行，说明不是验证问题，看下面其他情况。'
       ]
     },
@@ -963,9 +983,9 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
     disabled: {
       icon: '🔗',
       title: '链接已失效',
-      desc: '图片可以正常加载（网络正常），但当前视频链接返回的内容不是有效的视频文件。分享者可能停用了这个链接，或者链接已经过期失效。',
+      desc: '当前网络正常，但无法访问视频链路。链接可能已经过期或失效。',
       steps: [
-        '联系分享者，确认链接是否已被停用，有没有新的替代链接。',
+        '联系分享者，确认链接是否正常，有没有新的替代链接。',
         '如果这是你自己上传的链接，登录服务商后台检查链接状态和有效期。',
         '尝试使用其他可用的备用链接。'
       ]
@@ -1665,6 +1685,12 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
 
   $('btnContact').addEventListener('click', () => {
     window.open(CONTACT_URL, '_blank', 'noopener');
+  });
+
+  $('btnDisableMusic').addEventListener('click', event => {
+    pauseParentBackgroundMusic();
+    event.currentTarget.textContent = '背景音乐已关闭';
+    event.currentTarget.disabled = true;
   });
 
   /* =========================================================

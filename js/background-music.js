@@ -431,6 +431,16 @@
         isEnabled: () => isEnabled
     };
 
+    window.addEventListener('message', event => {
+        const movieFrame = document.getElementById('movieFrame');
+        if (event.source !== movieFrame?.contentWindow ||
+            event.data?.type !== 'background-music-pause') {
+            return;
+        }
+
+        window.BackgroundMusic.pause();
+    });
+
     // 初始化
     initBackgroundMusic();
 
