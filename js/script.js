@@ -31,7 +31,7 @@
                         <p>视频站</p>
                         <p><a href="https://annie106.github.io/annie106/movie.html" target="_blank" rel="noopener noreferrer">https://annie106.github.io/annie106/movie.html</a></p>
                         <p>直链下载站</p>
-                        <p><a href="https://annie106.github.io/annie106/project_subpage/rh_studlo_studio/download.html" target="_blank" rel="noopener noreferrer">https://annie106.github.io/annie106/project_subpage/rh_studlo_studio/download.html</a></p>
+                        <p><a href="https://annie106.github.io/annie106/project_subpage/rh_studio_studio/download.html" target="_blank" rel="noopener noreferrer">https://annie106.github.io/annie106/project_subpage/rh_studio_studio/download.html</a></p>
                         <h2>视频无法播放时 添加联系方式 备注来意</h2>
                         <p>联系方式在音乐卡片下方的图标 点击即复制相关信息</p>
                     `,
