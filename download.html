@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>直链下载</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f8fafc;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            color: #0f172a;
+            line-height: 1.5;
+            padding: 2rem 1.5rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* ===== 头部区域 ===== */
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.75rem;
+            margin-bottom: 3rem;
+            width: 100%;
+        }
+
+        /* ---- 品牌区（居中布局）---- */
+        .header-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;      /* 水平居中 */
+            text-align: center;       /* 文字居中 */
+            gap: 0.85rem;
+            width: 100%;
+        }
+        .header-brand .badge {
+            margin-bottom: 0;
+        }
+        .header-brand h1 {
+            margin: 0;
+            line-height: 1.15;
+        }
+        .header-brand .subhead {
+            font-size: 1.05rem;
+            color: #475569;
+            margin: 0;
+            padding: 0;
+            border: none;
+            max-width: 100%;
+        }
+        .header-brand .studio-tag {
+            margin-top: 0;
+            font-size: 0.85rem;
+            background: #eef2ff;
+            display: inline-flex;
+            align-items: center;
+            padding: 0.3rem 0.9rem;
+            border-radius: 30px;
+            color: #1e40af;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        /* ===== 搜索区域（居中）===== */
+        .search-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            flex: 0 1 auto;
+            width: 100%;
+            max-width: 460px;
+            min-width: 0;
+        }
+
+        /* ---- Uiverse 输入框（From Uiverse.io by Yaseen549）---- */
+        .input {
+            flex: 1 1 auto;
+            min-width: 0;
+            width: 100%;
+            height: 44px;
+            padding: 10px 14px;
+            background-color: #212121;
+            color: #f1f1f1;
+            border: 2px solid white;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .input:focus {
+            color: rgb(0, 255, 255);
+            background-color: #212121;
+            outline-color: rgb(0, 255, 255);
+            box-shadow: -3px -3px 15px rgb(0, 255, 255);
+            transition: .1s;
+            transition-property: box-shadow;
+        }
+
+        .input::placeholder {
+            color: #94a3b8;
+        }
+
+        /* ---- 搜索按钮 ---- */
+        .search-button {
+            flex: 0 0 auto;
+            height: 44px;
+            padding: 0 1.5rem;
+            border: 2px solid #334155;
+            border-radius: 5px;
+            background-color: #212121;
+            color: #f1f1f1;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.18s ease;
+        }
+        .search-button:hover {
+            border-color: rgb(0, 255, 255);
+            color: rgb(0, 255, 255);
+            box-shadow: -3px -3px 12px rgba(0, 255, 255, 0.35);
+        }
+        .search-button:active {
+            transform: scale(0.96);
+            background-color: #0d0d0d;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #e2e8f0;
+            color: #1e293b;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.25rem 1rem;
+            border-radius: 40px;
+            letter-spacing: 0.3px;
+        }
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #0f172a, #2d4a8c);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        /* 统计简介 */
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 2rem 0 2rem;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            background: white;
+            padding: 0.5rem 1.2rem;
+            border-radius: 60px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #2c3e66;
+        }
+
+        /* 分类导航 */
+        .category-nav {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin: 2rem 0 1rem;
+        }
+        .category-button {
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #0f172a;
+            padding: 0.7rem 1.3rem;
+            border-radius: 999px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 2rem 1rem;
+            border: 1px dashed #cbd5e1;
+            border-radius: 22px;
+            background: #ffffff;
+            color: #475569;
+            margin-top: 1rem;
+            font-size: 1rem;
+        }
+        .category-button.active,
+        .category-button:hover {
+            background: #0f172a;
+            color: #ffffff;
+            border-color: #0f172a;
+        }
+        .download-section {
+            margin-bottom: 2.5rem;
+        }
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #102a43;
+            margin-bottom: 1rem;
+        }
+        .download-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            margin: 0;
+        }
+        .survey-cta {
+            text-align: center;
+            margin: 1.5rem 0 2rem;
+            padding: 1rem 1.25rem;
+            background: #eef2ff;
+            border: 1px solid #cbd5e1;
+            border-radius: 18px;
+            color: #0f172a;
+        }
+        .survey-cta a {
+            color: #1d4ed8;
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .survey-cta a:hover {
+            text-decoration: underline;
+        }
+
+        /* 卡片样式 */
+        .download-card {
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0,0,0,0.02);
+            transition: all 0.25s ease;
+            overflow: hidden;
+            border: 1px solid #eef2f6;
+            display: flex;
+            flex-direction: column;
+        }
+        .download-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 24px 40px -12px rgba(0, 0, 0, 0.18);
+            border-color: #cbd5e1;
+        }
+        .card-header {
+            padding: 1.5rem 1.5rem 0.8rem 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .app-icon {
+            font-size: 2.6rem;
+            margin-bottom: 0.75rem;
+        }
+        .app-title {
+            font-size: 1.65rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            color: #0f172a;
+            line-height: 1.3;
+        }
+        .version-badge {
+            display: inline-block;
+            background: #eef2ff;
+            color: #1e3a8a;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.2rem 0.7rem;
+            border-radius: 40px;
+            margin-left: 0.6rem;
+            vertical-align: middle;
+        }
+        .meta-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 0.7rem;
+            font-size: 0.8rem;
+            color: #475569;
+        }
+        .meta-info span {
+            background: #f8fafc;
+            padding: 0.2rem 0.7rem;
+            border-radius: 30px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .description {
+            padding: 1.2rem 1.5rem;
+            flex: 1;
+            color: #2d3a4b;
+            font-size: 0.92rem;
+            line-height: 1.5;
+            border-bottom: 1px solid #f1f5f9;
+            background: #fefefe;
+        }
+        .description p {
+            margin: 0;
+        }
+        .detail-feature {
+            margin-top: 0.6rem;
+            font-size: 0.85rem;
+            color: #4b5563;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .detail-feature i {
+            font-style: normal;
+            background: #eef2ff40;
+            padding: 0.15rem 0.4rem;
+            border-radius: 12px;
+        }
+        .card-footer {
+            padding: 1rem 1.5rem 1.5rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .file-size {
+            font-size: 0.8rem;
+            font-weight: 500;
+            background: #eef2ff;
+            padding: 0.3rem 0.9rem;
+            border-radius: 36px;
+            color: #075985;
+        }
+
+        /* ===== 下载按钮 ===== */
+        .download-btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            padding: 0.9rem 2rem;
+            border: none;
+            background: rgba(15, 23, 42, 0.85);
+            color: #f1f1f1;
+            border-radius: 1.5rem;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.92rem;
+            letter-spacing: 0.3px;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.35);
+            transition: background 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+        }
+        .download-btn:hover {
+            background: rgba(15, 23, 42, 0.7);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 22px -8px rgba(15, 23, 42, 0.5);
+        }
+        .download-btn:active {
+            transform: translateY(0) scale(0.97);
+            background: #020617;
+        }
+        .download-btn svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            transition: transform 0.25s ease;
+        }
+        .download-btn:hover svg {
+            transform: translateY(2px);
+        }
+        .download-btn .btn-tooltip {
+            position: absolute;
+            left: 50%;
+            bottom: calc(100% + 10px);
+            transform: translateX(-50%) translateY(4px);
+            padding: 0.45rem 0.8rem;
+            background: rgba(15, 23, 42, 0.9);
+            color: #f1f1f1;
+            font-size: 0.75rem;
+            font-weight: 500;
+            white-space: nowrap;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 18px -6px rgba(0, 0, 0, 0.35);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .download-btn:hover .btn-tooltip {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
+        }
+        .toast-msg {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293bdd;
+            backdrop-filter: blur(12px);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 60px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            z-index: 1000;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            opacity: 0;
+        }
+
+        /* ---- 响应式 ---- */
+        @media (max-width: 700px) {
+            body {
+                padding: 1.2rem;
+            }
+            h1 {
+                font-size: 2.2rem;
+            }
+            .search-panel {
+                flex-direction: column;
+                align-items: stretch;
+                max-width: 100%;
+                gap: 0.5rem;
+            }
+            .input {
+                width: 100%;
+            }
+            .search-button {
+                width: 100%;
+                padding: 0 1rem;
+            }
+            .download-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            .card-footer {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .download-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="header-brand">
+            <div class="badge">⚡ 高速镜像 · 纯净体验</div>
+            <h1>直链下载</h1>
+            <div class="subhead">由 RH 工作室 提供下载</div>
+            <div class="studio-tag">由 GitHub Pages 提供静态托管 &amp; 安全分发</div>
+        </div>
+        <div class="search-panel">
+            <input placeholder="搜索工具、版本或功能" class="input" name="text" type="text" id="searchInput" aria-label="搜索工具">
+            <button id="searchButton" class="search-button" type="button">搜索</button>
+        </div>
+        <div class="stats">
+            <div class="stat-item">📦 今日更新</div>
+            <div class="stat-item">🛡️ 链接隐匿技术</div>
+        </div>
+    </div>
+
+    <div class="category-nav" id="categoryNav"></div>
+    <div id="downloadsContainer"></div>
+
+    <div class="survey-cta">
+        <p>没有我想要的资源？<a href="https://wj.qq.com/s2/26989305/166f/" target="_blank" rel="noopener noreferrer">点击跳转问卷调查</a></p>
+    </div>
+
+    <div class="footer">
+        <p>© RH Studio | 所有资源均来自网络，如有侵权请联系邮箱<br>anniedv106@gmail.com</p>
+        <p style="margin-top: 10px;"> 本站点仅提供下载 | 基于隐私保护设计 | 由 RH 工作室 提供服务
+        </p>
+    </div>
+</div>
+<div id="toast" class="toast-msg">🚀 正在跳转下载链接...</div>
+
+<script>
+    function reverseStr(str) {
+        return str.split('').reverse().join('');
+    }
+
+    const downloadsData = [
+        {
+            id: 1,
+            category: "Windows 工具",
+            name: "Visual Studio Code",
+            version: "1.124.0",
+            icon: "💻",
+            size: "94.2 MB",
+            date: "2026-06",
+            downloadsCount: "12.3w+",
+            shortDesc: "轻量但功能强大的代码编辑器，集成终端、Git、海量扩展。",
+            fullDesc: "微软出品，开源跨平台。支持智能提示、调试、插件生态极其丰富，前端/后端开发利器。内置AI辅助编程，性能优异。",
+            features: ["智能感知", "Git集成", "远程开发", "主题自由"],
+            realUrlReversed: reverseStr("https://links.8uid.com/d/24af7687eb2f00890f70bb6c18d0a515")
+        },
+        {
+            id: 9,
+            category: "Windows 工具",
+            name: "剪映 v6.0.1.11779 免V1P",
+            version: "6.0.1.11779",
+            icon: "💻",
+            size: "770.13 MB",
+            date: "2026-06",
+            downloadsCount: "",
+            shortDesc: "剪映的免VIP版本",
+            fullDesc: "剪映的免VIP版本，支持所有VIP功能，无需付费即可使用。       ",
+            extraNote: "仅供学习和交流，下载后24小时内请删除，禁止商用。",
+            features: ["免VIP", "支持所有VIP功能", "无需付费"],
+            realUrlReversed: reverseStr("https://links.8uid.com/d/3d49e1fcf42b8c36098150dc96844d80")
+        },
+        {
+            id: 2,
+            category: "Windows 工具",
+            name: "win RAR",
+            version: "7.21",
+            icon: "🗜️   ",
+            size: "	3.84 MB",
+            date: "2025-5",
+            downloadsCount: "50w+",
+            shortDesc: "高压缩比的开源解压缩软件，支持7z/ZIP/RAR等格式。",
+            fullDesc: "完全免费，拥有极高压缩率，集成Windows右键菜单，支持命令行，加密功能强大，性能远超同类工具。",
+            features: ["LZMA2压缩", "AES-256加密", "多格式支持", "极速解压"],
+            realUrlReversed: reverseStr("https://links.8uid.com/d/bd939779be79fe8534a1ac738e0fd3d0")
+        },
+        {
+            id: 3,
+            category: "Windows 工具",
+            name: "PotPlayer",
+            version: "1.7.22859.0",
+            icon: "📺",
+            size: "53.03 MB",
+            date: "2026-06",
+            downloadsCount: "89w+",
+            shortDesc: "万能播放器，几乎支持所有音视频格式，无需额外解码包。",
+            fullDesc: "开源跨平台，轻量稳定，支持流媒体、DVD、蓝光，带均衡器和滤镜。",
+            features: ["硬件解码", "网络串流", "播放列表", "音频特效"],
+            realUrlReversed: reverseStr("https://links.8uid.com/d/0f57c9727ac5f6c60b1fbb09d8c8cfd4")
+        },
+        {
+        "id": 10,
+        "category": "Android工具",
+        "name": "CapCut",
+        "version": "13.6.0",
+        "icon": "🎬",
+        "size": "68.5 MB",
+        "date": "2026-06",
+        "downloadsCount": "8.2亿+",
+        "shortDesc": "全球最受欢迎的免费视频剪辑神器，字节跳动出品。",
+        "fullDesc": "CapCut 安卓版提供专业级剪辑：关键帧动画、自动节拍同步、AI文字转语音、海量滤镜与贴纸。无水印导出，完全免费，适配抖音/TikTok/快手等平台。",
+        "features": ["关键帧动画", "自动字幕生成", "曲线变速", "AI消除笔", "文本转语音", "4K导出"],
+        "realUrlReversed": reverseStr("https://links.8uid.com/d/e0c5ff446001fe07e612ae21c36a01c7")
+        },
+        {
+            id: 4,
+            category: "Android工具",
+            name: "Termux",
+            version: "0.146.0",
+            icon: "📱",
+            size: "57 MB",
+            date: "2025-03",
+            downloadsCount: "20w+",
+            shortDesc: "在Android上运行终端环境，支持包管理、SSH、Python等开发工具。",
+            fullDesc: "轻量命令行环境，适合开发者和高级用户。提供 Bash、Zsh、Git、Python 等常用工具，可直接在Android设备上执行脚本。",
+            features: ["终端模拟", "包管理", "SSH 支持", "脚本执行"],
+            realUrlReversed: reverseStr("https://annie106.github.io/Transfer/")
+        },
+        {
+            id: 5,
+            category: "Android工具",
+            name: "F-Droid",
+            version: "1.2.0",
+            icon: "📦",
+            size: "15.8 MB",
+            date: "2025-04",
+            downloadsCount: "35w+",
+            shortDesc: "Android开源应用商店，提供隐私友好、无需谷歌服务的 APK 下载。",
+            fullDesc: "免费开源应用市场，自动更新应用，支持安全审查，适合追求隐私和开源生态的Android用户。",
+            features: ["开源应用", "自动更新", "隐私审查", "无谷歌依赖"],
+            realUrlReversed: reverseStr("https://annie106.github.io/Transfer/")
+        },
+        {
+            id: 6,
+            category: "其它工具",
+            name: "Blender",
+            version: "4.2 LTS",
+            icon: "🎨",
+            size: "328 MB",
+            date: "2025-01",
+            downloadsCount: "30w+",
+            shortDesc: "专业3D创作套件，建模/动画/渲染/剪辑全流程。",
+            fullDesc: "开源3D图形软件，支持 Cycles渲染引擎，几何节点，实时渲染EEVEE，适合独立创作者与工作室，全平台兼容。",
+            features: ["三维建模", "雕刻纹理", "动画绑定", "视频编辑"],
+            realUrlReversed: reverseStr("https://download.blender.org/release/Blender4.2/blender-4.2.0-windows-x64.msi")
+        },
+        {
+            id: 7,
+            category: "其它工具",
+            name: "GIMP",
+            version: "2.10.38",
+            icon: "🖌️",
+            size: "287 MB",
+            date: "2025-01",
+            downloadsCount: "18.2w+",
+            shortDesc: "开源图像编辑软件，功能媲美Photoshop。",
+            fullDesc: "跨平台位图图像编辑器，支持插件扩展，具备图层、蒙版、曲线调色，适合修图、UI设计、图标绘制。",
+            features: ["图层蒙版", "滤镜效果", "自定义笔刷", "色彩管理"],
+            realUrlReversed: reverseStr("https://download.gimp.org/mirror/pub/gimp/v2.10/windows/gimp-2.10.38-setup-1.exe")
+        },
+        {
+            id: 8,
+            category: "其它工具",
+            name: "OBS Studio",
+            version: "30.2.3",
+            icon: "📽️",
+            size: "155 MB",
+            date: "2025-01",
+            downloadsCount: "45w+",
+            shortDesc: "专业开源直播录制软件，场景切换，多平台推流。",
+            fullDesc: "免费且强大的视频录制与直播工具，支持实时混流，显卡编码，自定义过渡，广泛用于游戏直播、会议录制。",
+            features: ["场景合成", "降噪滤镜", "推流服务", "高性能编码"],
+            realUrlReversed: reverseStr("https://cdn-fastly.obsproject.com/downloads/OBS-Studio-30.2.3-Windows-Installer.exe")
+        }
+    ];
+
+    const categories = ["全部", "Windows 工具", "Android工具", "其它工具"];
+    let currentCategory = '全部';
+
+    function getSearchKeyword() {
+        const input = document.getElementById('searchInput');
+        return input ? input.value.trim().toLowerCase() : '';
+    }
+
+    const downloadIconSvg = `
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <g stroke-width="0" id="SVGRepo_bgCarrier"></g>
+            <g stroke-linejoin="round" stroke-linecap="round" id="SVGRepo_tracerCarrier"></g>
+            <g id="SVGRepo_iconCarrier">
+                <g id="Interface / Download">
+                    <path stroke-linejoin="round" stroke-linecap="round" stroke-width="2" stroke="#f1f1f1"
+                          d="M6 21H18M12 3V17M12 17L17 12M12 17L7 12"></path>
+                </g>
+            </g>
+        </svg>
+    `;
+
+    function renderCards(activeCategory = "全部", searchKeyword = '') {
+        const container = document.getElementById('downloadsContainer');
+        if (!container) return;
+
+        const keyword = searchKeyword.trim().toLowerCase();
+        let html = '';
+        for (let category of categories) {
+            if (category !== '全部' && (activeCategory === '全部' || activeCategory === category)) {
+                const items = downloadsData.filter(item => {
+                    if (item.category !== category) return false;
+                    if (!keyword) return true;
+                    const fullText = `${item.name} ${item.version} ${item.shortDesc} ${item.fullDesc} ${item.features.join(' ')}`.toLowerCase();
+                    return fullText.includes(keyword);
+                });
+                if (!items.length) continue;
+
+                html += `<div class="download-section">
+                    <div class="section-title">${category}</div>
+                    <div class="download-grid">
+                        ${items.map(item => {
+                            const featuresHtml = item.features.map(feat => `<i>✨ ${feat}</i>`).join('');
+                            return `
+                                <div class="download-card" data-id="${item.id}">
+                                    <div class="card-header">
+                                        <div class="app-icon">${item.icon}</div>
+                                        <div class="app-title">
+                                            ${item.name}
+                                            <span class="version-badge">v${item.version}</span>
+                                        </div>
+                                        <div class="meta-info">
+                                            <span>📅 ${item.date}</span>
+                                            <span>⬇️ ${item.downloadsCount}</span>
+                                            <span>📄 ${item.size}</span>
+                                        </div>
+                                    </div>
+                                    <div class="description">
+                                        <p style="font-weight: 600; margin-bottom: 6px;">📌 ${item.shortDesc}</p>
+                                        <p style="font-size: 0.88rem; margin-bottom: 8px;">${item.fullDesc}</p>
+                                        ${item.extraNote ? `<p style="font-size: 0.82rem; color: #64748b; margin-bottom: 8px;">${item.extraNote}</p>` : ''}
+                                        <div class="detail-feature">
+                                            ${featuresHtml}
+                                        </div>
+                                    </div>
+                                    <div class="card-footer">
+                                        <div class="file-size">💾 包体大小: ${item.size}</div>
+                                        <button class="download-btn" data-id="${item.id}" type="button" aria-label="下载 ${item.name}">
+                                            ${downloadIconSvg}
+                                            <span>Download</span>
+                                            <span class="btn-tooltip">点击下载 ${item.name}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>`;
+            }
+        }
+
+        if (!html) {
+            html = `<div class="empty-state">未找到匹配内容，请尝试更换关键词或切换分类。</div>`;
+        }
+        container.innerHTML = html;
+    }
+
+    function renderCategoryNav() {
+        const nav = document.getElementById('categoryNav');
+        if (!nav) return;
+
+        nav.innerHTML = categories.map(category => `
+            <button class="category-button${category === '全部' ? ' active' : ''}" data-category="${category}">${category}</button>
+        `).join('');
+
+        nav.addEventListener('click', (e) => {
+            const btn = e.target.closest('.category-button');
+            if (!btn) return;
+            const selected = btn.getAttribute('data-category');
+            currentCategory = selected;
+            document.querySelectorAll('.category-button').forEach(button => {
+                button.classList.toggle('active', button.getAttribute('data-category') === selected);
+            });
+            renderCards(selected, getSearchKeyword());
+        });
+    }
+
+    function bindSearch() {
+        const input = document.getElementById('searchInput');
+        const button = document.getElementById('searchButton');
+        if (!input || !button) return;
+
+        input.addEventListener('input', () => {
+            renderCards(currentCategory, getSearchKeyword());
+        });
+        button.addEventListener('click', () => {
+            renderCards(currentCategory, getSearchKeyword());
+            input.focus();
+        });
+    }
+
+    function bindDownloadEvents() {
+        const container = document.getElementById('downloadsContainer');
+        if (!container) return;
+
+        container.addEventListener('click', (e) => {
+            const btn = e.target.closest('.download-btn');
+            if (!btn) return;
+            const cardId = parseInt(btn.getAttribute('data-id'));
+            const targetItem = downloadsData.find(item => item.id === cardId);
+            if (targetItem && targetItem.realUrlReversed) {
+                const realUrl = reverseStr(targetItem.realUrlReversed);
+                if (realUrl && (realUrl.startsWith('http://') || realUrl.startsWith('https://'))) {
+                    showToast('正在准备下载...');
+                    setTimeout(() => {
+                        window.location.href = realUrl;
+                    }, 80);
+                } else {
+                    console.error('无效链接', realUrl);
+                    showToast('链接解析异常，请联系 RH 工作室 ', true);
+                }
+            } else {
+                showToast('下载地址暂时不可用', true);
+            }
+        });
+    }
+
+    let toastTimeout = null;
+    function showToast(msg, isError = false) {
+        const toastEl = document.getElementById('toast');
+        if (!toastEl) return;
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastEl.style.opacity = '1';
+        toastEl.style.background = isError ? '#b91c1cdd' : '#0f172add';
+        toastEl.innerText = msg || (isError ? '出错了' : '🚀 正在跳转下载链接...');
+        toastTimeout = setTimeout(() => {
+            toastEl.style.opacity = '0';
+        }, 1800);
+    }
+
+    function validateLinks() {
+        for (let item of downloadsData) {
+            const reversed = item.realUrlReversed;
+            if (reversed && typeof reversed === 'string') {
+                const originUrl = reverseStr(reversed);
+                if (!originUrl.startsWith('https://') && !originUrl.startsWith('http://')) {
+                    console.warn(`项目 ${item.name} 链接格式异常，请检查原始数据`);
+                }
+            } else {
+                console.error(`项目 ${item.name} 缺少反转链接字段`);
+            }
+        }
+    }
+
+    renderCategoryNav();
+    bindSearch();
+    renderCards(currentCategory, getSearchKeyword());
+    bindDownloadEvents();
+    validateLinks();
+</script>
+</body>
+</html>
