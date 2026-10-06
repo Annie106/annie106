@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+    <title>误踢申诉指南——RH工作室</title>
+    <style>
+        /* ============================================================
+               朴素简洁版样式（彻底无悬停、无渐变）
+               ============================================================ */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+            background: #f2f4f7;
+            color: #1e293b;
+            padding: 24px 16px 40px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .card {
+            max-width: 720px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 28px 24px 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e9ef;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+
+        .header-left h1 {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1e293b;
+            letter-spacing: -0.2px;
+        }
+
+        .sub-headline {
+            font-size: 14px;
+            color: #5b6b7d;
+            margin-top: 2px;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e9edf2;
+        }
+
+        /* ===== 提示条（低调版，位于副标题下方） ===== */
+        .notice-bar {
+            border-left: 3px solid #d5dbe3;
+            padding: 4px 0 4px 14px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #6b7a8a;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .notice-bar .notice-text strong {
+            font-weight: 500;
+            color: #4a6a8c;
+        }
+
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .step {
+            background: #fafbfc;
+            border: 1px solid #e5e9ef;
+            border-top: 3px solid #4a6a8c;
+            border-radius: 6px;
+            padding: 18px 20px;
+        }
+
+        .step:last-child {
+            background: #f8f9fb;
+        }
+
+        .step:hover,
+        .step:last-child:hover,
+        .placeholder-item:hover,
+        .demo-img:hover {
+            /* 无任何变化 */;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .step-num {
+            width: 30px;
+            height: 30px;
+            background: #4a6a8c;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 15px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .step-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #1e293b;
+            letter-spacing: -0.1px;
+        }
+
+        .step-desc {
+            font-size: 14px;
+            color: #3d4e62;
+            line-height: 1.7;
+            margin-bottom: 14px;
+            padding-left: 2px;
+        }
+
+        .step-desc strong {
+            color: #3b6b8c;
+            font-weight: 600;
+        }
+
+        .image-placeholder {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 2px;
+        }
+
+        /* ---- 图片容器（桌面版） ---- */
+        .placeholder-item {
+            flex: 1 1 150px;
+            min-width: 120px;
+            background: #ffffff;
+            border: 2px dashed #d5dbe3;
+            border-radius: 8px;
+            padding: 14px 10px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            text-align: center;
+            color: #5b6b7d;
+            font-size: 13px;
+            cursor: default;
+            position: relative;
+        }
+
+        /* 图片容器 — 固定图片/占位的位置 */
+        .placeholder-item .img-slot {
+            width: 100%;
+            max-width: 240px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .placeholder-item .img-slot .demo-img {
+            width: 100%;
+            max-width: 240px;
+            height: auto;
+            border-radius: 6px;
+            border: 1px solid #e5e9ef;
+            display: block;
+            cursor: pointer;
+        }
+
+        /* 文字占位（备用图也加载失败时显示） */
+        .placeholder-item .img-slot .img-error-placeholder {
+            display: none;
+            width: 100%;
+            max-width: 240px;
+            min-height: 100px;
+            background: #f5f6f8;
+            border-radius: 6px;
+            border: 2px dashed #d5dbe3;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #8a9aa9;
+            font-size: 13px;
+            padding: 16px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .img-error-placeholder .err-icon {
+            font-size: 32px;
+            margin-bottom: 4px;
+        }
+
+        .placeholder-item .icon {
+            font-size: 32px;
+            margin-bottom: 6px;
+            opacity: 0.85;
+        }
+
+        .placeholder-item .label {
+            font-weight: 500;
+            color: #1e293b;
+            font-size: 13px;
+            margin-bottom: 1px;
+        }
+
+        .placeholder-item .sub {
+            font-size: 11px;
+            color: #8a9aa9;
+            line-height: 1.3;
+        }
+
+        /* 说明文字（始终独立） */
+        .placeholder-item .text-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 6px;
+        }
+
+        /* 状态提示（红色错误） */
+        .status-tip {
+            width: 100%;
+            max-width: 240px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+            margin-bottom: 6px;
+            display: none;
+        }
+
+        .status-tip.error {
+            background: #fce8e8;
+            color: #a04444;
+            border: 1px solid #e8c8c8;
+            display: block;
+        }
+
+        /* ===== 底部：优化显示效果（已删除箭头） ===== */
+        .footer {
+            margin-top: 28px;
+            padding-top: 18px;
+            border-top: 1px solid #e9edf2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            color: #8a9aa9;
+            flex-wrap: wrap;
+        }
+
+        .footer .footer-divider {
+            color: #d5dbe3;
+            font-weight: 300;
+            margin: 0 2px;
+        }
+
+        .footer .link-blue {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+
+        .footer .link-blue:hover {
+            background-color: #eff6ff;
+            text-decoration: none;
+        }
+
+        .footer .footer-label {
+            color: #8a9aa9;
+        }
+
+        /* ============================================================
+                   Toast（右上角，暗色错误提示卡片 —— 放大版）
+        ============================================================ */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            pointer-events: none;
+            max-width: 92vw;
+        }
+
+        .toast-item {
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 380px;
+            max-width: 100%;
+            min-height: 76px;
+            padding: 12px 14px;
+            background: #232531;
+            border-radius: 12px;
+            box-shadow: 0 6px 28px rgba(0, 0, 0, 0.22);
+            font-size: 14px;
+            line-height: 1.4;
+            animation: toastSlideIn 0.3s ease;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            opacity: 1;
+            transform: translateX(0);
+            cursor: default;
+        }
+
+        .toast-item.hiding {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+
+        .toast-item .toast-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .toast-item .toast-icon-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            padding: 8px;
+            border-radius: 10px;
+            color: #d65563;
+            background: rgba(255, 255, 255, 0.06);
+            -webkit-backdrop-filter: blur(24px);
+            backdrop-filter: blur(24px);
+        }
+
+        .toast-item .toast-svg {
+            width: 30px;
+            height: 30px;
+            display: block;
+        }
+
+        .toast-item .toast-body {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .toast-item .toast-title {
+            margin: 0;
+            font-size: 1em;
+            font-weight: 500;
+            color: #ffffff;
+        }
+
+        .toast-item .toast-desc {
+            margin: 0;
+            font-size: 0.9em;
+            color: #8b93a7;
+        }
+
+        .toast-item .toast-close {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            margin-left: 8px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #4b5563;
+            cursor: pointer;
+            transition: background-color 0.1s linear;
+        }
+
+        .toast-item .toast-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .toast-item .toast-close .toast-svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        @keyframes toastSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(30px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        /* ============================================================
+                   图片预览遮罩层
+        ============================================================ */
+        .image-preview-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.80);
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            cursor: pointer;
+        }
+
+        .image-preview-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .image-preview-overlay .preview-img {
+            max-width: 92%;
+            max-height: 92%;
+            object-fit: contain;
+            border-radius: 6px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            user-select: none;
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
+        }
+
+        .image-preview-overlay.active .preview-img {
+            transform: scale(1);
+        }
+
+        .image-preview-overlay .preview-hint {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .image-preview-overlay.active .preview-hint {
+            opacity: 1;
+        }
+
+        /* ============================================================
+                   移动端适配
+        ============================================================ */
+
+        @media (max-width: 640px) {
+            .card {
+                padding: 20px 16px 16px;
+                border-radius: 6px;
+            }
+            .header-left h1 {
+                font-size: 19px;
+            }
+            .step {
+                padding: 16px 16px;
+                border-radius: 4px;
+                border-top: 3px solid #4a6a8c;
+            }
+            .step-title {
+                font-size: 16px;
+            }
+            .step-desc {
+                font-size: 13px;
+            }
+            .placeholder-item {
+                flex: 1 1 calc(50% - 6px);
+                min-width: 90px;
+                padding: 14px 6px 10px;
+            }
+            .placeholder-item .img-slot {
+                max-width: 170px;
+                min-height: 80px;
+            }
+            .placeholder-item .img-slot .demo-img {
+                max-width: 170px;
+            }
+            .placeholder-item .img-slot .img-error-placeholder {
+                max-width: 170px;
+                min-height: 80px;
+                font-size: 12px;
+                padding: 12px;
+            }
+            .img-error-placeholder .err-icon {
+                font-size: 28px;
+            }
+            .placeholder-item .icon {
+                font-size: 26px;
+            }
+            .placeholder-item .label {
+                font-size: 12px;
+            }
+            .status-tip {
+                max-width: 170px;
+                font-size: 12px;
+                padding: 4px 8px;
+            }
+
+            .toast-container {
+                top: 12px;
+                right: 12px;
+                left: 12px;
+                align-items: flex-end;
+                max-width: 100%;
+            }
+            .toast-item {
+                width: 340px;
+                max-width: 100%;
+                min-height: 68px;
+                font-size: 13px;
+                border-radius: 10px;
+            }
+            .toast-item .toast-svg {
+                width: 26px;
+                height: 26px;
+            }
+            .toast-item .toast-close .toast-svg {
+                width: 22px;
+                height: 22px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 12px 8px 30px;
+            }
+            .card {
+                padding: 16px 12px 14px;
+                border-radius: 4px;
+            }
+            .header-left h1 {
+                font-size: 18px;
+            }
+            .sub-headline {
+                font-size: 13px;
+                margin-bottom: 10px;
+                padding-bottom: 10px;
+            }
+            .notice-bar {
+                font-size: 12px;
+                padding: 3px 0 3px 12px;
+                margin-bottom: 16px;
+                border-left-width: 2px;
+            }
+            .steps {
+                gap: 14px;
+            }
+            .step {
+                padding: 14px 12px;
+                border-radius: 4px;
+                border-top: 3px solid #4a6a8c;
+            }
+            .step-header {
+                gap: 10px;
+                margin-bottom: 6px;
+            }
+            .step-num {
+                width: 26px;
+                height: 26px;
+                font-size: 13px;
+            }
+            .step-title {
+                font-size: 15px;
+            }
+            .step-desc {
+                font-size: 13px;
+                margin-bottom: 12px;
+                padding-left: 0;
+            }
+            .image-placeholder {
+                gap: 8px;
+            }
+
+            /* 移动端：垂直排列，文字在上，图片居中 */
+            .placeholder-item {
+                flex: 1 1 100%;
+                min-width: 0;
+                padding: 12px 10px;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                border-radius: 6px;
+                text-align: center;
+            }
+
+            /* 文字组移到上方 */
+            .placeholder-item .text-group {
+                order: -1;
+                margin-top: 0;
+                margin-bottom: 2px;
+                align-items: center;
+                width: 100%;
+            }
+
+            /* 图片槽居中 */
+            .placeholder-item .img-slot {
+                max-width: 140px;
+                min-height: 70px;
+                margin: 0 auto;
+            }
+
+            .placeholder-item .img-slot .demo-img {
+                max-width: 140px;
+            }
+
+            .placeholder-item .img-slot .img-error-placeholder {
+                max-width: 140px;
+                min-height: 70px;
+                padding: 10px;
+                font-size: 12px;
+                margin: 0 auto;
+            }
+
+            .img-error-placeholder .err-icon {
+                font-size: 24px;
+            }
+
+            .placeholder-item .icon {
+                font-size: 24px;
+                margin-bottom: 0;
+            }
+
+            .status-tip {
+                max-width: 100%;
+                font-size: 12px;
+                padding: 4px 8px;
+                order: 10;
+                flex-basis: 100%;
+            }
+
+            .placeholder-item .label {
+                font-size: 13px;
+            }
+            .placeholder-item .sub {
+                font-size: 11px;
+            }
+
+            .footer {
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                gap: 4px;
+                font-size: 12px;
+                margin-top: 20px;
+                flex-wrap: wrap;
+                padding-top: 14px;
+            }
+
+            .footer .link-blue {
+                font-size: 12px;
+            }
+
+            .toast-container {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                gap: 4px;
+            }
+            .toast-item {
+                width: 100%;
+                max-width: 100%;
+                min-height: 64px;
+                font-size: 12px;
+                padding: 10px 12px;
+                border-radius: 10px;
+            }
+            .toast-item .toast-left {
+                gap: 10px;
+            }
+            .toast-item .toast-icon-wrap {
+                padding: 6px;
+                border-radius: 8px;
+            }
+            .toast-item .toast-svg {
+                width: 24px;
+                height: 24px;
+            }
+            .toast-item .toast-close {
+                padding: 4px;
+                margin-left: 6px;
+            }
+            .toast-item .toast-close .toast-svg {
+                width: 20px;
+                height: 20px;
+            }
+
+            .image-preview-overlay .preview-img {
+                max-width: 96%;
+                max-height: 85%;
+                border-radius: 4px;
+            }
+            .image-preview-overlay .preview-hint {
+                bottom: 20px;
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .card {
+                padding: 12px 8px 10px;
+            }
+            .header-left h1 {
+                font-size: 16px;
+            }
+            .step {
+                padding: 10px 10px;
+                border-top: 3px solid #4a6a8c;
+            }
+            .step-title {
+                font-size: 14px;
+            }
+            .step-desc {
+                font-size: 12px;
+            }
+            .placeholder-item {
+                padding: 10px 8px;
+                gap: 4px;
+            }
+            .placeholder-item .img-slot {
+                max-width: 100px;
+                min-height: 60px;
+            }
+            .placeholder-item .img-slot .demo-img {
+                max-width: 100px;
+            }
+            .placeholder-item .img-slot .img-error-placeholder {
+                max-width: 100px;
+                min-height: 60px;
+                padding: 6px;
+                font-size: 11px;
+            }
+            .img-error-placeholder .err-icon {
+                font-size: 20px;
+            }
+            .placeholder-item .icon {
+                font-size: 20px;
+            }
+            .placeholder-item .label {
+                font-size: 12px;
+            }
+            .status-tip {
+                font-size: 11px;
+                padding: 3px 6px;
+            }
+
+            .toast-container {
+                top: 6px;
+                right: 6px;
+                left: 6px;
+            }
+            .toast-item {
+                min-height: 60px;
+                font-size: 11px;
+                padding: 8px 10px;
+            }
+            .toast-item .toast-svg {
+                width: 22px;
+                height: 22px;
+            }
+            .toast-item .toast-close .toast-svg {
+                width: 18px;
+                height: 18px;
+            }
+
+            .image-preview-overlay .preview-img {
+                max-width: 98%;
+                max-height: 80%;
+                border-radius: 4px;
+            }
+            .image-preview-overlay .preview-hint {
+                bottom: 16px;
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+
+        <div class="header">
+            <div class="header-left">
+                <h1>误踢申诉</h1>
+            </div>
+        </div>
+
+        <div class="sub-headline">
+            此页面用于企微群被踢申诉方式，按照步骤操作即可完成申诉。请确保的提交信息准确，请勿重复提交。
+        </div>
+
+        <!-- ===== 提示条（低调版，位于副标题下方，无图钉） ===== -->
+        <div class="notice-bar">
+            <span class="notice-text"><strong>此教程仅针对被误踢的群成员</strong>，请确认您是被系统误移除而非主动退群或违规被踢。</span>
+        </div>
+
+        <div class="steps">
+
+            <!-- 步骤 1 -->
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-num">1</span>
+                    <span class="step-title">准备聊天记录截图</span>
+                </div>
+                <div class="step-desc">
+                    打开被踢前的群聊，截取包含你 <strong>最近发言</strong> 及 <strong>上下文</strong> 的聊天记录，确保能看清你的昵称和发言时间。
+                </div>
+                <div class="image-placeholder">
+                    <div class="placeholder-item">
+                        <span class="icon">💬</span>
+                        <div class="text-group">
+                            <span class="label">聊天记录截图</span>
+                            <span class="sub">被踢前上下文</span>
+                        </div>
+                    </div>
+                    <div class="placeholder-item">
+                        <span class="icon">🚫</span>
+                        <div class="text-group">
+                            <span class="label">被踢警告信息截图</span>
+                            <span class="sub">警告信息截图</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤 2 -->
+            <div class="step" style="background: #f8f9fb;">
+                <div class="step-header">
+                    <span class="step-num">2</span>
+                    <span class="step-title">添加群主Annie → 进入「企业信息」</span>
+                </div>
+                <div class="step-desc">
+                    <strong>添加群主为联系人后 → </strong>点击群主头像 → <strong>企业信息</strong> → 点击底部 <strong>「误踢反馈」</strong> ，跳转问卷后提交相关信息。
+                </div>
+                <div class="image-placeholder">
+                    <div class="placeholder-item" style="flex: 1 1 200px; min-width: 150px;">
+
+                        <!-- 状态提示（红色错误） -->
+                        <div id="statusTip" class="status-tip"></div>
+
+                        <!-- ===== 图片槽：图片 + 文字占位 共享同一位置 ===== -->
+                        <div class="img-slot">
+                            <!-- 主图 -->
+                            <img id="mainImage"
+                                 src="https://1837491863.cdn.123clouddisk.com/1837491863/40203546"
+                                 alt="企业信息页示意"
+                                 class="demo-img" />
+
+                            <!-- 备用图 -->
+                            <img id="fallbackImage"
+                                 src="https://153485619232768.abvod.cn/fly.jpg"
+                                 alt="备用示意图片"
+                                 class="demo-img"
+                                 style="display: none;" />
+
+                            <!-- 文字占位（备用图也失败时显示） -->
+                            <div id="textFallback" class="img-error-placeholder" style="display: none;">
+                                <span class="err-icon">🖼️</span>
+                                <span>图片加载失败<br/>请参考文字描述</span>
+                            </div>
+                        </div>
+
+                        <!-- 说明文字（独立，始终在图片下方） -->
+                        <div class="text-group">
+                            <span class="label">企业信息页</span>
+                            <span class="sub">示意入口位置</span>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤 3 -->
+            <div class="step" style="background: #fafbfc;">
+                <div class="step-header">
+                    <span class="step-num">3</span>
+                    <span class="step-title">等待审核</span>
+                </div>
+                <div class="step-desc">
+                    提交申诉后，请勿重复提交，请 <strong>耐心等待</strong> 。<br/>
+                    审核通过后会重新邀你入群，请注意留意消息通知。
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ===== 底部（已删除箭头） ===== -->
+        <div class="footer">
+            <span class="footer-label">此页面由</span>
+            <a href="https://annie106.github.io/RHfortwo/" target="_blank" class="link-blue">RH工作室</a>
+            <span class="footer-label">提供</span>
+        </div>
+
+    </div>
+
+    <!-- Toast -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- 图片预览 -->
+    <div id="imagePreview" class="image-preview-overlay">
+        <img id="previewImg" class="preview-img" src="" alt="预览图片" />
+        <span class="preview-hint">点击任意位置关闭</span>
+    </div>
+
+    <script>
+        // ================================================================
+        //  Toast（暗色错误提示卡片）
+        // ================================================================
+        var toastContainer = document.getElementById('toastContainer');
+        var toastTimer = null;
+
+        var TOAST_ICON_SVG =
+            '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="toast-svg">' +
+            '<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"></path>' +
+            '</svg>';
+
+        var TOAST_CLOSE_SVG =
+            '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="toast-svg">' +
+            '<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"></path>' +
+            '</svg>';
+
+        function showToast(title, desc, duration) {
+            duration = duration || 8000;
+            var existing = toastContainer.querySelector('.toast-item');
+            if (existing) {
+                if (existing.parentNode) existing.parentNode.removeChild(existing);
+                if (toastTimer) { clearTimeout(toastTimer);
+                    toastTimer = null; }
+            }
+            var toast = document.createElement('div');
+            toast.className = 'toast-item';
+            toast.innerHTML =
+                '<div class="toast-left">' +
+                '<div class="toast-icon-wrap">' + TOAST_ICON_SVG + '</div>' +
+                '<div class="toast-body">' +
+                '<p class="toast-title">' + title + '</p>' +
+                '<p class="toast-desc">' + desc + '</p>' +
+                '</div>' +
+                '</div>' +
+                '<button type="button" class="toast-close" aria-label="关闭">' + TOAST_CLOSE_SVG + '</button>';
+
+            var closeBtn = toast.querySelector('.toast-close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    dismissToast(toast);
+                });
+            }
+
+            toastContainer.appendChild(toast);
+
+            if (duration > 0) {
+                toastTimer = setTimeout(function() { dismissToast(toast); }, duration);
+            }
+        }
+
+        function dismissToast(toast) {
+            if (!toast || !toast.parentNode || toast.classList.contains('hiding')) return;
+            toast.classList.add('hiding');
+            if (toastTimer) { clearTimeout(toastTimer);
+                toastTimer = null; }
+            setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
+        }
+
+        // ================================================================
+        //  红色错误提示
+        // ================================================================
+        function showErrorTip(message) {
+            var tip = document.getElementById('statusTip');
+            if (!tip) return;
+            tip.textContent = message;
+            tip.className = 'status-tip error';
+        }
+
+        function hideStatusTip() {
+            var tip = document.getElementById('statusTip');
+            if (!tip) return;
+            tip.className = 'status-tip';
+            tip.textContent = '';
+        }
+
+        // ================================================================
+        //  图片降级
+        // ================================================================
+        function showTextFallback() {
+            var main = document.getElementById('mainImage');
+            var fallback = document.getElementById('fallbackImage');
+            var textFallback = document.getElementById('textFallback');
+
+            if (main) main.style.display = 'none';
+            if (fallback) fallback.style.display = 'none';
+            if (textFallback) textFallback.style.display = 'flex';
+        }
+
+        function handleFallbackError(img) {
+            hideStatusTip();
+            showErrorTip('❌ 备用图加载失败，请参考文字描述');
+            showTextFallback();
+        }
+
+        function handleImageError(img) {
+            if (img.dataset.fallbackAttempted === 'true') {
+                showErrorTip('❌ 备用图加载失败，请参考文字描述');
+                showTextFallback();
+                return;
+            }
+            img.dataset.fallbackAttempted = 'true';
+            showToast('主图加载失败', '已切换至备用示意图', 8000);
+            hideStatusTip();
+
+            var fallback = document.getElementById('fallbackImage');
+            if (fallback) {
+                img.style.display = 'none';
+                fallback.style.display = 'block';
+                fallback.onerror = function() { handleFallbackError(this); };
+            } else {
+                showErrorTip('❌ 备用图加载失败，请参考文字描述');
+                showTextFallback();
+            }
+        }
+
+        // ================================================================
+        //  主动检测主图（3秒超时）
+        // ================================================================
+        function checkMainImage() {
+            var mainImg = document.getElementById('mainImage');
+            if (!mainImg) return;
+            if (mainImg.complete) {
+                if (mainImg.naturalWidth === 0) { handleImageError(mainImg); }
+                return;
+            }
+            var timeoutId = setTimeout(function() {
+                if (!mainImg.complete || mainImg.naturalWidth === 0) { handleImageError(mainImg); }
+            }, 3000);
+            mainImg.onload = function() { clearTimeout(timeoutId); };
+            mainImg.onerror = function() {
+                clearTimeout(timeoutId);
+                if (!mainImg.dataset.fallbackAttempted) { handleImageError(mainImg); }
+            };
+        }
+
+        // ================================================================
+        //  图片预览
+        // ================================================================
+        var previewOverlay = document.getElementById('imagePreview');
+        var previewImg = document.getElementById('previewImg');
+        var isPreviewOpen = false;
+
+        function openPreview(src) {
+            if (!src) return;
+            previewImg.src = src;
+            previewOverlay.classList.add('active');
+            isPreviewOpen = true;
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePreview() {
+            previewOverlay.classList.remove('active');
+            isPreviewOpen = false;
+            document.body.style.overflow = '';
+            setTimeout(function() { if (!isPreviewOpen) { previewImg.src = ''; } }, 400);
+        }
+
+        previewOverlay.addEventListener('click', function(e) {
+            if (e.target === this || e.target === previewImg) { closePreview(); }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkMainImage();
+            var images = document.querySelectorAll('.demo-img');
+            images.forEach(function(img) {
+                img.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (this.style.display === 'none') return;
+                    if (!this.complete || this.naturalWidth === 0) return;
+                    openPreview(this.src);
+                });
+            });
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && isPreviewOpen) { closePreview(); }
+        });
+
+        window.addEventListener('beforeunload', function() {
+            if (isPreviewOpen) { closePreview(); }
+        });
+    </script>
+
+</body>
+</html>
