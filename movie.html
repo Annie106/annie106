@@ -101,16 +101,10 @@ button.primary:hover{
 
 /* 左上角水印 */
 #watermark{
-  position:absolute;top:16px;left:18px;z-index:12;
+  position:absolute;top:25px;left:35px;z-index:12;
   pointer-events:none;user-select:none;
-  font-size:15px;font-weight:800;letter-spacing:2.4px;
-  background:linear-gradient(100deg,
-              rgba(255,255,255,.72) 0%,
-              rgba(210,225,255,.55) 35%,
-              rgba(255,255,255,.28) 70%,
-              rgba(255,255,255,.14) 100%);
-  -webkit-background-clip:text;background-clip:text;
-  color:transparent;-webkit-text-fill-color:transparent;
+  font-size:25px;font-weight:800;letter-spacing:2.4px;
+  color:rgba(255,255,255,.65);
   text-shadow:0 1px 8px rgba(0,0,0,.55);
   filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));
 }
@@ -619,7 +613,7 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
 <div id="stage">
   <video id="player" playsinline preload="metadata"></video>
 
-  <div id="watermark">RH 工作室</div>
+  <div id="watermark">RH STUDIO·VIDEO</div>
 
   <!-- 中央加载动画 -->
   <div id="loadingBox">
