@@ -36,6 +36,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         html {
@@ -394,10 +395,12 @@
             box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
             transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
-        .task:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
-            border-color: rgba(17, 17, 17, 0.12);
+        @media (hover: hover) and (pointer: fine) {
+            .task:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+                border-color: rgba(17, 17, 17, 0.12);
+            }
         }
         .tags {
             display: flex;
@@ -456,6 +459,59 @@
             width: 18px;
             height: 18px;
             display: block;
+        }
+        .post-card.menu-open {
+            z-index: 5;
+        }
+        @media (hover: none) {
+            .post-card {
+                transition: transform 0.16s ease;
+            }
+            .post-card:active:not(.menu-open) {
+                transform: scale(0.985);
+            }
+        }
+        .post-menu {
+            position: absolute;
+            top: 54px;
+            right: 18px;
+            z-index: 6;
+            min-width: 184px;
+            padding: 6px;
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            background: var(--color-bg);
+            box-shadow: var(--shadow-md);
+        }
+        .post-menu[hidden] {
+            display: none;
+        }
+        .post-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            width: 100%;
+            padding: 9px 10px;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--color-text-primary);
+            font: inherit;
+            font-size: 0.88rem;
+            line-height: 1.4;
+            text-align: left;
+            text-decoration: none;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .post-menu-item:hover,
+        .post-menu-item:focus-visible {
+            background: var(--color-surface);
+            outline: none;
+        }
+        .post-menu-item i {
+            color: var(--color-text-secondary);
+            font-size: 1rem;
         }
         .task-title {
             font-size: 1.15rem;
@@ -696,6 +752,9 @@
             .article-detail,
             .post-card-enter {
                 animation: none;
+            }
+            .post-card {
+                transition: none;
             }
         }
         .back-link {
@@ -1230,11 +1289,6 @@
             .article-full-title {
                 font-size: 1.5rem;
             }
-            .post-card:hover {
-                padding-left: 8px;
-                margin: 0 -8px;
-                padding-right: 8px;
-            }
             .music-player-card {
                 padding: 12px 14px 10px;
             }
@@ -1362,9 +1416,11 @@
             border-color: rgba(255, 255, 255, 0.1);
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
         }
-        [data-theme="dark"] .task:hover {
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
-            border-color: rgba(255, 255, 255, 0.16);
+        @media (hover: hover) and (pointer: fine) {
+            [data-theme="dark"] .task:hover {
+                box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
+                border-color: rgba(255, 255, 255, 0.16);
+            }
         }
         [data-theme="dark"] .tag {
             background: rgba(255, 255, 255, 0.08);
@@ -1375,6 +1431,14 @@
         }
         [data-theme="dark"] .options:hover {
             background: rgba(255, 255, 255, 0.06);
+        }
+        [data-theme="dark"] .post-menu {
+            border-color: var(--color-border);
+            background: var(--color-surface);
+        }
+        [data-theme="dark"] .post-menu-item:hover,
+        [data-theme="dark"] .post-menu-item:focus-visible {
+            background: rgba(255, 255, 255, 0.08);
         }
 
         /* 浏览量头像叠加 */

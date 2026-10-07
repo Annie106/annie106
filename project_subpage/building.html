@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>项目构建中 · Annie</title>
+  <style>
+    /* ===== 颜色变量：与博客风格对齐 ===== */
+    :root {
+      --bg: #fafafa;
+      --card-bg: #ffffff;
+      --text-primary: #1a1a1a;
+      --text-secondary: #666666;
+      --text-tertiary: #999999;
+      --border: #eaeaea;
+      --link-border: #1a1a1a;
+      --link-hover-bg: #1a1a1a;
+      --link-hover-text: #ffffff;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121212;
+        --card-bg: #1e1e1e;
+        --text-primary: #e0e0e0;
+        --text-secondary: #a0a0a0;
+        --text-tertiary: #777777;
+        --border: #2a2a2a;
+        --link-border: #e0e0e0;
+        --link-hover-bg: #e0e0e0;
+        --link-hover-text: #121212;
+      }
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+      color: var(--text-primary);
+      padding: 24px;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .card {
+      max-width: 520px;
+      width: 100%;
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 48px 40px;
+      text-align: center;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+
+    .card__label {
+      display: inline-block;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      margin-bottom: 24px;
+      font-weight: 500;
+    }
+
+    .card__title {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .card__desc {
+      font-size: 15px;
+      line-height: 1.75;
+      color: var(--text-secondary);
+      margin-bottom: 36px;
+    }
+
+    .card__link {
+      display: inline-block;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      text-decoration: none;
+      padding: 10px 28px;
+      border: 1px solid var(--link-border);
+      border-radius: 6px;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .card__link:hover {
+      background-color: var(--link-hover-bg);
+      color: var(--link-hover-text);
+    }
+
+    @media (max-width: 480px) {
+      .card {
+        padding: 36px 24px;
+      }
+      .card__title {
+        font-size: 19px;
+      }
+      .card__desc {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <span class="card__label">Status</span>
+    <h1 class="card__title">项目正在构建中</h1>
+    <p class="card__desc">
+      该页面尚未完成，内容正在准备。请稍后再来查看。
+    </p>
+    <a href="../index.html" class="card__link" id="returnToBlog">返回博客首页</a>
+  </main>
+  <script>
+    const returnToBlog = document.getElementById('returnToBlog');
+    const blogHome = new URL(returnToBlog.href);
+    const referrer = document.referrer ? new URL(document.referrer) : null;
+
+    if (referrer && referrer.origin === blogHome.origin && referrer.pathname === blogHome.pathname) {
+      returnToBlog.addEventListener('click', function(event) {
+        event.preventDefault();
+        window.history.back();
+      });
+    }
+  </script>
+</body>
+</html>

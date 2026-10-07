@@ -142,6 +142,26 @@
                     `,
             }, ];
 
+            // ==================== 统一管理文章卡片的二级菜单 ====================
+            // 使用文章 id 对应菜单项；未配置的文章默认显示“评论”入口。
+            // type 可用 article（打开站内文章）、externalPage（打开文章的 externalPage）或 link（打开 url）。
+            // 菜单项支持三种类型：
+
+            // article：打开站内文章
+            // link：打开指定网址或 HTML 页面
+            // externalPage：打开该文章数据中的独立页面
+
+            const articleMenus = {
+                // 9: [
+                //    { label: '打开独立页面', type: 'externalPage' },
+                // ],
+                // 7: [
+                //    { label: '查看文章', type: 'article' },
+                //    { label: '打开视频站', type: 'link', url: 'movie.html' },
+                //    { label: '打开直链下载站', type: 'link', url: 'project_subpage/rh_studio_studio/download.html' },
+                // ],
+            };
+
             // ==================== ★★★ 修改个人信息 ★★★ ====================
             const siteConfig = {
                 authorName: 'Annie',              // 你的名字
@@ -246,6 +266,16 @@
                 return ['all', ...Array.from(tagSet)];
             }
 
+            function escapeHtml(value) {
+                return String(value).replace(/[&<>"']/g, character => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;',
+                })[character]);
+            }
+
             function renderTagPills(containerId) {
                 const container = document.getElementById(containerId);
                 if (!container) return;
@@ -288,6 +318,22 @@
                     const commentCount = 12 + (p.id % 9);
                     const likeCount = 7 + (p.id % 6);
                     const viewCount = 18 + (p.id * 5);
+                // ================ 二级菜单默认选项 ================
+                    const menuItems = articleMenus[p.id] || [
+                        { label: '评论', type: 'link', url: 'project_subpage/building.html' },
+                    ];
+                    const menuLinks = menuItems.map(item => {
+                        if (item.type === 'article') {
+                            return `<button class="post-menu-item" type="button" role="menuitem" data-action="article"><i class="ri-article-line"></i>${escapeHtml(item.label)}</button>`;
+                        }
+                        const url = item.type === 'externalPage' ? p.externalPage : item.url;
+                        if (!url) return '';
+                        const icon = item.type === 'externalPage' ? 'ri-external-link-line' : 'ri-arrow-up-right-line';
+                        const target = new URL(url, window.location.href).origin === window.location.origin
+                            ? ''
+                            : ' target="_blank" rel="noopener noreferrer"';
+                        return `<a class="post-menu-item" role="menuitem" href="${escapeHtml(url)}"${target}><i class="${icon}"></i>${escapeHtml(item.label)}</a>`;
+                    }).join('');
 
                     return `
                         <article class="task post-card${animate ? ' post-card-enter' : ''}" data-article-id="${p.id}" draggable="true">
@@ -296,9 +342,12 @@
                                     ${p.pinned ? '<span class="tag tag-pinned" title="置顶"><i class="ri-pushpin-2-line"></i></span>' : ''}
                                     <span class="tag">${firstTag}</span>
                                 </div>
-                                <button class="options" type="button" aria-label="更多选项">
+                                <button class="options" type="button" aria-label="更多选项" aria-haspopup="menu" aria-expanded="false">
                                     <svg xml:space="preserve" viewBox="0 0 41.915 41.916" xmlns="http://www.w3.org/2000/svg" id="Capa_1" version="1.1" fill="#000000" aria-hidden="true"><g stroke-width="0" id="SVGRepo_bgCarrier"></g><g stroke-linejoin="round" stroke-linecap="round" id="SVGRepo_tracerCarrier"></g><g id="SVGRepo_iconCarrier"><g><g><path d="M11.214,20.956c0,3.091-2.509,5.589-5.607,5.589C2.51,26.544,0,24.046,0,20.956c0-3.082,2.511-5.585,5.607-5.585 C8.705,15.371,11.214,17.874,11.214,20.956z"></path><path d="M26.564,20.956c0,3.091-2.509,5.589-5.606,5.589c-3.097,0-5.607-2.498-5.607-5.589c0-3.082,2.511-5.585,5.607-5.585 C24.056,15.371,26.564,17.874,26.564,20.956z"></path><path d="M41.915,20.956c0,3.091-2.509,5.589-5.607,5.589c-3.097,0-5.606-2.498-5.606-5.589c0-3.082,2.511-5.585,5.606-5.585 C39.406,15.371,41.915,17.874,41.915,20.956z"></path></g></g></g></svg>
                                 </button>
+                                <div class="post-menu" role="menu" hidden>
+                                    ${menuLinks}
+                                </div>
                             </div>
                             <h3 class="task-title">${p.title}</h3>
                             <p>${p.excerpt}</p>
@@ -319,7 +368,8 @@
                     `;
                 }).join('');
                 container.querySelectorAll('.post-card').forEach(card => {
-                    card.addEventListener('click', function() {
+                    card.addEventListener('click', function(e) {
+                        if (e.target.closest('.options, .post-menu')) return;
                         const id = parseInt(this.getAttribute('data-article-id'));
                         openArticle(id);
                     });
@@ -327,6 +377,37 @@
                 container.querySelectorAll('.options').forEach(button => {
                     button.addEventListener('click', function(e) {
                         e.stopPropagation();
+                        const card = this.closest('.post-card');
+                        const isOpen = !card.classList.contains('menu-open');
+                        document.querySelectorAll('.post-card.menu-open').forEach(openCard => {
+                            openCard.classList.remove('menu-open');
+                            openCard.querySelector('.options').setAttribute('aria-expanded', 'false');
+                            openCard.querySelector('.post-menu').hidden = true;
+                        });
+                        if (isOpen) {
+                            card.classList.add('menu-open');
+                            this.setAttribute('aria-expanded', 'true');
+                            card.querySelector('.post-menu').hidden = false;
+                        }
+                    });
+                });
+                container.querySelectorAll('.post-menu [data-action="article"]').forEach(button => {
+                    button.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const card = this.closest('.post-card');
+                        card.classList.remove('menu-open');
+                        card.querySelector('.options').setAttribute('aria-expanded', 'false');
+                        card.querySelector('.post-menu').hidden = true;
+                        openArticle(parseInt(card.getAttribute('data-article-id')));
+                    });
+                });
+                container.querySelectorAll('.post-menu a').forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const card = this.closest('.post-card');
+                        card.classList.remove('menu-open');
+                        card.querySelector('.options').setAttribute('aria-expanded', 'false');
+                        card.querySelector('.post-menu').hidden = true;
                     });
                 });
             }
@@ -459,9 +540,26 @@
             });
 
             document.addEventListener('click', function(e) {
+                if (!e.target.closest('.post-card.menu-open')) {
+                    document.querySelectorAll('.post-card.menu-open').forEach(card => {
+                        card.classList.remove('menu-open');
+                        card.querySelector('.options').setAttribute('aria-expanded', 'false');
+                        card.querySelector('.post-menu').hidden = true;
+                    });
+                }
                 if (!e.target.closest('.site-header') && navLinks.classList.contains('open')) {
                     navLinks.classList.remove('open');
                 }
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key !== 'Escape') return;
+                const openCard = document.querySelector('.post-card.menu-open');
+                if (!openCard) return;
+                openCard.classList.remove('menu-open');
+                openCard.querySelector('.options').setAttribute('aria-expanded', 'false');
+                openCard.querySelector('.post-menu').hidden = true;
+                openCard.querySelector('.options').focus();
             });
 
             // ==================== 初始化 ====================
