@@ -285,6 +285,13 @@
             color: #fff;
             border-color: var(--color-text-primary);
         }
+        .social-links .theme-toggle {
+            width: 32px;
+            height: 32px;
+            flex: 0 0 32px;
+            border-color: transparent;
+            font-size: 1.1rem;
+        }
 
         /* ==================== 文章列表 ==================== */
         .section-header {
@@ -1141,6 +1148,7 @@
                 padding: 10px 12px;
                 border-radius: 15px;
                 gap: 10px;
+                min-height: 66px;
             }
             .hero-section {
                 padding-top: 4px;
@@ -1149,7 +1157,15 @@
                 min-width: 0;
                 flex: 1;
             }
-            nav {
+            .site-title-group {
+                min-width: 0;
+            }
+            .site-subtitle {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .site-header nav {
                 flex: 1;
                 min-width: 0;
             }
@@ -1240,4 +1256,206 @@
                 right: 12px;
                 width: calc(100% - 24px);
             }
+        }
+        /* ==================== 主题切换按钮 ==================== */
+        .theme-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            border: 1px solid var(--color-border);
+            background: var(--color-surface);
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            font-size: 1.15rem;
+            transition: all var(--transition-fast);
+        }
+        .theme-toggle:hover {
+            background: var(--color-text-primary);
+            color: #ffffff;
+            border-color: var(--color-text-primary);
+        }
+        .theme-toggle i {
+            line-height: 1;
+            pointer-events: none;
+        }
+        @media (max-width: 600px) {
+            .theme-toggle {
+                width: 34px;
+                height: 34px;
+                font-size: 1rem;
+            }
+        }
+
+        /* ==================== 深色模式 ==================== */
+        [data-theme="dark"] {
+            --color-bg: #0f1115;
+            --color-surface: #171a20;
+            --color-border: #2a2e37;
+            --color-border-light: #23262d;
+            --color-text-primary: #e7e9ee;
+            --color-text-secondary: #9aa1ad;
+            --color-text-tertiary: #6d7480;
+            --color-accent: #ffffff;
+            --color-accent-hover: #d6d9e0;
+            --color-tag-bg: #23262d;
+            --color-tag-text: #b3b9c2;
+            --color-divider: #22252c;
+
+            --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+            --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.45);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        /* 顶部导航 */
+        [data-theme="dark"] .site-header {
+            background: rgba(15, 17, 21, 0.85);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+        }
+        [data-theme="dark"] .nav-links {
+            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+        [data-theme="dark"] .nav-links a:hover,
+        [data-theme="dark"] .nav-links a.active {
+            background: var(--color-text-primary);
+            color: #111111;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        /* 按钮与社交链接 */
+        [data-theme="dark"] .hero-button-primary,
+        [data-theme="dark"] .social-links a:hover {
+            background: var(--color-text-primary);
+            color: #111111;
+        }
+        [data-theme="dark"] .tag-pill {
+            background: var(--color-surface);
+        }
+        [data-theme="dark"] .tag-pill:hover {
+            border-color: var(--color-border);
+        }
+        [data-theme="dark"] .tag-pill.active {
+            background: var(--color-text-primary);
+            color: #111111;
+            border-color: var(--color-text-primary);
+        }
+        [data-theme="dark"] .home-tag-filter .tag-pill {
+            background: transparent;
+        }
+        [data-theme="dark"] .home-tag-filter .tag-pill.active {
+            background: transparent;
+            color: #ffffff;
+            border-color: transparent;
+            box-shadow: inset 0 -1px #ffffff;
+        }
+
+        /* 文章卡片 */
+        [data-theme="dark"] .task {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.03));
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+        }
+        [data-theme="dark"] .task:hover {
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.16);
+        }
+        [data-theme="dark"] .tag {
+            background: rgba(255, 255, 255, 0.08);
+            color: #d1d5dc;
+        }
+        [data-theme="dark"] .tag-pinned {
+            background: rgba(255, 255, 255, 0.14);
+        }
+        [data-theme="dark"] .options:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        /* 浏览量头像叠加 */
+        [data-theme="dark"] .viewer span {
+            background: linear-gradient(135deg, #2a2e38, #454b59);
+            border-color: var(--color-bg);
+        }
+        [data-theme="dark"] .viewer span:last-child {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* 音乐播放器卡片 */
+        [data-theme="dark"] .music-player-card {
+            background: rgba(23, 26, 32, 0.9);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+        }
+        [data-theme="dark"] .music-player-card.playing {
+            border-color: rgba(245, 158, 11, 0.3);
+            box-shadow: 0 14px 32px rgba(245, 158, 11, 0.16);
+        }
+        [data-theme="dark"] .music-player-text h3 { color: #e7e9ee; }
+        [data-theme="dark"] .music-player-text p { color: #9aa1ad; }
+        [data-theme="dark"] .music-icon-btn,
+        [data-theme="dark"] .music-card-toggle,
+        [data-theme="dark"] .music-card-collapse { color: #9aa1ad; }
+        [data-theme="dark"] .music-icon-btn:hover,
+        [data-theme="dark"] .music-card-toggle:hover,
+        [data-theme="dark"] .music-card-collapse:hover { color: #e7e9ee; }
+        [data-theme="dark"] .music-card-toggle {
+            background: var(--color-text-primary);
+            color: #111111;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
+        }
+        [data-theme="dark"] .music-card-collapse {
+            background: rgba(255, 255, 255, 0.08);
+            color: #9aa1ad;
+        }
+        [data-theme="dark"] .music-track-time { color: #9aa1ad; }
+        [data-theme="dark"] .music-track-progress { background: #2a2e37; }
+        [data-theme="dark"] .music-volume-trigger {
+            background: rgba(255, 255, 255, 0.08);
+            color: #9aa1ad;
+        }
+        [data-theme="dark"] .music-volume-trigger:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #e7e9ee;
+        }
+        [data-theme="dark"] .music-volume-slider {
+            background: linear-gradient(90deg, #fbbf24 0%, #fbbf24 var(--volume-percent, 30%), #2a2e37 var(--volume-percent, 30%), #2a2e37 100%);
+        }
+        [data-theme="dark"] .music-volume-slider::-webkit-slider-thumb {
+            background: var(--color-text-primary);
+            border-color: var(--color-bg);
+        }
+        [data-theme="dark"] .music-volume-slider::-moz-range-thumb {
+            background: var(--color-text-primary);
+            border-color: var(--color-bg);
+        }
+        [data-theme="dark"] .music-player-percent { color: #9aa1ad; }
+
+        /* 错误提示 */
+        [data-theme="dark"] .audio-error-toast {
+            background: linear-gradient(rgba(248, 81, 73, 0.16), rgba(248, 81, 73, 0.16));
+            color: #ff8f88;
+        }
+        [data-theme="dark"] .audio-error-close:hover {
+            background: rgba(248, 81, 73, 0.12);
+        }
+
+        /* 主题切换按钮在深色模式下 */
+        [data-theme="dark"] .theme-toggle:hover {
+            background: var(--color-text-primary);
+            color: #111111;
+            border-color: var(--color-text-primary);
+        }
+
+        /* 导航容器：让主题切换按钮与导航项横向排列 */
+        .site-header nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }

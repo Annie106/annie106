@@ -606,7 +606,49 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
 }
 #toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ==================== 深色模式 ==================== */
+[data-theme="dark"]{
+  --bg:#0f1115; --panel:#16191f; --line:#2a2e37;
+  --txt:#e7e9ee; --dim:#9aa1ad; --acc:#ffffff; --danger:#ff8f88;
+}
+[data-theme="dark"] body{background:var(--bg);color:var(--txt)}
+[data-theme="dark"] button{
+  background:#1b1f26;color:var(--txt);border-color:var(--line);box-shadow:none;
+}
+[data-theme="dark"] button:hover{background:#242a33;border-color:#333947}
+[data-theme="dark"] button.primary{background:#e7e9ee;color:#111;border-color:#e7e9ee}
+[data-theme="dark"] button.primary:hover{background:#ffffff;border-color:#ffffff}
+
+/* 列表面板 */
+[data-theme="dark"] #panel{background:var(--panel);border-left-color:var(--line);box-shadow:-12px 0 36px rgba(0,0,0,.6)}
+[data-theme="dark"] .p-head{background:var(--panel);border-bottom-color:var(--line)}
+[data-theme="dark"] .music-control-btn{color:var(--dim);background:#1b1f26}
+[data-theme="dark"] #panel .icon-btn{color:var(--dim);border-color:var(--line);background:#1b1f26}
+[data-theme="dark"] #panel .icon-btn:hover,
+[data-theme="dark"] .music-control-btn:hover{background:#242a33;border-color:#333947}
+[data-theme="dark"] .item:hover{background:rgba(255,255,255,.05)}
+[data-theme="dark"] .item.active{background:rgba(255,255,255,.09)}
+[data-theme="dark"] .p-foot{background:var(--panel);border-top-color:var(--line)}
+[data-theme="dark"] .contact-btn{background:#e7e9ee;border-color:#e7e9ee;color:#111}
+[data-theme="dark"] .contact-btn:hover{background:#ffffff;border-color:#ffffff;color:#111}
 </style>
+<script>
+(function () {
+  function apply() {
+    var t = null;
+    try { t = localStorage.getItem('annie-theme'); } catch (e) {}
+    var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var theme = (t === 'light' || t === 'dark') ? t : (dark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+  apply();
+  // 跟随博客主页的主题切换（iframe 与父页同源，共享 localStorage）
+  window.addEventListener('storage', function (e) {
+    if (e.key === 'annie-theme') apply();
+  });
+})();
+</script>
 </head>
 <body>
 

@@ -10,6 +10,18 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
 
     <link rel="stylesheet" href="css/style.css">
+
+    <!-- 深色模式：尽早设置主题，避免页面闪烁 -->
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('annie-theme');
+                var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var theme = (t === 'light' || t === 'dark') ? t : (dark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {}
+        })();
+    </script>
 </head>
 <body>
 
@@ -72,6 +84,9 @@
                         <a href="javascript:void(0);" onclick="copyToClipboard('anniedv106@gmail.com', '邮箱地址已复制')" title="邮箱"><i class="ri-mail-line"></i></a>
 
                         <a href="#" title="RSS 订阅"><i class="ri-rss-line"></i></a>
+                        <button class="theme-toggle" id="themeToggle" aria-label="切换深色模式" title="切换主题">
+                            <i class="ri-moon-line"></i>
+                        </button>
                     </div>
                 </div>
                 <div class="hero-player">
@@ -201,7 +216,7 @@
 
         <!-- ==================== 页脚 ==================== -->
         <footer class="site-footer">
-              <p>© 2026 <a href="https://annie106.github.io/RHfortwo/" target="_blank" rel="noopener noreferrer">Annie</a> · 由 <a href="https://annie106.github.io/RHfortwo/" target="_blank" rel="noopener noreferrer">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.3.17.30 </p>
+              <p>© 2026 <a href="https://annie106.github.io/RHfortwo/" target="_blank" rel="noopener noreferrer">Annie</a> · 由 <a href="https://annie106.github.io/RHfortwo/" target="_blank" rel="noopener noreferrer">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.3.19.31 </p>
         </footer>
 
     </div>
@@ -212,6 +227,7 @@
             <span>点击任意位置启用背景音乐</span>
         </div>
     </div>
+    <script src="js/theme.js"></script>
     <script src="js/script.js"></script>
     <script src="js/copyToClipboard.js"></script>
     <script src="js/background-music.js"></script>
