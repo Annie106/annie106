@@ -2,6 +2,16 @@
             // ==================== ★★★ 在这里修改你的博客内容 ★★★ ====================
             // 所有文章数据都集中在这个数组里，增删改都非常方便。
             const blogPosts = [{
+                id: 9,
+                title: '直链下载',
+                date: '2026-10-07',
+                excerpt: '直链下载页面',
+                tags: ['直链下载'],
+                featured: false,
+                // 填写 HTML 相对路径，例如：'articles/my-article.html'
+                externalPage: 'project_subpage/rh_studio_studio/download.html',
+                content: '<p> 错误 <404> </p>',
+            }, {
                 id: 8,
                 pinned: true,
                 title: '对朋友圈、抖音、QQ空间等互动的说明',
@@ -324,13 +334,17 @@
             function openArticle(id) {
                 const post = blogPosts.find(p => p.id === id);
                 if (!post) return;
+                if (post.externalPage) {
+                    window.location.href = post.externalPage;
+                    return;
+                }
                 articleReturnView = currentView === 'article' ? 'home' : currentView;
                 articleReturnScroll = window.scrollY;
                 currentArticleId = id;
                 articleTitle.textContent = post.title;
                 articleMeta.innerHTML = `
                     <span><i class="ri-calendar-line"></i> ${post.date}</span>
-                    <span>${post.tags.map(t => `<span class="post-tag">${t}</span>`).join(' ')}</span>
+                    ${post.tags.map(t => `<span class="post-tag">${t}</span>`).join(' ')}
                 `;
                 articleContent.innerHTML = post.content;
                 switchView('article');
