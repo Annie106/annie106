@@ -8,9 +8,7 @@
                 excerpt: '直链下载页面',
                 tags: ['直链下载'],
                 featured: false,
-                // 填写 HTML 相对路径，例如：'articles/my-article.html'
-                externalPage: 'project_subpage/rh_studio_studio/download.html',
-                content: '<p> 错误 <404> </p>',
+                embeddedPage: 'project_subpage/rh_studio_studio/download.html',
             }, {
                 id: 8,
                 pinned: true,
@@ -197,12 +195,14 @@
             const articleTitle = $('#articleTitle');
             const articleMeta = $('#articleMeta');
             const articleContent = $('#articleContent');
+            const embeddedPageFrame = $('#embeddedPageFrame');
             const backBtn = $('#backBtn');
             const backBtn2 = $('#backBtn2');
 
             let currentView = 'home';
             let activeTag = 'all';
             let currentArticleId = null;
+            let embeddedPageObserver = null;
             let articleReturnView = 'home';
             let articleReturnScroll = 0;
             const viewScrollPositions = { home: 0, blog: 0, movie: null, about: 0 };
@@ -267,7 +267,7 @@
                 const post = state.view === 'article'
                     ? blogPosts.find(p => p.id === state.articleId)
                     : null;
-                if (post && !post.externalPage) {
+                if (post && (!post.externalPage || post.embeddedPage)) {
                     renderArticle(post);
                     switchView('article');
                 } else {
@@ -493,13 +493,47 @@
                     <span><i class="ri-calendar-line"></i> ${post.date}</span>
                     ${post.tags.map(t => `<span class="post-tag">${t}</span>`).join(' ')}
                 `;
-                articleContent.innerHTML = post.content;
+                const isEmbeddedPage = Boolean(post.embeddedPage);
+                articleContent.hidden = isEmbeddedPage;
+                embeddedPageFrame.hidden = !isEmbeddedPage;
+                articleContent.innerHTML = post.content || '';
+                if (embeddedPageObserver) {
+                    embeddedPageObserver.disconnect();
+                    embeddedPageObserver = null;
+                }
+                if (isEmbeddedPage) {
+                    embeddedPageFrame.onload = () => {
+                        const embeddedDocument = embeddedPageFrame.contentDocument;
+                        const embeddedBody = embeddedDocument.body;
+                        const embeddedRoot = embeddedDocument.documentElement;
+                        const resizeFrame = () => {
+                            embeddedPageFrame.style.height = `${Math.max(
+                                embeddedBody.scrollHeight,
+                                embeddedRoot.scrollHeight
+                            )}px`;
+                        };
+                        resizeFrame();
+                        if ('ResizeObserver' in window) {
+                            embeddedPageObserver = new ResizeObserver(resizeFrame);
+                            embeddedPageObserver.observe(embeddedBody);
+                            embeddedPageObserver.observe(embeddedRoot);
+                        }
+                    };
+                    if (embeddedPageFrame.src !== new URL(post.embeddedPage, window.location.href).href) {
+                        embeddedPageFrame.src = post.embeddedPage;
+                    } else if (embeddedPageFrame.contentDocument.readyState === 'complete') {
+                        embeddedPageFrame.onload();
+                    }
+                } else {
+                    embeddedPageFrame.onload = null;
+                    embeddedPageFrame.removeAttribute('src');
+                }
             }
 
             function openArticle(id) {
                 const post = blogPosts.find(p => p.id === id);
                 if (!post) return;
-                if (post.externalPage) {
+                if (post.externalPage && !post.embeddedPage) {
                     // 记住当前界面，返回时才能回到原处
                     saveViewState();
                     window.location.href = post.externalPage;
