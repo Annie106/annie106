@@ -224,6 +224,78 @@
                 window.scrollTo({ top: scrollTop, behavior: 'instant' });
             }
 
+            // ==================== 离开时的界面记忆 ====================
+            // 点击文章跳到独立 HTML 页面后，返回本站时恢复离开时所在的界面：
+            // 视图（首页 / 文章列表 / 文章详情 / 电影 / 关于）、当前标签、滚动位置。
+            const VIEW_STATE_KEY = 'annie-view-state';
+            const VALID_VIEWS = ['home', 'blog', 'movie', 'about', 'article'];
+
+            function saveViewState() {
+                if (!VALID_VIEWS.includes(currentView)) return;
+                if (currentView !== 'article') {
+                    viewScrollPositions[currentView] = window.scrollY;
+                }
+                try {
+                    sessionStorage.setItem(VIEW_STATE_KEY, JSON.stringify({
+                        view: currentView,
+                        articleId: currentArticleId,
+                        tag: activeTag,
+                        scroll: window.scrollY,
+                        scrollPositions: viewScrollPositions,
+                        returnView: articleReturnView,
+                        returnScroll: articleReturnScroll,
+                    }));
+                } catch (e) {}
+            }
+
+            function readViewState() {
+                try {
+                    const state = JSON.parse(sessionStorage.getItem(VIEW_STATE_KEY) || 'null');
+                    return state && VALID_VIEWS.includes(state.view) ? state : null;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function restoreViewState(state) {
+                if (!state) return false;
+                if (typeof state.returnView === 'string' && VALID_VIEWS.includes(state.returnView)) {
+                    articleReturnView = state.returnView;
+                }
+                if (typeof state.returnScroll === 'number') articleReturnScroll = state.returnScroll;
+
+                const post = state.view === 'article'
+                    ? blogPosts.find(p => p.id === state.articleId)
+                    : null;
+                if (post && !post.externalPage) {
+                    renderArticle(post);
+                    switchView('article');
+                } else {
+                    switchView(state.view === 'article' ? 'home' : state.view);
+                }
+
+                // switchView 会把上一个视图的滚动位置记成 0，这里用离开时的记录覆盖回来
+                const savedScrolls = state.scrollPositions || {};
+                Object.keys(viewScrollPositions).forEach(key => {
+                    if (typeof savedScrolls[key] === 'number') viewScrollPositions[key] = savedScrolls[key];
+                });
+
+                if (typeof state.scroll === 'number' && state.scroll > 0) {
+                    // 关掉浏览器自带的滚动还原，避免和这里的恢复互相打架
+                    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+                    window.requestAnimationFrame(() => {
+                        window.scrollTo({ top: state.scroll, behavior: 'instant' });
+                    });
+                }
+                return true;
+            }
+
+            // 跳转到独立 HTML 页面 / 切到后台 / 关闭标签页之前记录界面状态
+            window.addEventListener('pagehide', saveViewState);
+            document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'hidden') saveViewState();
+            });
+
             function sizeMovieFrame() {
                 if (currentView !== 'movie') return;
                 if (window.innerWidth <= 700) {
@@ -408,26 +480,34 @@
                         card.classList.remove('menu-open');
                         card.querySelector('.options').setAttribute('aria-expanded', 'false');
                         card.querySelector('.post-menu').hidden = true;
+                        // 同标签页跳转到其它 HTML 页面时，先记住当前界面
+                        if (this.target !== '_blank') saveViewState();
                     });
                 });
             }
 
-            function openArticle(id) {
-                const post = blogPosts.find(p => p.id === id);
-                if (!post) return;
-                if (post.externalPage) {
-                    window.location.href = post.externalPage;
-                    return;
-                }
-                articleReturnView = currentView === 'article' ? 'home' : currentView;
-                articleReturnScroll = window.scrollY;
-                currentArticleId = id;
+            function renderArticle(post) {
+                currentArticleId = post.id;
                 articleTitle.textContent = post.title;
                 articleMeta.innerHTML = `
                     <span><i class="ri-calendar-line"></i> ${post.date}</span>
                     ${post.tags.map(t => `<span class="post-tag">${t}</span>`).join(' ')}
                 `;
                 articleContent.innerHTML = post.content;
+            }
+
+            function openArticle(id) {
+                const post = blogPosts.find(p => p.id === id);
+                if (!post) return;
+                if (post.externalPage) {
+                    // 记住当前界面，返回时才能回到原处
+                    saveViewState();
+                    window.location.href = post.externalPage;
+                    return;
+                }
+                articleReturnView = currentView === 'article' ? 'home' : currentView;
+                articleReturnScroll = window.scrollY;
+                renderArticle(post);
                 switchView('article');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
@@ -564,11 +644,16 @@
 
             // ==================== 初始化 ====================
             function init() {
+                const savedState = readViewState();
+                if (savedState && typeof savedState.tag === 'string' && getAllTags().includes(savedState.tag)) {
+                    activeTag = savedState.tag;
+                }
                 renderTagPills('tagFilterHome');
                 renderTagPills('tagFilterBlog');
                 renderPostsList('postsListHome');
                 renderPostsList('postsListBlog');
-                switchView('home');
+                // 从别的 HTML 页面返回时，回到离开时的界面
+                if (!restoreViewState(savedState)) switchView('home');
             }
 
             init();

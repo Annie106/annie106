@@ -1432,9 +1432,16 @@
         [data-theme="dark"] .options:hover {
             background: rgba(255, 255, 255, 0.06);
         }
+        /* 三点图标内联了 fill="#000000"，深色模式下会变成看不见的黑点 */
+        [data-theme="dark"] .options svg {
+            fill: #d5d8de;
+        }
         [data-theme="dark"] .post-menu {
-            border-color: var(--color-border);
-            background: var(--color-surface);
+            border-color: rgba(255, 255, 255, 0.14);
+            background: #1e222b;
+            /* 深色模式下页面与卡片本身就是深色，原先 30px 的大范围黑色阴影会在菜单周围
+               形成一圈发暗的“阴影环”，这里改为更收拢的柔和投影 */
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
         }
         [data-theme="dark"] .post-menu-item:hover,
         [data-theme="dark"] .post-menu-item:focus-visible {
