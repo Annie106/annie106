@@ -203,8 +203,11 @@
             let activeTag = 'all';
             let currentArticleId = null;
             let embeddedPageObserver = null;
+            let embeddedPageResizeHandler = null;
             let articleReturnView = 'home';
             let articleReturnScroll = 0;
+            let articleHistoryEntryActive = false;
+            let returningFromArticleButton = false;
             const viewScrollPositions = { home: 0, blog: 0, movie: null, about: 0 };
 
             function centerMovieFrame(behavior = 'smooth') {
@@ -268,6 +271,7 @@
                     ? blogPosts.find(p => p.id === state.articleId)
                     : null;
                 if (post && (!post.externalPage || post.embeddedPage)) {
+                    articleHistoryEntryActive = true;
                     renderArticle(post);
                     switchView('article');
                 } else {
@@ -486,6 +490,32 @@
                 });
             }
 
+            // iframe 的普通导航（设置 src / 移除 src）都会往浏览器历史里塞记录，
+            // 这些记录会占掉一次“返回”，导致返回首页要按两次，所以统一改用
+            // location.replace() 切换内嵌页面：它只替换当前记录，不新增记录。
+            function setFrameSource(frame, url) {
+                const target = url ? new URL(url, window.location.href).href : 'about:blank';
+                let current = '';
+                try {
+                    current = frame.contentWindow ? frame.contentWindow.location.href : '';
+                } catch (error) {
+                    current = frame.src || '';
+                }
+                if (current === target) return false;
+                if (!url && current === 'about:blank') return false;
+                try {
+                    frame.contentWindow.location.replace(target);
+                } catch (error) {
+                    // 跨域页面读不到 location，只能退回直接设置 src
+                    if (url) {
+                        frame.src = url;
+                    } else {
+                        frame.removeAttribute('src');
+                    }
+                }
+                return true;
+            }
+
             function renderArticle(post) {
                 currentArticleId = post.id;
                 articleTitle.textContent = post.title;
@@ -501,16 +531,41 @@
                     embeddedPageObserver.disconnect();
                     embeddedPageObserver = null;
                 }
+                if (embeddedPageResizeHandler) {
+                    window.removeEventListener('resize', embeddedPageResizeHandler);
+                    embeddedPageResizeHandler = null;
+                }
                 if (isEmbeddedPage) {
                     embeddedPageFrame.onload = () => {
-                        const embeddedDocument = embeddedPageFrame.contentDocument;
-                        const embeddedBody = embeddedDocument.body;
-                        const embeddedRoot = embeddedDocument.documentElement;
+                        const embeddedWindow = embeddedPageFrame.contentWindow;
+                        if (embeddedWindow) {
+                            embeddedWindow.postMessage({
+                                type: 'annie-theme',
+                                theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light',
+                            }, '*');
+                        }
+                        let embeddedBody;
+                        let embeddedRoot;
+                        try {
+                            const embeddedDocument = embeddedPageFrame.contentDocument;
+                            if (!embeddedDocument || !embeddedDocument.body) {
+                                throw new Error('内嵌页面文档尚未就绪');
+                            }
+                            embeddedBody = embeddedDocument.body;
+                            embeddedRoot = embeddedDocument.documentElement;
+                        } catch (error) {
+                            console.error('无法读取内嵌页面尺寸，将保留可滚动的视口高度。', error);
+                            embeddedPageFrame.style.height = `${Math.max(window.innerHeight * 0.8, 600)}px`;
+                            return;
+                        }
                         const resizeFrame = () => {
-                            embeddedPageFrame.style.height = `${Math.max(
-                                embeddedBody.scrollHeight,
-                                embeddedRoot.scrollHeight
-                            )}px`;
+                            window.requestAnimationFrame(() => {
+                                embeddedPageFrame.style.height = `${Math.max(
+                                    embeddedBody.scrollHeight,
+                                    embeddedRoot.scrollHeight,
+                                    window.innerHeight * 0.8
+                                )}px`;
+                            });
                         };
                         resizeFrame();
                         if ('ResizeObserver' in window) {
@@ -518,15 +573,16 @@
                             embeddedPageObserver.observe(embeddedBody);
                             embeddedPageObserver.observe(embeddedRoot);
                         }
+                        embeddedPageResizeHandler = resizeFrame;
+                        window.addEventListener('resize', embeddedPageResizeHandler);
                     };
-                    if (embeddedPageFrame.src !== new URL(post.embeddedPage, window.location.href).href) {
-                        embeddedPageFrame.src = post.embeddedPage;
-                    } else if (embeddedPageFrame.contentDocument.readyState === 'complete') {
+                    if (!setFrameSource(embeddedPageFrame, post.embeddedPage) && embeddedPageFrame.contentWindow) {
+                        // 已经停在这个内嵌页面上，补跑一次初始化
                         embeddedPageFrame.onload();
                     }
                 } else {
                     embeddedPageFrame.onload = null;
-                    embeddedPageFrame.removeAttribute('src');
+                    setFrameSource(embeddedPageFrame, null);
                 }
             }
 
@@ -541,6 +597,17 @@
                 }
                 articleReturnView = currentView === 'article' ? 'home' : currentView;
                 articleReturnScroll = window.scrollY;
+                const articleHistoryState = {
+                    annieArticleId: post.id,
+                    annieReturnView: articleReturnView,
+                    annieReturnScroll: articleReturnScroll,
+                };
+                if (articleHistoryEntryActive || (history.state && Number.isInteger(history.state.annieArticleId))) {
+                    history.replaceState(articleHistoryState, '', window.location.href);
+                } else {
+                    history.pushState(articleHistoryState, '', window.location.href);
+                }
+                articleHistoryEntryActive = true;
                 renderArticle(post);
                 switchView('article');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -559,7 +626,7 @@
                 viewArticle.classList.remove('active');
 
                 if (previousView === 'movie' && viewName !== 'movie') {
-                    movieFrame.src = 'about:blank';
+                    setFrameSource(movieFrame, null);
                 }
 
                 if (viewName === 'home') {
@@ -573,7 +640,7 @@
                 } else if (viewName === 'movie') {
                     viewMovie.style.display = 'block';
                     viewMovie.classList.add('active-view');
-                    if (previousView !== 'movie') movieFrame.src = 'movie.html';
+                    if (previousView !== 'movie') setFrameSource(movieFrame, 'movie.html');
                     sizeMovieFrame();
                     if (window.innerWidth <= 700) {
                         window.requestAnimationFrame(() => {
@@ -639,11 +706,46 @@
             });
 
             function returnToArticlePosition() {
+                if (history.state && history.state.annieArticleId === currentArticleId) {
+                    returningFromArticleButton = true;
+                    history.back();
+                    return;
+                }
+                articleHistoryEntryActive = false;
                 switchView(articleReturnView);
                 window.requestAnimationFrame(() => {
                     window.scrollTo({ top: articleReturnScroll, behavior: 'smooth' });
                 });
             }
+
+            window.addEventListener('popstate', function(event) {
+                const state = event.state;
+                const post = state && blogPosts.find(item => item.id === state.annieArticleId);
+                if (post && (!post.externalPage || post.embeddedPage)) {
+                    articleHistoryEntryActive = true;
+                    articleReturnView = typeof state.annieReturnView === 'string'
+                        && ['home', 'blog', 'movie', 'about'].includes(state.annieReturnView)
+                        ? state.annieReturnView
+                        : 'home';
+                    articleReturnScroll = typeof state.annieReturnScroll === 'number'
+                        ? state.annieReturnScroll
+                        : 0;
+                    renderArticle(post);
+                    switchView('article');
+                    window.scrollTo({ top: 0, behavior: 'instant' });
+                    return;
+                }
+
+                if (!articleHistoryEntryActive && currentView !== 'article') return;
+                const returnView = returningFromArticleButton ? articleReturnView : 'home';
+                const returnScroll = returningFromArticleButton ? articleReturnScroll : 0;
+                returningFromArticleButton = false;
+                articleHistoryEntryActive = false;
+                switchView(returnView);
+                window.requestAnimationFrame(() => {
+                    window.scrollTo({ top: returnScroll, behavior: 'instant' });
+                });
+            });
 
             document.addEventListener('click', function(e) {
                 if (e.target.matches('[data-nav="blog"]') && e.target.closest('.tag-pill')) {

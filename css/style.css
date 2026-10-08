@@ -837,6 +837,9 @@
             border: 0;
             background: var(--color-bg);
         }
+        .embedded-article-frame[hidden] {
+            display: none;
+        }
         .article-content p {
             font-family: var(--font-sans);
             margin: 0 0 0.8em;
@@ -870,6 +873,15 @@
             border: none;
             border-top: 1px solid var(--color-divider);
             margin: 32px 0;
+        }
+        #view-article .divider-thin {
+            margin: 24px 0;
+        }
+        #backBtn2 {
+            margin-bottom: 0;
+        }
+        #view-article.active + .site-footer {
+            margin-top: 24px;
         }
 
         /* ==================== 音乐播放器卡片 ==================== */

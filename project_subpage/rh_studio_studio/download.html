@@ -4,8 +4,87 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>直链下载</title>
+    <script>
+        (function () {
+            try {
+                const savedTheme = localStorage.getItem('annie-theme');
+                if (savedTheme === 'light' || savedTheme === 'dark') {
+                    document.documentElement.setAttribute('data-theme', savedTheme);
+                    return;
+                }
+            } catch (error) {
+                console.warn('无法读取已保存的主题设置。', error);
+            }
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+        })();
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            color-scheme: light;
+            --page-bg: #ffffff;
+            --surface: #fafafa;
+            --surface-muted: #f5f5f5;
+            --surface-accent: #f5f5f5;
+            --text-primary: #1a1a1a;
+            --text-secondary: #6b6b6b;
+            --text-muted: #999999;
+            --border: #eaeaea;
+            --border-soft: #eeeeee;
+            --border-card: #eaeaea;
+            --divider: #eeeeee;
+            --description-bg: #ffffff;
+            --field-bg: #ffffff;
+            --field-text: #1a1a1a;
+            --badge-bg: #f5f5f5;
+            --badge-text: #555555;
+            --badge-accent-bg: #f5f5f5;
+            --badge-accent-text: #555555;
+            --link: #333333;
+            --title-gradient-end: #555555;
+            --button-bg: #1a1a1a;
+            --button-hover-bg: #333333;
+            --button-text: #ffffff;
+            --feature-bg: #f5f5f5;
+            --control-focus: #555555;
+            --control-focus-shadow: 0 0 0 3px rgba(26, 26, 26, 0.12);
+            --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.05);
+            --shadow-chip: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+
+        [data-theme="dark"] {
+            color-scheme: dark;
+            --page-bg: #0f1115;
+            --surface: #171a20;
+            --surface-muted: #20242d;
+            --surface-accent: #222838;
+            --text-primary: #e7e9ee;
+            --text-secondary: #a6adba;
+            --text-muted: #8992a1;
+            --border: #343a46;
+            --border-soft: #2a303a;
+            --border-card: #2a303a;
+            --divider: #2a303a;
+            --description-bg: #171a20;
+            --field-bg: #1b1f26;
+            --field-text: #e7e9ee;
+            --badge-bg: #2a303a;
+            --badge-text: #e7e9ee;
+            --badge-accent-bg: #252d40;
+            --badge-accent-text: #b9caff;
+            --link: #9db8ff;
+            --title-gradient-end: #b9caff;
+            --button-bg: #e7e9ee;
+            --button-hover-bg: #cdd2dc;
+            --button-text: #0f1115;
+            --feature-bg: rgba(157, 184, 255, 0.12);
+            --control-focus: #9aa1ad;
+            --control-focus-shadow: 0 0 0 3px rgba(231, 233, 238, 0.12);
+            --shadow-card: 0 12px 28px -8px rgba(0, 0, 0, 0.45), 0 2px 4px rgba(0, 0, 0, 0.25);
+            --shadow-chip: 0 1px 3px rgba(0, 0, 0, 0.35);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,9 +92,9 @@
         }
 
         body {
-            background: #f8fafc;
+            background: var(--page-bg);
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
-            color: #0f172a;
+            color: var(--text-primary);
             line-height: 1.5;
             padding: 2rem 1.5rem;
         }
@@ -53,7 +132,7 @@
         }
         .header-brand .subhead {
             font-size: 1.05rem;
-            color: #475569;
+            color: var(--text-secondary);
             margin: 0;
             padding: 0;
             border: none;
@@ -62,12 +141,12 @@
         .header-brand .studio-tag {
             margin-top: 0;
             font-size: 0.85rem;
-            background: #eef2ff;
+            background: var(--surface-accent);
             display: inline-flex;
             align-items: center;
             padding: 0.3rem 0.9rem;
             border-radius: 30px;
-            color: #1e40af;
+            color: var(--badge-accent-text);
             font-weight: 500;
             line-height: 1.4;
         }
@@ -91,9 +170,9 @@
             width: 100%;
             height: 44px;
             padding: 10px 14px;
-            background-color: #212121;
-            color: #f1f1f1;
-            border: 2px solid white;
+            background-color: var(--field-bg);
+            color: var(--field-text);
+            border: 1px solid var(--border);
             border-radius: 5px;
             font-family: inherit;
             font-size: 0.95rem;
@@ -101,16 +180,16 @@
         }
 
         .input:focus {
-            color: rgb(0, 255, 255);
-            background-color: #212121;
-            outline-color: rgb(0, 255, 255);
-            box-shadow: -3px -3px 15px rgb(0, 255, 255);
+            color: var(--field-text);
+            background-color: var(--field-bg);
+            border-color: var(--control-focus);
+            box-shadow: var(--control-focus-shadow);
             transition: .1s;
             transition-property: box-shadow;
         }
 
         .input::placeholder {
-            color: #94a3b8;
+            color: var(--text-muted);
         }
 
         /* ---- 搜索按钮 ---- */
@@ -118,10 +197,10 @@
             flex: 0 0 auto;
             height: 44px;
             padding: 0 1.5rem;
-            border: 2px solid #334155;
+            border: 1px solid var(--border);
             border-radius: 5px;
-            background-color: #212121;
-            color: #f1f1f1;
+            background-color: var(--button-bg);
+            color: var(--button-text);
             font-family: inherit;
             font-weight: 600;
             font-size: 0.9rem;
@@ -131,19 +210,18 @@
             transition: all 0.18s ease;
         }
         .search-button:hover {
-            border-color: rgb(0, 255, 255);
-            color: rgb(0, 255, 255);
-            box-shadow: -3px -3px 12px rgba(0, 255, 255, 0.35);
+            border-color: var(--control-focus);
+            box-shadow: var(--control-focus-shadow);
         }
         .search-button:active {
             transform: scale(0.96);
-            background-color: #0d0d0d;
+            background-color: var(--button-hover-bg);
         }
 
         .badge {
             display: inline-block;
-            background: #e2e8f0;
-            color: #1e293b;
+            background: var(--badge-bg);
+            color: var(--badge-text);
             font-size: 0.8rem;
             font-weight: 600;
             padding: 0.25rem 1rem;
@@ -153,7 +231,7 @@
         h1 {
             font-size: 2.8rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #0f172a, #2d4a8c);
+            background: linear-gradient(135deg, var(--text-primary), var(--title-gradient-end));
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
@@ -169,13 +247,13 @@
             flex-wrap: wrap;
         }
         .stat-item {
-            background: white;
+            background: var(--surface);
             padding: 0.5rem 1.2rem;
             border-radius: 60px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: var(--shadow-chip);
             font-size: 0.9rem;
             font-weight: 500;
-            color: #2c3e66;
+            color: var(--text-secondary);
         }
 
         /* 分类导航 */
@@ -187,9 +265,9 @@
             margin: 2rem 0 1rem;
         }
         .category-button {
-            border: 1px solid #cbd5e1;
-            background: #ffffff;
-            color: #0f172a;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-primary);
             padding: 0.7rem 1.3rem;
             border-radius: 999px;
             font-weight: 600;
@@ -199,18 +277,18 @@
         .empty-state {
             text-align: center;
             padding: 2rem 1rem;
-            border: 1px dashed #cbd5e1;
+            border: 1px dashed var(--border);
             border-radius: 22px;
-            background: #ffffff;
-            color: #475569;
+            background: var(--surface);
+            color: var(--text-secondary);
             margin-top: 1rem;
             font-size: 1rem;
         }
         .category-button.active,
         .category-button:hover {
-            background: #0f172a;
-            color: #ffffff;
-            border-color: #0f172a;
+            background: var(--button-bg);
+            color: var(--button-text);
+            border-color: var(--button-bg);
         }
         .download-section {
             margin-bottom: 2.5rem;
@@ -218,12 +296,12 @@
         .section-title {
             font-size: 1.2rem;
             font-weight: 700;
-            color: #102a43;
+            color: var(--text-primary);
             margin-bottom: 1rem;
         }
         .download-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr));
             gap: 2rem;
             margin: 0;
         }
@@ -231,13 +309,13 @@
             text-align: center;
             margin: 1.5rem 0 2rem;
             padding: 1rem 1.25rem;
-            background: #eef2ff;
-            border: 1px solid #cbd5e1;
+            background: var(--surface-accent);
+            border: 1px solid var(--border);
             border-radius: 18px;
-            color: #0f172a;
+            color: var(--text-primary);
         }
         .survey-cta a {
-            color: #1d4ed8;
+            color: var(--link);
             font-weight: 700;
             text-decoration: none;
         }
@@ -247,23 +325,23 @@
 
         /* 卡片样式 */
         .download-card {
-            background: #ffffff;
+            background: var(--surface);
             border-radius: 28px;
-            box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0,0,0,0.02);
+            box-shadow: var(--shadow-card);
             transition: all 0.25s ease;
             overflow: hidden;
-            border: 1px solid #eef2f6;
+            border: 1px solid var(--border-card);
             display: flex;
             flex-direction: column;
         }
         .download-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 24px 40px -12px rgba(0, 0, 0, 0.18);
-            border-color: #cbd5e1;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+            border-color: var(--border);
         }
         .card-header {
             padding: 1.5rem 1.5rem 0.8rem 1.5rem;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid var(--divider);
         }
         .app-icon {
             font-size: 2.6rem;
@@ -273,13 +351,13 @@
             font-size: 1.65rem;
             font-weight: 700;
             letter-spacing: -0.3px;
-            color: #0f172a;
+            color: var(--text-primary);
             line-height: 1.3;
         }
         .version-badge {
             display: inline-block;
-            background: #eef2ff;
-            color: #1e3a8a;
+            background: var(--badge-accent-bg);
+            color: var(--badge-accent-text);
             font-size: 0.7rem;
             font-weight: 600;
             padding: 0.2rem 0.7rem;
@@ -293,10 +371,10 @@
             gap: 1rem;
             margin-top: 0.7rem;
             font-size: 0.8rem;
-            color: #475569;
+            color: var(--text-secondary);
         }
         .meta-info span {
-            background: #f8fafc;
+            background: var(--surface-muted);
             padding: 0.2rem 0.7rem;
             border-radius: 30px;
             display: inline-flex;
@@ -306,26 +384,31 @@
         .description {
             padding: 1.2rem 1.5rem;
             flex: 1;
-            color: #2d3a4b;
+            color: var(--text-secondary);
             font-size: 0.92rem;
             line-height: 1.5;
-            border-bottom: 1px solid #f1f5f9;
-            background: #fefefe;
+            border-bottom: 1px solid var(--divider);
+            background: var(--description-bg);
         }
         .description p {
             margin: 0;
         }
+        .description .extra-note {
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+        }
         .detail-feature {
             margin-top: 0.6rem;
             font-size: 0.85rem;
-            color: #4b5563;
+            color: var(--text-muted);
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
         }
         .detail-feature i {
             font-style: normal;
-            background: #eef2ff40;
+            background: var(--feature-bg);
             padding: 0.15rem 0.4rem;
             border-radius: 12px;
         }
@@ -340,10 +423,10 @@
         .file-size {
             font-size: 0.8rem;
             font-weight: 500;
-            background: #eef2ff;
+            background: var(--badge-accent-bg);
             padding: 0.3rem 0.9rem;
             border-radius: 36px;
-            color: #075985;
+            color: var(--badge-accent-text);
         }
 
         /* ===== 下载按钮 ===== */
@@ -355,8 +438,8 @@
             gap: 0.45rem;
             padding: 0.9rem 2rem;
             border: none;
-            background: rgba(15, 23, 42, 0.85);
-            color: #f1f1f1;
+            background: var(--button-bg);
+            color: var(--button-text);
             border-radius: 1.5rem;
             font-family: inherit;
             font-weight: 600;
@@ -364,17 +447,17 @@
             letter-spacing: 0.3px;
             line-height: 1;
             cursor: pointer;
-            box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.35);
+            box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.2);
             transition: background 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
         }
         .download-btn:hover {
-            background: rgba(15, 23, 42, 0.7);
+            background: var(--button-hover-bg);
             transform: translateY(-2px);
-            box-shadow: 0 12px 22px -8px rgba(15, 23, 42, 0.5);
+            box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.3);
         }
         .download-btn:active {
             transform: translateY(0) scale(0.97);
-            background: #020617;
+            background: var(--text-secondary);
         }
         .download-btn svg {
             width: 20px;
@@ -391,7 +474,7 @@
             bottom: calc(100% + 10px);
             transform: translateX(-50%) translateY(4px);
             padding: 0.45rem 0.8rem;
-            background: rgba(15, 23, 42, 0.9);
+            background: rgba(26, 26, 26, 0.92);
             color: #f1f1f1;
             font-size: 0.75rem;
             font-weight: 500;
@@ -411,8 +494,8 @@
             text-align: center;
             margin-top: 4rem;
             padding-top: 2rem;
-            border-top: 1px solid #e2e8f0;
-            color: #5b6e8c;
+            border-top: 1px solid var(--border-soft);
+            color: var(--text-muted);
             font-size: 0.85rem;
         }
         .toast-msg {
@@ -503,6 +586,51 @@
 </div>
 <div id="toast" class="toast-msg">🚀 正在跳转下载链接...</div>
 
+<script>
+(function () {
+    const themeStorageKey = 'annie-theme';
+
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+    }
+
+    function readTheme() {
+        try {
+            const savedTheme = localStorage.getItem(themeStorageKey);
+            if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+        } catch (error) {
+            console.warn('无法读取已保存的主题设置。', error);
+        }
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light';
+    }
+
+    applyTheme(readTheme());
+
+    window.addEventListener('message', function (event) {
+        if (event.source !== window.parent || !event.data || event.data.type !== 'annie-theme') return;
+        if (event.data.theme !== 'light' && event.data.theme !== 'dark') return;
+        applyTheme(event.data.theme);
+    });
+
+    window.addEventListener('storage', function (event) {
+        if (event.key === themeStorageKey && (event.newValue === 'light' || event.newValue === 'dark')) {
+            applyTheme(event.newValue);
+        }
+    });
+
+    if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (event) {
+            try {
+                if (!localStorage.getItem(themeStorageKey)) applyTheme(event.matches ? 'dark' : 'light');
+            } catch (error) {
+                console.warn('无法检查已保存的主题设置。', error);
+            }
+        });
+    }
+})();
+</script>
 <script>
     function reverseStr(str) {
         return str.split('').reverse().join('');
@@ -666,7 +794,7 @@
             <g stroke-linejoin="round" stroke-linecap="round" id="SVGRepo_tracerCarrier"></g>
             <g id="SVGRepo_iconCarrier">
                 <g id="Interface / Download">
-                    <path stroke-linejoin="round" stroke-linecap="round" stroke-width="2" stroke="#f1f1f1"
+                    <path stroke-linejoin="round" stroke-linecap="round" stroke-width="2" stroke="currentColor"
                           d="M6 21H18M12 3V17M12 17L17 12M12 17L7 12"></path>
                 </g>
             </g>
@@ -711,7 +839,7 @@
                                     <div class="description">
                                         <p style="font-weight: 600; margin-bottom: 6px;">📌 ${item.shortDesc}</p>
                                         <p style="font-size: 0.88rem; margin-bottom: 8px;">${item.fullDesc}</p>
-                                        ${item.extraNote ? `<p style="font-size: 0.82rem; color: #64748b; margin-bottom: 8px;">${item.extraNote}</p>` : ''}
+                                        ${item.extraNote ? `<p class="extra-note">${item.extraNote}</p>` : ''}
                                         <div class="detail-feature">
                                             ${featuresHtml}
                                         </div>

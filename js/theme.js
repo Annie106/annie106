@@ -21,10 +21,16 @@
         if (btn) {
             btn.setAttribute('aria-label', theme === 'dark' ? '切换到浅色模式' : '切换到深色模式');
         }
+        const embeddedPageFrame = document.getElementById('embeddedPageFrame');
+        if (embeddedPageFrame && embeddedPageFrame.contentWindow) {
+            embeddedPageFrame.contentWindow.postMessage({ type: 'annie-theme', theme: theme }, '*');
+        }
     }
 
     function init() {
         applyTheme(getTheme());
+
+        const embeddedPageFrame = document.getElementById('embeddedPageFrame');
 
         if (btn) {
             btn.addEventListener('click', function () {
