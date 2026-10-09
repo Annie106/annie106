@@ -20,6 +20,7 @@
 │   ├── copyToClipboard.js     # 联系方式复制功能
 │   └── music-player.js        # 旧版播放器脚本（当前首页未加载）
 └── project_subpage/           # 子页面（可根据自己需求来存放）
+    ├── building.html          # 没做完的项目导航到这里
     ├── rh_studio_appeal_guide/
     │   └── index.html         # 误踢申诉指南——RH工作室
     └── rh_studio_studio/

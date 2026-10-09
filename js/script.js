@@ -397,6 +397,7 @@
                 // ================ 二级菜单默认选项 ================
                     const menuItems = articleMenus[p.id] || [
                         { label: '评论', type: 'link', url: 'project_subpage/building.html' },
+                        { label: '反馈', type: 'link', url: 'project_subpage/building.html' },
                     ];
                     const menuLinks = menuItems.map(item => {
                         if (item.type === 'article') {
@@ -549,7 +550,7 @@
                         try {
                             const embeddedDocument = embeddedPageFrame.contentDocument;
                             if (!embeddedDocument || !embeddedDocument.body) {
-                                throw new Error('内嵌页面文档尚未就绪');
+                                throw new Error('加载失败');
                             }
                             embeddedBody = embeddedDocument.body;
                             embeddedRoot = embeddedDocument.documentElement;
@@ -597,16 +598,25 @@
                 }
                 articleReturnView = currentView === 'article' ? 'home' : currentView;
                 articleReturnScroll = window.scrollY;
+                const viewStateSnapshot = {
+                    view: currentView,
+                    articleId: currentArticleId,
+                    tag: activeTag,
+                    scroll: articleReturnScroll,
+                    scrollPositions: {
+                        ...viewScrollPositions,
+                        [currentView]: articleReturnScroll,
+                    },
+                    returnView: articleReturnView,
+                    returnScroll: articleReturnScroll,
+                };
+                history.replaceState({ annieViewSnapshot: viewStateSnapshot }, '', window.location.href);
                 const articleHistoryState = {
                     annieArticleId: post.id,
                     annieReturnView: articleReturnView,
                     annieReturnScroll: articleReturnScroll,
                 };
-                if (articleHistoryEntryActive || (history.state && Number.isInteger(history.state.annieArticleId))) {
-                    history.replaceState(articleHistoryState, '', window.location.href);
-                } else {
-                    history.pushState(articleHistoryState, '', window.location.href);
-                }
+                history.pushState(articleHistoryState, '', window.location.href);
                 articleHistoryEntryActive = true;
                 renderArticle(post);
                 switchView('article');
@@ -720,6 +730,17 @@
 
             window.addEventListener('popstate', function(event) {
                 const state = event.state;
+                const viewSnapshot = state && state.annieViewSnapshot;
+                if (viewSnapshot && VALID_VIEWS.includes(viewSnapshot.view)) {
+                    if (typeof viewSnapshot.tag === 'string' && getAllTags().includes(viewSnapshot.tag)) {
+                        activeTag = viewSnapshot.tag;
+                    }
+                    returningFromArticleButton = false;
+                    articleHistoryEntryActive = false;
+                    restoreViewState(viewSnapshot);
+                    return;
+                }
+
                 const post = state && blogPosts.find(item => item.id === state.annieArticleId);
                 if (post && (!post.externalPage || post.embeddedPage)) {
                     articleHistoryEntryActive = true;
@@ -737,8 +758,8 @@
                 }
 
                 if (!articleHistoryEntryActive && currentView !== 'article') return;
-                const returnView = returningFromArticleButton ? articleReturnView : 'home';
-                const returnScroll = returningFromArticleButton ? articleReturnScroll : 0;
+                const returnView = articleReturnView;
+                const returnScroll = articleReturnScroll;
                 returningFromArticleButton = false;
                 articleHistoryEntryActive = false;
                 switchView(returnView);
