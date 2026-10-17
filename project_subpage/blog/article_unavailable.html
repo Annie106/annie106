@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
-  <title>文章暂不开放 · Annie</title>
+  <title>Annie · 文章暂不开放</title>
   <link rel="icon" type="image/svg+xml" href="../../favicon.svg">
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
   <script>
@@ -19,16 +19,76 @@
           ? savedTheme
           : (systemPrefersDark ? 'dark' : 'light')
       );
+
+      // 只有「单独打开这个页面」时才打上 is-standalone：
+      // 被嵌进文章（iframe）时保持纯内容高度，绝不能用 100vh 去撑，
+      // 否则外层量到的高度会包含 iframe 自身高度，越撑越高。
+      try {
+        const inFrame = window.parent !== window || window.frameElement;
+        if (!inFrame) {
+          document.documentElement.classList.add('is-standalone');
+        }
+      } catch (e) {
+        // 跨域读取 frameElement 会抛错，说明确实在 iframe 里，不做处理
+      }
     })();
   </script>
   <link rel="stylesheet" href="../../css/style.css">
   <style>
+    /* ==================== 内嵌页面样式 ==================== */
+    /* 作为 iframe 嵌入文章时，这里必须清掉站点样式表里的
+       body { min-height: 100vh; display: flex; padding: 0 24px }，
+       否则内嵌页面会被撑到 iframe 自身的高度：外层量到的高度里包含了
+       那个 100vh，iframe 一变高、100vh 又跟着变大，于是越撑越高、
+       内容一直在往上跑，卡片上下也会空出一整屏。 */
+    html,
+    body {
+      box-sizing: border-box;
+      margin: 0 !important;
+      padding: 0 !important;
+      min-height: 0 !important;
+      height: auto !important;
+      display: block !important;
+      overflow-x: hidden;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    /* iOS 在 iframe / 横屏下会自动放大文字，导致内嵌页面字号突然变大、
+       排版被撑破，这里强制按 CSS 尺寸显示 */
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    /* 站点样式表里的 body::before 是给外层页面用的「顶部渐变虚化」层：
+       position: fixed + backdrop-filter，会盖在内嵌内容最上面 150px，
+       把卡片顶部糊成一片灰白，这里必须关掉 */
+    body::before,
+    body::after {
+      content: none !important;
+      display: none !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+
     .unavailable-page {
-      flex: 1;
       display: grid;
       place-items: center;
       width: 100%;
-      padding: 48px 0 72px;
+      padding: 40px 24px 48px;
+    }
+
+    /* body 的左右 padding 被清掉了，这里把主容器重新居中，
+       保证单独打开页面时版心不会贴到左边 */
+    .main-container {
+      margin: 0 auto;
+    }
+
+    /* 单独打开这个页面（不是被嵌入）时，让卡片垂直居中。
+       默认不撑满视口：嵌入文章时必须严格按内容高度，不能被 100vh 顶住。 */
+    html.is-standalone .unavailable-page {
+      min-height: 100vh;
     }
 
     .unavailable-card {
@@ -78,7 +138,15 @@
       line-height: 1.8;
     }
 
-    .unavailable-home-link {
+    .unavailable-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .unavailable-action {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -96,16 +164,29 @@
         color var(--transition-fast), transform var(--transition-fast);
     }
 
-    .unavailable-home-link:hover {
+    .unavailable-action:hover {
       border-color: var(--color-accent-hover);
       background: var(--color-accent-hover);
       color: var(--color-bg);
       transform: translateY(-1px);
     }
 
-    .unavailable-home-link:focus-visible {
+    .unavailable-action:focus-visible {
       outline: 2px solid var(--color-accent);
       outline-offset: 4px;
+    }
+
+    /* 次级按钮（描边款），需要时给次要操作加 .is-secondary */
+    .unavailable-action.is-secondary {
+      border-color: var(--color-border);
+      background: transparent;
+      color: var(--color-text-secondary);
+    }
+
+    .unavailable-action.is-secondary:hover {
+      border-color: var(--color-text-tertiary);
+      background: var(--color-bg);
+      color: var(--color-text-primary);
     }
 
     @keyframes unavailableEnter {
@@ -114,14 +195,16 @@
     }
 
     @media (max-width: 480px) {
-      .unavailable-page { padding: 32px 0 56px; }
+      /* 水平内边距不能去掉：body 的 24px padding 已经被清掉了，
+         这里再归零卡片就会贴到屏幕边缘 */
+      .unavailable-page { padding: 28px 16px 36px; }
       .unavailable-card { padding: 36px 24px; }
       .unavailable-title { font-size: 1.375rem; }
     }
 
     @media (prefers-reduced-motion: reduce) {
       .unavailable-card { animation: none; }
-      .unavailable-home-link { transition: none; }
+      .unavailable-action { transition: none; }
     }
   </style>
 </head>
@@ -132,16 +215,47 @@
         <div class="unavailable-icon" aria-hidden="true">
           <i class="ri-lock-2-line"></i>
         </div>
-        <p class="unavailable-label">暂未开放</p>
+        <p class="unavailable-label">拒绝访问</p>
         <h1 class="unavailable-title" id="unavailableTitle">当前文章不对外开放</h1>
-        <p class="unavailable-description">这篇文章目前暂不对外开放，感谢你的理解。</p>
-        <a href="../../index.html" class="unavailable-home-link">
-          <i class="ri-arrow-left-line" aria-hidden="true"></i>
-          返回博客
-        </a>
+        <p class="unavailable-description">这篇文章正在构建中，暂时无法查看，感谢你的理解。</p>
+        <div class="unavailable-actions">
+          <a href="feedback.html" class="unavailable-action" id="unavailableFeedbackLink" target="_top">
+            <i class="ri-feedback-line" aria-hidden="true"></i>
+            意见反馈
+          </a>
+        </div>
       </section>
     </main>
   </div>
   <script src="../../js/theme.js"></script>
+  <script>
+    (function () {
+      // 反馈链接带上文章 id 和标题，反馈页会显示「反馈的文章：xxx」，
+      // 方便定位是哪篇文章出的问题。
+      const feedbackLink = document.getElementById('unavailableFeedbackLink');
+      if (!feedbackLink) return;
+
+      const params = new URLSearchParams(window.location.search);
+      // 被嵌进文章时，文章信息在父页面那边，从父页面地址栏 / 标题里取
+      let articleId = params.get('article');
+      let articleTitle = params.get('title');
+      try {
+        if (window.parent !== window) {
+          const parentParams = new URLSearchParams(window.parent.location.search);
+          articleId = articleId || parentParams.get('article');
+          articleTitle = articleTitle || parentParams.get('title');
+          if (!articleTitle) {
+            const parentTitle = window.parent.document.getElementById('articleTitle');
+            articleTitle = parentTitle ? parentTitle.textContent.trim() : '';
+          }
+        }
+      } catch (e) { /* 跨域时读不到父页面，就用当前地址里的参数 */ }
+
+      const target = new URL(feedbackLink.getAttribute('href'), window.location.href);
+      if (articleId) target.searchParams.set('article', articleId);
+      if (articleTitle) target.searchParams.set('title', articleTitle);
+      feedbackLink.href = target.href;
+    })();
+  </script>
 </body>
 </html>

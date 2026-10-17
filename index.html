@@ -221,19 +221,24 @@
             </button>
         </div>
 
+            <section class="article-unavailable-notice" id="articleUnavailableNotice" aria-label="文章暂不开放提示" hidden>
+                <div id="articleUnavailableMount"></div>
+            </section>
             <h1 class="article-full-title" id="articleTitle"></h1>
             <div class="article-full-meta" id="articleMeta"></div>
             <div class="article-content" id="articleContent"></div>
-            <div class="embedded-article-wrap" id="embeddedArticleWrap" hidden>
-                <div class="embedded-article-loading" id="embeddedArticleLoading" role="status" aria-live="polite">
-                    <span class="embedded-article-spinner" aria-hidden="true"></span>
-                    <span class="embedded-article-loading-text">正在加载页面…</span>
+            <div id="embeddedArticleNormalMount">
+                <div class="embedded-article-wrap" id="embeddedArticleWrap" hidden>
+                    <div class="embedded-article-loading" id="embeddedArticleLoading" role="status" aria-live="polite">
+                        <span class="embedded-article-spinner" aria-hidden="true"></span>
+                        <span class="embedded-article-loading-text">正在加载页面…</span>
+                    </div>
+                    <iframe
+                        class="embedded-article-frame"
+                        id="embeddedPageFrame"
+                        title="文章内嵌页面"
+                    ></iframe>
                 </div>
-                <iframe
-                    class="embedded-article-frame"
-                    id="embeddedPageFrame"
-                    title="文章内嵌页面"
-                ></iframe>
             </div>
             <hr class="divider-thin">
             <span class="back-link" id="backBtn2"><i class="ri-arrow-left-line"></i> 返回</span>
@@ -241,7 +246,7 @@
 
         <!-- ==================== 页脚 ==================== -->
         <footer class="site-footer">
-            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.19.196</p>
+            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.19.200</p>
         </footer>
     </div>
 

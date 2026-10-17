@@ -694,7 +694,13 @@
   // 从 URL 读取文章信息
   const urlParams = new URLSearchParams(window.location.search);
   const articleId = urlParams.get('article');
-  const articleTitle = decodeURIComponent(urlParams.get('title'));
+  // URLSearchParams.get() 已经解过一次码了，这里只在确实是转义串时再解一次；
+  // 标题里带 % 号时直接 decodeURIComponent 会抛错，导致整段脚本中断。
+  const rawTitle = urlParams.get('title') || '';
+  let articleTitle = rawTitle;
+  if (/%[0-9a-fA-F]{2}/.test(rawTitle)) {
+    try { articleTitle = decodeURIComponent(rawTitle); } catch (e) { articleTitle = rawTitle; }
+  }
 
   if (articleId) {
     articleIdInput.value = articleId;

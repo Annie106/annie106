@@ -201,6 +201,9 @@
             const articleTitle = $('#articleTitle');
             const articleMeta = $('#articleMeta');
             const articleContent = $('#articleContent');
+            const articleUnavailableNotice = $('#articleUnavailableNotice');
+            const articleUnavailableMount = $('#articleUnavailableMount');
+            const embeddedArticleNormalMount = $('#embeddedArticleNormalMount');
             const embeddedPageFrame = $('#embeddedPageFrame');
             const embeddedArticleWrap = $('#embeddedArticleWrap');
             const backBtn = $('#backBtn');
@@ -213,6 +216,9 @@
             let embeddedPageObserver = null;
             let embeddedPageResizeHandler = null;
             let embeddedPageFallbackTimer = null;
+            // 上一次量出的 iframe 高度：内容没变就不重复写 height，
+            // 避免「改高度 → 触发 ResizeObserver → 再改高度」的循环
+            let embeddedFrameHeight = 0;
             let articleReturnView = 'home';
             let articleReturnScroll = 0;
             let articleHistoryEntryActive = false;
@@ -410,16 +416,6 @@
                 return post.isPublic !== false;
             }
 
-            function openUnavailableArticle(replaceCurrentPage) {
-                saveViewState();
-                const url = new URL('project_subpage/blog/article_unavailable.html', window.location.href);
-                if (replaceCurrentPage) {
-                    window.location.replace(url.href);
-                } else {
-                    window.location.href = url.href;
-                }
-            }
-
             function restoreViewState(state) {
                 if (!state) return false;
                 if (typeof state.returnView === 'string' && VALID_VIEWS.includes(state.returnView)) {
@@ -430,13 +426,7 @@
                 const post = state.view === 'article'
                     ? blogPosts.find(p => p.id === state.articleId)
                     : null;
-                if (post && !isArticlePublic(post)) {
-                    articleHistoryEntryActive = false;
-                    switchView('home');
-                    openUnavailableArticle(true);
-                    return true;
-                }
-                if (post && (!post.externalPage || post.embeddedPage)) {
+                if (post && (!post.externalPage || post.embeddedPage || !isArticlePublic(post))) {
                     articleHistoryEntryActive = true;
                     renderArticle(post);
                     switchView('article');
@@ -513,7 +503,11 @@
                 if (!frameWindow || event.source !== frameWindow) return;
                 const height = Number(data.height);
                 if (!isFinite(height) || height <= 0) return;
-                embeddedPageFrame.style.height = `${Math.ceil(height) + 2}px`;
+                const contentHeight = Math.ceil(height);
+                // 和内层量到的一致就不再重复写 height，避免来回振荡
+                if (contentHeight === embeddedFrameHeight) return;
+                embeddedFrameHeight = contentHeight;
+                embeddedPageFrame.style.height = `${contentHeight}px`;
                 revealEmbeddedPage();
             });
 
@@ -734,21 +728,35 @@
             }
 
             function renderArticle(post) {
-                if (!isArticlePublic(post)) {
-                    articleContent.replaceChildren();
-                    openUnavailableArticle(true);
-                    return;
-                }
                 currentArticleId = post.id;
+                const isUnavailableArticle = !isArticlePublic(post);
+                articleTitle.hidden = isUnavailableArticle;
+                articleMeta.hidden = isUnavailableArticle;
+                articleUnavailableNotice.hidden = !isUnavailableArticle;
+                articleShare.hidden = isUnavailableArticle;
                 articleTitle.textContent = post.title;
-                articleMeta.innerHTML = `
+                articleMeta.innerHTML = isUnavailableArticle ? '' : `
                     <span><i class="ri-calendar-line"></i> ${post.date}</span>
                     ${post.tags.map(t => `<span class="post-tag">${t}</span>`).join(' ')}
                 `;
-                const isEmbeddedPage = Boolean(post.embeddedPage);
-                articleContent.hidden = isEmbeddedPage;
+                const embeddedPage = isUnavailableArticle
+                    ? 'project_subpage/blog/article_unavailable.html'
+                    : post.embeddedPage;
+                const isEmbeddedPage = Boolean(embeddedPage);
+                articleContent.hidden = isUnavailableArticle || isEmbeddedPage;
                 embeddedArticleWrap.hidden = !isEmbeddedPage;
-                articleContent.innerHTML = post.content || '';
+                const embeddedMount = isUnavailableArticle
+                    ? articleUnavailableMount
+                    : embeddedArticleNormalMount;
+                if (embeddedArticleWrap.parentElement !== embeddedMount) {
+                    embeddedMount.appendChild(embeddedArticleWrap);
+                }
+                embeddedPageFrame.title = isUnavailableArticle
+                    ? '当前文章不对外开放'
+                    : '文章内嵌页面';
+                articleContent.innerHTML = isUnavailableArticle ? '' : (post.content || '');
+                // 换了文章就重新开始量高度，否则会沿用上一篇记下的旧值
+                embeddedFrameHeight = 0;
                 if (embeddedPageObserver) {
                     embeddedPageObserver.disconnect();
                     embeddedPageObserver = null;
@@ -825,8 +833,13 @@
                         const resizeFrame = () => {
                             window.requestAnimationFrame(() => {
                                 // 只按下限 120px 兜底，保证 iframe 始终贴合真实内容，
-                                // 底部不再出现大片空白
-                                const contentHeight = Math.ceil(Math.max(measureContentHeight(), 120)) + 2;
+                                // 底部不再出现大片空白。
+                                // 不要再往量到的高度上加余量：内嵌页如果把自己的
+                                // 高度当成 iframe 高度（比如还带着 100vh），多出的
+                                // 几像素会被下一轮重新量进去，越滚越大。
+                                const contentHeight = Math.max(Math.ceil(measureContentHeight()), 120);
+                                if (contentHeight === embeddedFrameHeight) return;
+                                embeddedFrameHeight = contentHeight;
                                 embeddedPageFrame.style.height = `${contentHeight}px`;
                                 revealEmbeddedPage();
                             });
@@ -840,7 +853,7 @@
                         embeddedPageResizeHandler = resizeFrame;
                         window.addEventListener('resize', embeddedPageResizeHandler);
                     };
-                    if (!setFrameSource(embeddedPageFrame, post.embeddedPage) && embeddedPageFrame.contentWindow) {
+                    if (!setFrameSource(embeddedPageFrame, embeddedPage) && embeddedPageFrame.contentWindow) {
                         // 已经停在这个内嵌页面上，补跑一次初始化
                         embeddedPageFrame.onload();
                     }
@@ -856,11 +869,7 @@
             function openArticle(id) {
                 const post = blogPosts.find(p => p.id === id);
                 if (!post) return;
-                if (!isArticlePublic(post)) {
-                    openUnavailableArticle(false);
-                    return;
-                }
-                if (post.externalPage && !post.embeddedPage) {
+                if (isArticlePublic(post) && post.externalPage && !post.embeddedPage) {
                     // 记住当前界面，返回时才能回到原处
                     saveViewState();
                     window.location.href = post.externalPage;
@@ -1022,13 +1031,7 @@
                 }
 
                 const post = state && blogPosts.find(item => item.id === state.annieArticleId);
-                if (post && !isArticlePublic(post)) {
-                    articleHistoryEntryActive = false;
-                    switchView('home');
-                    openUnavailableArticle(true);
-                    return;
-                }
-                if (post && (!post.externalPage || post.embeddedPage)) {
+                if (post && (!post.externalPage || post.embeddedPage || !isArticlePublic(post))) {
                     articleHistoryEntryActive = true;
                     articleReturnView = typeof state.annieReturnView === 'string'
                         && ['home', 'blog', 'movie', 'about'].includes(state.annieReturnView)
@@ -1102,12 +1105,7 @@
                 const urlPost = urlArticleId === null
                     ? null
                     : blogPosts.find(p => p.id === urlArticleId);
-                if (urlPost && !isArticlePublic(urlPost)) {
-                    switchView('home');
-                    openUnavailableArticle(true);
-                    return;
-                }
-                if (urlPost && isArticlePublic(urlPost) && (!urlPost.externalPage || urlPost.embeddedPage)) {
+                if (urlPost && (!urlPost.externalPage || urlPost.embeddedPage || !isArticlePublic(urlPost))) {
                     articleReturnView = 'home';
                     articleReturnScroll = 0;
                     // 直接进入的文章没有可回退的站内记录，标记为未激活，

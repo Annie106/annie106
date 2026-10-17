@@ -1170,7 +1170,7 @@
                     <li><code>tags</code>：标签，用来看筛选按钮，可以有多个，写成 <code>['随笔', '阅读']</code></li>
                     <li><code>pinned</code>：写 <code>true</code> 就是置顶</li>
                     <li><code>featured</code>：<code>true</code> 显示在首页，<code>false</code> 只在文章页显示</li>
-                    <li><code>isPublic</code>：可选。设为 <code>false</code> 后，点文章或打开文章直达链接会跳到 <code>project_subpage/blog/article_unavailable.html</code>；改为 <code>true</code> 或删掉此字段即可重新开放。没有设置时默认开放</li>
+                    <li><code>isPublic</code>：可选。设为 <code>false</code> 后，文章详情区域会显示“当前文章不对外开放”，并隐藏文章标题、元信息和正文；改为 <code>true</code> 或删掉此字段即可重新开放。没有设置时默认开放</li>
                     <li><code>content</code>：正文，写在反引号（键盘左上角 <span class="guide-kbd">`</span> 那个键）中间，可以用 <code>&lt;p&gt;</code> 分段、<code>&lt;h2&gt;</code> 加小标题</li>
                     <li><code>embeddedPage</code>：填相对路径如 <code>'project_subpage/projects/xxx/index.html'</code>，这篇文章会把那个网页嵌进来显示</li>
                     <li><code>externalPage</code>：填路径，点文章直接跳过去。跟上面那个二选一</li>
@@ -1182,7 +1182,7 @@
                         <i class="ri-lock-line"></i>
                         暂停展示不等于保密
                     </div>
-                    <p><code>isPublic: false</code> 会阻止文章显示在站内文章页，并把访客带到提示页；正文不会插入前端页面 DOM。可是这是静态博客，文章数据仍在公开的 <code>js/script.js</code> 文件中，访客仍可能查看源码。因此这个开关只是控制页面展示，不能用来保护敏感或机密内容。</p>
+                    <p><code>isPublic: false</code> 会在文章详情区域显示未开放提示，并且不把正文插入前端页面 DOM。可是这是静态博客，文章数据仍在公开的 <code>js/script.js</code> 文件中，访客仍可能查看源码。因此这个开关只是控制页面展示，不能用来保护敏感或机密内容。</p>
                 </div>
 
                 <div class="guide-warning">
@@ -1215,7 +1215,7 @@
                     <i class="ri-share-line"></i>
                     6.7 把文章分享给别人
                 </h3>
-                <p>每篇开放文章都有一个专属链接，形式是 <code>你的网址/?article=文章id</code>。别人打开这个链接，会直接看到那篇文章，不用自己去找。把 <code>isPublic</code> 设为 <code>false</code> 的文章会跳转到未开放提示页，而不会显示正文。</p>
+                <p>每篇文章都有一个专属链接，形式是 <code>你的网址/?article=文章id</code>。别人打开这个链接，会直接进入对应文章详情。把 <code>isPublic</code> 设为 <code>false</code> 的文章会显示未开放提示，而不会显示正文。</p>
                 <p>拿到链接有两种办法：</p>
                 <ul>
                     <li><strong>文章里点「分享」</strong>：打开文章后，标题上方有一个「分享」按钮。手机点它会唤起系统分享面板（微信、QQ 等），电脑点它会直接把链接复制到剪贴板，然后右上角弹出提示。</li>
@@ -1228,7 +1228,7 @@
                         链接里的数字就是文章 id
                     </div>
                     <p><code>?article=10</code> 里的 <code>10</code> 就是文章数据里的 <code>id</code>。所以<strong>改 id 会让已经发出去的链接失效</strong>——想改文章内容就改标题和正文，别动 <code>id</code>。</p>
-                    <p>如果链接里的 id 不存在（文章被删了），页面会自动回到首页并清掉地址栏里的参数；如果文章设为未开放，则会跳转到 <code>project_subpage/blog/article_unavailable.html</code>。</p>
+                    <p>如果链接里的 id 不存在（文章被删了），页面会自动回到首页并清掉地址栏里的参数；如果文章设为未开放，则会在文章详情区域显示未开放提示。</p>
                 </div>
 
                 <div class="guide-warning">

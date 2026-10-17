@@ -925,6 +925,10 @@
             cursor: pointer;
             transition: var(--transition-fast);
         }
+        .article-share[hidden],
+        .article-full-meta[hidden] {
+            display: none;
+        }
         .article-share i {
             font-size: 0.95rem;
         }
@@ -957,6 +961,13 @@
         .article-full-meta,
         .article-content {
             max-width: 860px;
+        }
+        .article-unavailable-notice {
+            max-width: 860px;
+            margin: 24px auto 32px;
+        }
+        .article-unavailable-notice[hidden] {
+            display: none;
         }
         .article-content {
             font-family: var(--font-serif);
@@ -1038,6 +1049,8 @@
             .embedded-article-loading {
                 transition: none;
             }
+        }
+        @media (max-width: 480px) {
         }
         .article-content p {
             font-family: var(--font-sans);
