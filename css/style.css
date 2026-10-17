@@ -444,6 +444,33 @@
             align-items: stretch;
             gap: 18px;
         }
+        .home-loading {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 32px 0;
+            color: var(--color-text-tertiary);
+            font-size: 0.86rem;
+        }
+        .home-loading-spinner {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 18px;
+            border: 2px solid var(--color-border);
+            border-top-color: var(--color-text-primary);
+            border-radius: 50%;
+            animation: homeLoadingSpin 0.8s linear infinite;
+        }
+        @keyframes homeLoadingSpin {
+            to { transform: rotate(360deg); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .home-loading-spinner {
+                animation: none;
+            }
+        }
         .post-card-enter {
             animation: postCardEnter 0.28s ease both;
         }
