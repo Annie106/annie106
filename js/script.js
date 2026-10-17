@@ -2,22 +2,15 @@
             // ==================== ★★★ 在这里修改你的博客内容 ★★★ ====================
             // 所有文章数据都集中在这个数组里，增删改都非常方便。
             const blogPosts = [{
-                id: 10,
+                id: 11,
                 pinned: false,
-                title: '使用、修改和部署这个博客的操作指南',
-                date: '2026-10-16',
-                excerpt: '从零开始构建个人博客的完整教程，包含配置、部署和进阶技巧',
-                tags: ['教程', '指南'],
+                title: '归宿里的两帧：和朋友的拍归宿照',
+                date: '2026-10-18',
+                excerpt: '我很少在游戏里拍照，不是不喜欢，是总觉得镜头里缺点什么...直到有人愿意站在里面，陪我一起等光。',
+                tags: ['第五人格', '随笔', '社交'],
                 featured: true,
-                embeddedPage: 'project_subpage/blog/guide.html',
-            }, {
-                id: 9,
-                title: '直链下载',
-                date: '2026-10-07',
-                excerpt: '直链下载页面',
-                tags: ['直链下载'],
-                featured: false,
-                embeddedPage: 'project_subpage/projects/download/index.html',
+                // 独立页面，作为文章正文内嵌展示（照片、排版都在这个文件里）
+                embeddedPage: 'project_subpage/blog/manor_photo.html',
             }, {
                 id: 8,
                 pinned: true,
@@ -36,14 +29,32 @@
                         <h2>免责声明</h2>
                         <p>本文仅针对极个别群体，通常情况下，不会是你的。如果有任何不满，可以向我提出相关意见。</p>
                     `,
+            }, {                
+                id: 10,
+                pinned: true,
+                title: '使用、修改和部署这个博客的操作指南',
+                date: '2026-10-16',
+                excerpt: '从零开始构建个人博客的完整教程，包含配置、部署和进阶技巧',
+                tags: ['教程', '指南', '置顶'],
+                featured: true,
+                embeddedPage: 'project_subpage/blog/guide.html',
             }, {
+                id: 9,
+                title: '直链下载',
+                date: '2026-10-07',
+                excerpt: '直链下载页面',
+                tags: ['直链下载'],
+                featured: false,
+                embeddedPage: 'project_subpage/projects/download/index.html',
+            }, {
+
                 id: 7,
                 // 这是置顶文章模板，直接修改下面的标题、摘要和正文即可
-                pinned: true,
+                pinned: false,
                 title: '我的其它网站',
                 date: '2026-09-23',
                 excerpt: '有视频网站、直链下载站等',
-                tags: ['置顶'],  
+                tags: ['网站'],  
                 content: `
                         <p>视频站</p>
                         <p><a href="https://annie106.github.io/annie106/movie.html" target="_blank" rel="noopener noreferrer">https://annie106.github.io/annie106/movie.html</a></p>

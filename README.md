@@ -12,6 +12,8 @@
 ├── movie.html                 # 独立视频播放页，视频列表配置在 VIDEO_LIST 数组
 ├── favicon.svg                # 网站图标
 ├── share_cover.jpg            # 分享卡片封面（微信/QQ 链接预览用，1080×1080）
+├── images/                    # 图片目录
+│   └── manor_photos/          # 我的归宿照图集，文章 id 11 用的就是它
 ├── css/
 │   └── style.css              # 博客样式及响应式布局
 ├── js/
@@ -26,7 +28,8 @@
 │   │   ├── article_unavailable.html # 未开放文章的提示页
 │   │   ├── feedback.html      # 反馈表单，提交后跳到 thanks.html
 │   │   ├── thanks.html        # 反馈提交成功页
-│   │   └── guide.html         # 博客使用指南（自己生成）
+│   │   ├── guide.html         # 博客使用指南（自己生成）
+│   │   └── manor_photo.html   # 第五人格归宿照图文页（内嵌在文章 id 11，照片在根目录 images/manor_photos/）
 │   └── projects/              # 自己的项目页
 │       ├── appeal-guide/
 │       │   └── index.html     # 误踢申诉指南——RH工作室（自己生成）
@@ -61,11 +64,15 @@
 
 ## 修改内容
 
-- **个人资料和页面文字**：编辑 `index.html`，包括姓名、简介、所在地、职业、头像、社交联系方式及关于页面内容。首页"最新文章"标签筛选默认为 `置顶 / 社交 / 阅读 / 随笔`，可在 `js/script.js` 的 `renderTagPills` 中调整。
+- **个人资料和页面文字**：编辑 `index.html`，包括姓名、简介、所在地、职业、头像、社交联系方式及关于页面内容。首页"最新文章"标签筛选默认为 `置顶 / 社交 / 阅读 / 随笔 / 第五人格`，可在 `js/script.js` 的 `renderTagPills` 中调整。
 - **文章**：编辑 `js/script.js` 中的 `blogPosts` 数组。文章可设置标题、日期、摘要、标签和 HTML 正文；将 `pinned` 设为 `true` 可置顶。设 `isPublic: false` 时，文章详情会嵌入 `project_subpage/blog/article_unavailable.html`；如需修改未开放提示的内容和样式，直接编辑该文件即可。文章标题、元信息和正文会隐藏；改为 `true` 或删除该字段即可恢复开放。此开关只控制页面显示，不是安全措施：静态站点的文章正文仍可从公开的 `js/script.js` 源码中读取。`embeddedPage` 可将独立 HTML 页面嵌入博客文章详情（自动调整高度并适配深色模式）；`externalPage` 可配置跳转到独立页面。卡片二级菜单统一配置在 `articleMenus` 中，以文章 `id` 为键；未单独配置的文章默认显示“复制文章链接”“查看评论”和“问题反馈”三个选项。菜单项支持：
   - `article`：打开站内文章详情
   - `externalPage`：打开该文章数据中的 `externalPage` 链接
   - `link`：打开指定的 URL 或 HTML 页面
+- **归宿照图文页**：`project_subpage/blog/manor_photo.html`（文章 id 11，通过 `embeddedPage` 内嵌）。照片放在根目录的 `images/manor_photos/`（`manor_01.jpg` / `manor_02.jpg`），页面里写相对路径 `../../images/manor_photos/xxx.jpg`。换照片只需改这个文件里两个 `<img>` 的 `src`，并把新图放进 `images/manor_photos/`（建议长边 1600px 左右、JPEG 质量 85、单张不超过 500KB）。`alt` 顺手改掉。字体与字号跟博客正文一致（`--font-sans` / 1.05rem / 1.78）。页面用 `is-embedded` 标记判断是否处于 iframe 中：内嵌时自动隐藏页内大标题（避免和文章标题重复）、内容列左对齐到文章标题，独立打开时显示完整刊头。
+
+  - 点击照片在当前页放大，**再点一下图片**（或按 `Esc`、点背景、点右上角 ×）退出，不会跳新标签页。内嵌时 iframe 高度等于整篇文章高度，`position: fixed` 的「视口」是整块 iframe，会把预览层拉成超高的遮罩还盖不住顶部导航，所以脚本会把预览层连同 `#manorLightboxStyles` 整块搬到父文档，用父页面视口定位。改这段时注意别删掉 `id="manorLightboxStyles"`，否则内嵌后预览层没有样式。
+
 - **分享文章**：每篇文章的链接形式为 `index.html?article=<id>`。打开文章时地址栏会自动带上该参数，返回列表时自动清除；开放文章页顶部有「分享」按钮（微信内先复制链接并弹出引导浮层，其它移动端唤起系统分享面板，桌面端复制链接），卡片「⋯」菜单里也有「复制文章链接」。未开放文章的直达链接会在文章区域显示提示。链接中的 `id` 不存在时会清掉参数并回到首页。**改动文章 `id` 会使已分享的链接失效。**
 
   > **为什么微信里不能一键分享？** 微信内置浏览器不实现 Web Share API，也没有任何公开接口能让网页主动弹出「分享给朋友」面板。官方微信 JS-SDK 只能**配置**分享卡片的标题、摘要和缩略图，真正发起分享仍需用户手动点右上角「···」；且 JS-SDK 要求认证公众号、HTTPS 域名以及后端签名服务（用 `appId` + `secret` 换 `jsapi_ticket`），纯静态的 GitHub Pages 站点无法满足。所以本站采用「复制链接 + 引导浮层」的方案。

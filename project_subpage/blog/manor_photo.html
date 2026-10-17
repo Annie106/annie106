@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <title>Annie · 归宿里的两帧</title>
+    <link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css">
+    <script>
+        (function () {
+            // 尽早决定主题，避免内嵌时先白后黑的闪烁
+            var saved = null;
+            try { saved = localStorage.getItem('annie-theme'); } catch (e) {}
+            var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.setAttribute(
+                'data-theme',
+                saved === 'light' || saved === 'dark' ? saved : (dark ? 'dark' : 'light')
+            );
+
+            // 嵌进博客文章时，外层已经显示过文章标题了，
+            // 这里再放一个大标题就成了重复的两行字。
+            // 给根节点加个标记，由 CSS 把标题收起来，只留引言。
+            try {
+                if (window.self !== window.top) {
+                    document.documentElement.classList.add('is-embedded');
+                }
+            } catch (e) {
+                document.documentElement.classList.add('is-embedded');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="../../css/style.css">
+    <style>
+        /* ==========================================================
+           作为 iframe 嵌进文章时，必须清掉站点样式表里的
+           body { min-height: 100vh; display: flex; padding: 0 24px }
+           否则内嵌页会被撑到视口高度，文章底部留一大块空白。
+           ========================================================== */
+        html, body {
+            box-sizing: border-box;
+            margin: 0 !important;
+            padding: 0 !important;
+            min-height: 0 !important;
+            height: auto !important;
+            display: block !important;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        /* iOS 在 iframe 里会自动放大字号，这里锁死按 CSS 尺寸渲染 */
+        html {
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        /* 站点样式表的 body::before 是给外层页面用的顶部虚化层，
+           position: fixed + backdrop-filter 会糊住内嵌内容的顶部 */
+        body::before,
+        body::after {
+            content: none !important;
+            display: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+
+        /* ==================== 文章主题变量 ==================== */
+        .manor-article {
+            --manor-max: 880px;
+            --manor-wide: 1000px;
+            --manor-gap: clamp(28px, 5vw, 56px);
+            --manor-ink: var(--color-text-primary);
+            --manor-ink-soft: var(--color-text-secondary);
+            --manor-ink-faint: var(--color-text-tertiary);
+            --manor-line: var(--color-border);
+            --manor-paper: var(--color-surface);
+            /* 字体跟博客正文完全一致：文章段落用的是 --font-sans，
+               这里显式带上同样的 fallback，样式表没加载时也不会掉成衬线 */
+            --manor-font: var(--font-sans, 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif);
+
+            width: 100%;
+            max-width: var(--manor-wide);
+            margin: 0 auto;
+            padding: clamp(12px, 3vw, 28px) clamp(16px, 4vw, 32px) clamp(28px, 5vw, 56px);
+            color: var(--manor-ink);
+            font-family: var(--manor-font);
+            /* 和 css/style.css 里 .article-content 的字号、行高、字距对齐 */
+            font-size: 1.05rem;
+            line-height: 1.78;
+            letter-spacing: -0.01em;
+            overflow-wrap: anywhere;
+        }
+
+        .manor-article *,
+        .manor-article *::before,
+        .manor-article *::after {
+            box-sizing: border-box;
+        }
+
+        /* ==================== 刊头 ==================== */
+        .manor-hero {
+            max-width: var(--manor-max);
+            margin: 0 auto;
+            padding: clamp(8px, 2vw, 20px) 0 clamp(24px, 4vw, 36px);
+            text-align: center;
+        }
+
+        .manor-eyebrow {
+            margin: 0 0 18px;
+            color: var(--manor-ink-faint);
+            font-family: var(--manor-font);
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+        }
+
+        .manor-eyebrow .dot {
+            display: inline-block;
+            width: 3px;
+            height: 3px;
+            margin: 0 10px 3px;
+            border-radius: 50%;
+            background: currentColor;
+            vertical-align: middle;
+        }
+
+        .manor-title {
+            margin: 0 0 18px;
+            font-family: var(--manor-font);
+            font-size: clamp(1.75rem, 1.25rem + 2.1vw, 2.4rem);
+            font-weight: 700;
+            line-height: 1.28;
+            letter-spacing: -0.02em;
+        }
+
+        .manor-lead {
+            max-width: 30em;
+            margin: 0 auto;
+            color: var(--manor-ink-soft);
+            font-size: clamp(0.98rem, 0.94rem + 0.2vw, 1.08rem);
+            line-height: 2;
+        }
+
+        .manor-rule {
+            width: 100%;
+            max-width: var(--manor-max);
+            height: 1px;
+            margin: 0 auto;
+            border: 0;
+            background: var(--manor-line);
+        }
+
+        .manor-meta {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px clamp(18px, 4vw, 34px);
+            margin: clamp(22px, 4vw, 30px) auto 0;
+            padding: 0;
+            list-style: none;
+            color: var(--manor-ink-faint);
+            font-family: var(--manor-font);
+            font-size: 0.78rem;
+            letter-spacing: 0.06em;
+        }
+
+        .manor-meta li {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 7px;
+        }
+
+        .manor-meta .k {
+            color: var(--manor-ink-faint);
+            font-size: 0.7rem;
+            letter-spacing: 0.14em;
+        }
+
+        .manor-meta .v {
+            color: var(--manor-ink-soft);
+            letter-spacing: 0.04em;
+        }
+
+        /* 嵌入博客文章时：外层已经渲染了文章大标题，
+           内嵌页只保留眉题和引言，避免同屏出现两个标题。
+           同时把内容列对齐到外层标题的左边缘、同一宽度，
+           否则标题靠左、正文居中，看起来像两块拼在一起。 */
+        .is-embedded .manor-article {
+            --manor-max: 860px;
+            --manor-wide: 860px;
+            margin-left: 0;
+            margin-right: 0;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        .is-embedded .manor-title {
+            display: none;
+        }
+
+        .is-embedded .manor-hero {
+            padding-top: clamp(4px, 1.5vw, 12px);
+            padding-bottom: clamp(20px, 3vw, 28px);
+            text-align: left;
+        }
+
+        .is-embedded .manor-eyebrow {
+            margin-bottom: 14px;
+        }
+
+        .is-embedded .manor-lead {
+            margin-left: 0;
+            margin-right: 0;
+            max-width: none;
+        }
+
+        .is-embedded .manor-meta {
+            justify-content: flex-start;
+            margin-top: clamp(18px, 3vw, 24px);
+        }
+
+        /* ==================== 正文段落 ==================== */
+        .manor-body {
+            max-width: var(--manor-max);
+            margin: 0 auto;
+        }
+
+        .manor-body p {
+            margin: 0 0 1.35em;
+        }
+
+        .manor-body p:last-child {
+            margin-bottom: 0;
+        }
+
+        .manor-body strong {
+            font-weight: 700;
+        }
+
+        /* ==================== 照片 ==================== */
+        .manor-figure {
+            margin: var(--manor-gap) 0;
+        }
+
+        .manor-figure--wide {
+            max-width: var(--manor-wide);
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* 第二张是特写，比第一张窄一截并居中：
+           宽度差得足够明显，才像「镜头推近」，而不是没对齐 */
+        .manor-figure--inset {
+            max-width: 640px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .manor-shot {
+            position: relative;
+            display: block;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            border-radius: 14px;
+            overflow: hidden;
+            background: var(--manor-paper);
+            box-shadow:
+                0 0 0 1px var(--color-border-light),
+                0 18px 48px -24px rgba(0, 0, 0, 0.35);
+            text-decoration: none;
+            color: inherit;
+            font: inherit;
+            cursor: zoom-in;
+            -webkit-appearance: none;
+            appearance: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        [data-theme="dark"] .manor-shot {
+            box-shadow:
+                0 0 0 1px var(--color-border),
+                0 18px 48px -22px rgba(0, 0, 0, 0.85);
+        }
+
+        .manor-shot img {
+            display: block;
+            width: 100%;
+            height: auto;
+            opacity: 0;
+            transform: scale(1.015);
+            transition: opacity 0.7s ease, transform 1.1s cubic-bezier(0.2, 0.6, 0.2, 1);
+        }
+
+        .manor-shot img.is-loaded {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* 加载完成前先给一块有质感的底色，避免白闪 */
+        .manor-shot::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(115deg, var(--color-surface), var(--color-border-light));
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        .manor-shot.is-ready::before {
+            opacity: 0;
+        }
+
+        .manor-shot::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+            pointer-events: none;
+        }
+
+        .manor-zoom {
+            position: absolute;
+            right: 14px;
+            bottom: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 13px;
+            border-radius: 999px;
+            background: rgba(12, 12, 14, 0.62);
+            color: #fff;
+            font-family: var(--manor-font);
+            font-size: 0.72rem;
+            letter-spacing: 0.06em;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            opacity: 0;
+            transform: translateY(4px);
+            transition: opacity 0.28s ease, transform 0.28s ease;
+            pointer-events: none;
+        }
+
+        .manor-zoom i {
+            font-size: 0.9rem;
+        }
+
+        @media (hover: hover) {
+            .manor-shot:hover .manor-zoom,
+            .manor-shot:focus-visible .manor-zoom {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 触屏设备上常驻显示，否则根本没有"可以点开"的提示 */
+        @media (hover: none) {
+            .manor-zoom {
+                opacity: 1;
+                transform: none;
+                padding: 6px 10px;
+                font-size: 0.68rem;
+            }
+        }
+
+        .manor-shot:focus-visible {
+            outline: 2px solid var(--color-accent);
+            outline-offset: 4px;
+        }
+
+        .manor-figure figcaption {
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+            margin-top: 14px;
+            color: var(--manor-ink-faint);
+            font-family: var(--manor-font);
+            font-size: 0.8rem;
+            line-height: 1.75;
+            letter-spacing: 0.02em;
+        }
+
+        .manor-figure--inset figcaption {
+            justify-content: center;
+            text-align: center;
+        }
+
+        .manor-num {
+            flex: none;
+            color: var(--manor-ink-faint);
+            font-family: var(--manor-font);
+            font-size: 0.78rem;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.1em;
+        }
+
+        .manor-num::after {
+            content: '';
+            display: inline-block;
+            width: 22px;
+            height: 1px;
+            margin: 0 0 4px 10px;
+            background: var(--manor-line);
+            vertical-align: middle;
+        }
+
+        /* ==================== 引文 ==================== */
+        .manor-quote {
+            position: relative;
+            max-width: 700px;
+            margin: clamp(40px, 7vw, 72px) auto;
+            padding: clamp(24px, 4vw, 34px) clamp(20px, 5vw, 44px);
+            text-align: center;
+            border-top: 1px solid var(--manor-line);
+            border-bottom: 1px solid var(--manor-line);
+        }
+
+        .manor-quote p {
+            margin: 0;
+            font-size: clamp(1.02rem, 0.95rem + 0.4vw, 1.2rem);
+            line-height: 2.1;
+            letter-spacing: 0.03em;
+        }
+
+        .manor-quote cite {
+            display: block;
+            margin-top: 16px;
+            color: var(--manor-ink-faint);
+            font-family: var(--manor-font);
+            font-size: 0.74rem;
+            font-style: normal;
+            letter-spacing: 0.16em;
+        }
+
+        /* ==================== 拍摄手记 ==================== */
+        .manor-notes {
+            max-width: var(--manor-max);
+            margin: clamp(40px, 7vw, 68px) auto 0;
+            padding: clamp(22px, 4vw, 32px);
+            border: 1px solid var(--manor-line);
+            border-radius: 16px;
+            background: var(--manor-paper);
+        }
+
+        .manor-notes-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin: 0 0 20px;
+            color: var(--manor-ink);
+            font-family: var(--manor-font);
+            font-size: 0.82rem;
+            font-weight: 650;
+            letter-spacing: 0.16em;
+        }
+
+        .manor-notes-title i {
+            font-size: 1rem;
+            color: var(--manor-ink-faint);
+        }
+
+        .manor-notes dl {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px clamp(20px, 4vw, 40px);
+            margin: 0;
+        }
+
+        .manor-notes .note {
+            min-width: 0;
+        }
+
+        .manor-notes dt {
+            margin-bottom: 3px;
+            color: var(--manor-ink-faint);
+            font-family: var(--manor-font);
+            font-size: 0.72rem;
+            letter-spacing: 0.14em;
+        }
+
+        .manor-notes dd {
+            margin: 0;
+            color: var(--manor-ink-soft);
+            font-size: 0.94rem;
+            line-height: 1.85;
+        }
+
+        /* ==================== 结尾 ==================== */
+        .manor-outro {
+            max-width: var(--manor-max);
+            margin: clamp(36px, 6vw, 56px) auto 0;
+            text-align: center;
+        }
+
+        .manor-outro p {
+            margin: 0 auto;
+            max-width: 28em;
+            color: var(--manor-ink-soft);
+        }
+
+        .manor-sign {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: clamp(28px, 5vw, 40px);
+            color: var(--manor-ink-faint);
+            font-family: var(--manor-font);
+            font-size: 0.76rem;
+            letter-spacing: 0.14em;
+        }
+
+        .manor-sign::before,
+        .manor-sign::after {
+            content: '';
+            width: 26px;
+            height: 1px;
+            background: var(--manor-line);
+        }
+
+        /* ==================== 响应式 ==================== */
+        @media (max-width: 720px) {
+            .manor-figure--inset {
+                max-width: none;
+            }
+
+            .manor-figure--inset figcaption {
+                justify-content: flex-start;
+                text-align: left;
+            }
+
+            .manor-notes dl {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .manor-quote {
+                padding-left: 4px;
+                padding-right: 4px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .manor-meta {
+                gap: 6px 16px;
+                font-size: 0.74rem;
+            }
+
+            .manor-figure figcaption {
+                gap: 10px;
+                font-size: 0.76rem;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .manor-shot img,
+            .manor-shot::before,
+            .manor-zoom {
+                transition: none;
+            }
+
+            .manor-shot img {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        /* 打印：只留文字和照片 */
+        @media print {
+            .manor-zoom {
+                display: none;
+            }
+
+            .manor-shot {
+                box-shadow: none;
+            }
+        }
+
+        /* ==================== 大图预览 ====================
+           点击照片在当前页放大，再点一下图片（或按 Esc / 点背景）退出。
+           这段样式单独放一个 <style>，内嵌到博客时会被整块复制到父页面，
+           所以不能依赖 .manor-article 上的变量，字体、颜色都写死兜底。 */
+    </style>
+    <style id="manorLightboxStyles">
+        .manor-lightbox {
+            position: fixed;
+            inset: 0;
+            z-index: 1400;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(12px, 3vw, 40px);
+            background: rgba(10, 10, 12, 0.88);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transition: opacity 0.22s ease;
+            cursor: zoom-out;
+            overscroll-behavior: contain;
+            font-family: 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif;
+        }
+
+        .manor-lightbox.is-open {
+            opacity: 1;
+        }
+
+        /* 关键：display: flex 会盖掉 [hidden] 自带的 display: none，
+           不加这条的话关闭后遮罩虽然透明，仍然铺满全屏挡住点击 */
+        .manor-lightbox[hidden] {
+            display: none !important;
+        }
+
+        .manor-lightbox img {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9);
+            cursor: zoom-out;
+            transform: scale(0.985);
+            transition: transform 0.22s ease;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        .manor-lightbox.is-open img {
+            transform: scale(1);
+        }
+
+        .manor-lightbox-close {
+            position: absolute;
+            top: max(14px, env(safe-area-inset-top));
+            right: 14px;
+            display: grid;
+            place-items: center;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 50%;
+            background: rgba(20, 20, 24, 0.55);
+            color: #fff;
+            font-size: 1.2rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .manor-lightbox-close:hover,
+        .manor-lightbox-close:focus-visible {
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.16);
+        }
+
+        .manor-lightbox-hint {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: max(14px, env(safe-area-inset-bottom));
+            margin: 0;
+            color: rgba(255, 255, 255, 0.62);
+            font-size: 0.74rem;
+            letter-spacing: 0.1em;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .manor-lightbox,
+            .manor-lightbox img {
+                transition: none;
+            }
+        }
+
+        @media print {
+            .manor-lightbox {
+                display: none !important;
+            }
+        }
+
+        /* 预览打开时锁住滚动（class 挂在 <html> 上，内嵌时挂父页面） */
+        html.manor-lightbox-open,
+        html.manor-lightbox-open body {
+            overflow: hidden !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+         ★ 换照片只需要改下面两个 <img> 的 src ★
+           1. 图片放在根目录的 images/manor_photos/ 下，
+              本页在 project_subpage/blog/，所以要往上退两级：../../images/manor_photos/
+           2. 改 src，顺手改 alt（无障碍阅读会读 alt）
+           3. 建议长边 1600px 左右、JPEG 质量 85，文件别超过 500KB
+         ============================================================ -->
+    <article class="manor-article">
+
+        <header class="manor-hero">
+            <p class="manor-eyebrow">第五人格<span class="dot"></span>归宿影像</p>
+            <h1 class="manor-title">归宿里的两帧</h1>
+            <p class="manor-lead">我很少在游戏里拍照。不是不喜欢，是总觉得镜头里缺点什么——直到有人愿意站在里面，陪我一起等光。</p>
+            <hr class="manor-rule">
+            <ul class="manor-meta">
+                <li><span class="k">出镜</span><span class="v">我 · 一位网上认识的朋友</span></li>
+                <li><span class="k">场地</span><span class="v">归宿 · 第五</span></li>
+                <li><span class="k">摄影</span><span class="v">她</span></li>
+                <li><span class="k">时间</span><span class="v">某个不赶时间的晚上</span></li>
+            </ul>
+        </header>
+
+        <div class="manor-body">
+            <p>归宿是第五人格里最不像游戏的地方。没有密码机，没有追击，也没有倒计时。你可以在里面摆一张椅子、挂一盏灯，然后什么都不做。</p>
+            <p>那天我们本来只是想看看新摆的花房。她调了很久的角度，我站在旁边，负责当那个“不要动”的人。</p>
+        </div>
+
+        <figure class="manor-figure manor-figure--wide">
+            <button class="manor-shot" type="button" aria-label="点击放大：花房里的合影" aria-expanded="false">
+                <img src="../../images/manor_photos/manor_01.jpg"
+                     alt="第五人格归宿花房，两个角色站在绣球花与白色玩偶之间，一人抬手像是要碰花"
+                     width="1728" height="1079" loading="eager" decoding="async">
+                <span class="manor-zoom"><i class="ri-zoom-in-line" aria-hidden="true"></i>点击放大</span>
+            </button>
+            <figcaption>
+                <span class="manor-num">01</span>
+                <span>花房。她摆的绣球、她挑的玩偶，还有我们两个人站在花里，谁也没说话。</span>
+            </figcaption>
+        </figure>
+
+        <div class="manor-body">
+            <p>我其实不太会摆这些东西。家具是她一件一件挪的，绣球要堆在哪个角落、南瓜该滚到哪一边，她都有主意。我只提了一个要求：给我留个位置。</p>
+            <p>拍第一张的时候我们隔得挺远，像两个刚认识的人在同一个房间里客气地站着。现在回看，反而觉得那张最好——所有的距离都是真的，后来靠近也是真的。</p>
+        </div>
+
+        <figure class="manor-figure manor-figure--inset">
+            <button class="manor-shot" type="button" aria-label="点击放大：两个角色靠近的合影" aria-expanded="false">
+                <img src="../../images/manor_photos/manor_02.jpg"
+                     alt="第五人格归宿中两个角色靠得很近的侧脸合影，背景是绣球花与烛光"
+                     width="1728" height="1079" loading="lazy" decoding="async">
+                <span class="manor-zoom"><i class="ri-zoom-in-line" aria-hidden="true"></i>点击放大</span>
+            </button>
+            <figcaption>
+                <span class="manor-num">02</span>
+                <span>第二帧。镜头拉近之后，两个人都安静下来了。</span>
+            </figcaption>
+        </figure>
+
+        <div class="manor-body">
+            <p>第二张是意外。她把镜头往前推，说“再近一点”。近到帽檐快要碰到一起，近到能看清对方眼罩上的花纹。</p>
+            <p>游戏里的角色不会脸红，也不会躲。可那一刻我确实有了别样的感觉，好像真的被谁凑近了看。</p>
+            <p>我们谁也没提“要不要再来一张”。有些画面，一次就够了。</p>
+        </div>
+
+        <blockquote class="manor-quote">
+            <p>有些截图不是为了发出去，只是想在很久以后翻到的时候，能想起那天晚上，屏幕那头有人在等我站好。</p>
+            <cite>拍摄手记</cite>
+        </blockquote>
+
+        <section class="manor-notes" aria-labelledby="manorNotesTitle">
+            <h2 class="manor-notes-title" id="manorNotesTitle">
+                <i class="ri-camera-lens-line" aria-hidden="true"></i>
+                这一组照片的说明
+            </h2>
+            <dl>
+                <div class="note">
+                    <dt>场景</dt>
+                    <dd>归宿 · 花房，绣球开得最满的那个角落</dd>
+                </div>
+                <div class="note">
+                    <dt>出镜</dt>
+                    <dd>两个人，一个负责站，一个负责按快门</dd>
+                </div>
+                <div class="note">
+                    <dt>道具</dt>
+                    <dd>绣球、白色玩偶、一只南瓜</dd>
+                </div>
+                <div class="note">
+                    <dt>后期</dt>
+                    <dd>没修，游戏内截图，但压缩过</dd>
+                </div>
+                <div class="note">
+                    <dt>备注</dt>
+                    <dd>文案由AI生成</dd>
+                </div>
+                <div class="note">
+                    <dt>照片</dt>
+                    <dd>点击任意一张可在当前页放大，再点一下退出</dd>
+                </div>
+            </dl>
+        </section>
+
+        <div class="manor-outro">
+            <p>我们大概不会一直玩这个游戏。但这两帧会一直留在相册里——连同那个不赶时间的晚上。</p>
+            <span class="manor-sign">安妮 · 2026.10.18</span>
+        </div>
+    </article>
+
+    <!-- 大图预览层。独立打开时用这一份；
+         内嵌到博客里时会被整块搬到父文档，才能盖住整个浏览器视口 -->
+    <div class="manor-lightbox" id="manorLightbox" role="dialog" aria-modal="true" aria-label="照片大图预览" hidden>
+        <button class="manor-lightbox-close" type="button" aria-label="关闭大图">
+            <i class="ri-close-line" aria-hidden="true"></i>
+        </button>
+        <img id="manorLightboxImage" src="" alt="">
+        <p class="manor-lightbox-hint">点击图片或按 Esc 退出</p>
+    </div>
+
+    <script>
+        (function () {
+            'use strict';
+
+            // ---------- 照片淡入 ----------
+            // 本地图通常瞬间就加载完，所以要先看 complete，
+            // 否则 load 事件早就过去了，图片会一直停在 opacity: 0
+            document.querySelectorAll('.manor-shot img').forEach(function (img) {
+                var shot = img.closest('.manor-shot');
+                function done() {
+                    img.classList.add('is-loaded');
+                    if (shot) shot.classList.add('is-ready');
+                    reportHeight();
+                }
+                if (img.complete && img.naturalWidth > 0) {
+                    done();
+                } else {
+                    img.addEventListener('load', done, { once: true });
+                    img.addEventListener('error', function () {
+                        if (shot) shot.classList.add('is-ready');
+                    }, { once: true });
+                }
+            });
+
+            // ---------- 主题同步 ----------
+            // 外层博客切换深浅色时会 postMessage 进来；
+            // 独立打开时也监听本地存储，保持一致
+            window.addEventListener('message', function (event) {
+                var data = event.data;
+                if (!data || data.type !== 'annie-theme') return;
+                if (data.theme !== 'light' && data.theme !== 'dark') return;
+                document.documentElement.setAttribute('data-theme', data.theme);
+            });
+
+            window.addEventListener('storage', function (event) {
+                if (event.key === 'annie-theme' && (event.newValue === 'light' || event.newValue === 'dark')) {
+                    document.documentElement.setAttribute('data-theme', event.newValue);
+                }
+            });
+
+            // ---------- 内嵌高度上报 ----------
+            // 照片加载会改变内容高度，加载完主动告诉外层一次，
+            // 免得 iframe 停在旧高度上，底部多出空白。
+            // 用文章元素的底边来量，和外层「量所有元素最底部」的算法一致，
+            // 两边不会因为差一两个像素来回改高度。
+            var lastReportedHeight = 0;
+
+            function reportHeight() {
+                if (window.parent === window) return;
+                var article = document.querySelector('.manor-article');
+                if (!article) return;
+                var bottom = article.getBoundingClientRect().bottom + (window.scrollY || 0);
+                var height = Math.ceil(bottom);
+                if (height <= 0 || height === lastReportedHeight) return;
+                lastReportedHeight = height;
+                window.parent.postMessage(
+                    { type: 'annie-embedded-height', height: height },
+                    '*'
+                );
+            }
+
+            window.addEventListener('load', reportHeight);
+            window.addEventListener('resize', reportHeight);
+
+            // 图片是异步加载的，高度会在之后变一次；
+            // 只在尺寸真的变化时上报，避免和外层来回抖
+            if ('ResizeObserver' in window) {
+                var observer = new ResizeObserver(function () {
+                    reportHeight();
+                });
+                observer.observe(document.body);
+            }
+
+            // 字体加载完高度会再变一次
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(reportHeight);
+            }
+
+            // ==================== 大图预览 ====================
+            // 点击照片 -> 当前页放大；再点一下图片（或 Esc / 点背景）-> 退出。
+            //
+            // 内嵌在博客文章 iframe 里时有个坑：iframe 的高度等于整篇文章的高度，
+            // 里面 position: fixed 的「视口」就是这一整块 iframe，
+            // 预览层会被拉成一张超高的遮罩，还盖不住博客顶部导航。
+            // 所以内嵌时把预览层和它的样式整块搬到父文档，
+            // 用父页面的视口来定位；独立打开时就用本页自己的。
+            var lightbox = document.getElementById('manorLightbox');
+            var lightboxImage = document.getElementById('manorLightboxImage');
+            var lightboxClose = lightbox.querySelector('.manor-lightbox-close');
+            var shots = Array.prototype.slice.call(document.querySelectorAll('.manor-shot'));
+            var lastFocused = null;
+            var isOpen = false;
+
+            // 判断是否嵌在父页面里；跨域时读不到 frameElement，退回本页
+            var parentDoc = null;
+            try {
+                if (window.parent && window.parent !== window && window.frameElement) {
+                    parentDoc = window.parent.document;
+                }
+            } catch (e) {
+                parentDoc = null;
+            }
+
+            if (parentDoc && parentDoc.body) {
+                // 文章在博客里会被反复打开/关闭，内嵌页也会重新加载。
+                // 先把上一份挂上去的清掉，避免父页面里堆一串用不到的遮罩
+                parentDoc.querySelectorAll('.manor-lightbox').forEach(function (old) {
+                    if (old !== lightbox) old.remove();
+                });
+                var staleStyles = parentDoc.getElementById('manorLightboxStylesMounted');
+                if (staleStyles) staleStyles.remove();
+
+                var styles = document.getElementById('manorLightboxStyles');
+                if (styles) {
+                    var copiedStyles = styles.cloneNode(true);
+                    copiedStyles.id = 'manorLightboxStylesMounted';
+                    parentDoc.head.appendChild(copiedStyles);
+                }
+                parentDoc.body.appendChild(lightbox);
+
+                // 页面被卸载（切文章、关标签页）时把挂到父页面的东西收走
+                window.addEventListener('pagehide', function () {
+                    lightbox.remove();
+                    var mounted = parentDoc.getElementById('manorLightboxStylesMounted');
+                    if (mounted) mounted.remove();
+                    parentDoc.documentElement.classList.remove('manor-lightbox-open');
+                });
+            }
+
+            // 预览打开时锁住外层滚动，否则滚轮会带着整篇文章上下跑
+            var scrollHost = parentDoc && parentDoc.documentElement
+                ? parentDoc.documentElement
+                : document.documentElement;
+
+            function openLightbox(shot) {
+                var img = shot.querySelector('img');
+                if (!img) return;
+                lastFocused = shot;
+                lightboxImage.src = img.currentSrc || img.src;
+                lightboxImage.alt = img.alt || '';
+                lightbox.hidden = false;
+                // 先上屏再淡入，否则 hidden -> 显示的过渡会被合并掉
+                void lightbox.offsetHeight;
+                lightbox.classList.add('is-open');
+                isOpen = true;
+                scrollHost.classList.add('manor-lightbox-open');
+                shot.setAttribute('aria-expanded', 'true');
+                if (lightboxClose) lightboxClose.focus({ preventScroll: true });
+            }
+
+            function closeLightbox() {
+                if (!isOpen) return;
+                isOpen = false;
+                lightbox.classList.remove('is-open');
+                scrollHost.classList.remove('manor-lightbox-open');
+                shots.forEach(function (shot) {
+                    shot.setAttribute('aria-expanded', 'false');
+                });
+                var hideAfterFade = function () {
+                    if (isOpen) return;
+                    lightbox.hidden = true;
+                    lightboxImage.removeAttribute('src');
+                };
+                window.setTimeout(hideAfterFade, 240);
+                if (lastFocused && typeof lastFocused.focus === 'function') {
+                    lastFocused.focus({ preventScroll: true });
+                }
+                lastFocused = null;
+            }
+
+            shots.forEach(function (shot) {
+                shot.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    // 已经开着的时候，点缩略图也当作关闭
+                    if (isOpen) {
+                        closeLightbox();
+                        return;
+                    }
+                    openLightbox(shot);
+                });
+            });
+
+            // 点图片本身退出；点背景也退出
+            lightbox.addEventListener('click', function (event) {
+                if (event.target === lightbox || event.target === lightboxImage) {
+                    closeLightbox();
+                }
+            });
+
+            if (lightboxClose) {
+                lightboxClose.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    closeLightbox();
+                });
+            }
+
+            // Esc 退出。内嵌时焦点在父文档，所以两边的 document 都要挂
+            function handleKeydown(event) {
+                if (event.key === 'Escape' && isOpen) {
+                    closeLightbox();
+                }
+            }
+            document.addEventListener('keydown', handleKeydown);
+            if (parentDoc) {
+                parentDoc.addEventListener('keydown', handleKeydown);
+            }
+
+            // 内嵌时预览层不在 iframe 里，主题变量取不到，
+            // 这里直接同步一份给父文档里的预览层用
+            function syncLightboxTheme() {
+                var theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+                lightbox.setAttribute('data-theme', theme);
+            }
+            syncLightboxTheme();
+            new MutationObserver(syncLightboxTheme).observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['data-theme']
+            });
+        })();
+    </script>
+</body>
+</html>
