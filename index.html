@@ -246,7 +246,7 @@
 
         <!-- ==================== 页脚 ==================== -->
         <footer class="site-footer">
-            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.19.200</p>
+            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.19.201</p>
         </footer>
     </div>
 
@@ -258,6 +258,30 @@
     <div class="site-toast" id="siteToast" role="status" aria-live="polite" hidden>
         <i class="ri-link" aria-hidden="true"></i>
         <span id="siteToastText"></span>
+    </div>
+
+    <!-- 微信内分享引导：微信内置浏览器不允许网页主动唤起分享面板，
+         只能提示用户点右上角「···」→「分享给朋友」 -->
+    <div class="wechat-share-guide" id="wechatShareGuide" role="dialog" aria-modal="true"
+         aria-labelledby="wechatShareGuideTitle" hidden>
+        <div class="wechat-share-guide-arrow" aria-hidden="true">
+            <i class="ri-arrow-right-up-line"></i>
+        </div>
+        <div class="wechat-share-guide-body">
+            <p class="wechat-share-guide-title" id="wechatShareGuideTitle">
+                点击右上角 <i class="ri-more-fill" aria-hidden="true"></i> 分享给朋友
+            </p>
+            <p class="wechat-share-guide-desc">链接已复制，也可以直接粘贴给好友</p>
+            <div class="wechat-share-guide-actions">
+                <button class="wechat-share-guide-copy" id="wechatShareGuideCopy" type="button">
+                    <i class="ri-file-copy-line" aria-hidden="true"></i>
+                    再次复制链接
+                </button>
+                <button class="wechat-share-guide-close" id="wechatShareGuideClose" type="button">
+                    我知道了
+                </button>
+            </div>
+        </div>
     </div>
 
     <div class="music-enable-hint" id="musicEnableHint" style="display: none;">

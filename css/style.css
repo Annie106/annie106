@@ -1445,6 +1445,149 @@
             }
         }
 
+        /* ==================== 微信分享引导浮层 ==================== */
+        /* 微信内置浏览器不允许网页主动唤起分享面板，只能引导用户点右上角「···」。
+           浮层顶部留出箭头指向的位置，整体半透明遮罩，点空白处也能关闭。 */
+        .wechat-share-guide {
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            padding: 12px 18px 24px;
+            background: rgba(0, 0, 0, 0.62);
+            opacity: 0;
+            transition: opacity 0.24s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .wechat-share-guide[hidden] {
+            display: none;
+        }
+
+        /* 浮层打开时锁住背景滚动，避免手指滑动穿透到底层文章 */
+        body.wechat-guide-open {
+            overflow: hidden;
+        }
+
+        .wechat-share-guide.visible {
+            opacity: 1;
+        }
+
+        .wechat-share-guide-arrow {
+            flex: 0 0 auto;
+            margin-right: 8px;
+            color: #ffffff;
+            font-size: 2rem;
+            line-height: 1;
+            animation: wechatArrowNudge 1.4s ease-in-out infinite;
+        }
+
+        .wechat-share-guide-body {
+            width: min(100%, 360px);
+            margin-top: auto;
+            margin-bottom: auto;
+            padding: 24px 22px;
+            border-radius: var(--radius-lg);
+            background: var(--color-surface);
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+            transform: translateY(12px);
+            transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .wechat-share-guide.visible .wechat-share-guide-body {
+            transform: translateY(0);
+        }
+
+        .wechat-share-guide-title {
+            margin-bottom: 10px;
+            color: var(--color-text-primary);
+            font-size: 1rem;
+            font-weight: 600;
+            line-height: 1.6;
+        }
+
+        .wechat-share-guide-title i {
+            font-size: 1.1em;
+            vertical-align: -0.1em;
+        }
+
+        .wechat-share-guide-desc {
+            margin-bottom: 20px;
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.7;
+        }
+
+        .wechat-share-guide-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .wechat-share-guide-copy,
+        .wechat-share-guide-close {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 42px;
+            padding: 10px 18px;
+            border-radius: var(--radius-md);
+            font: inherit;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background var(--transition-fast), border-color var(--transition-fast),
+                color var(--transition-fast);
+        }
+
+        .wechat-share-guide-copy {
+            border: 1px solid var(--color-accent);
+            background: var(--color-accent);
+            color: var(--color-bg);
+        }
+
+        .wechat-share-guide-copy:hover {
+            border-color: var(--color-accent-hover);
+            background: var(--color-accent-hover);
+        }
+
+        .wechat-share-guide-close {
+            border: 1px solid var(--color-border);
+            background: transparent;
+            color: var(--color-text-secondary);
+        }
+
+        .wechat-share-guide-close:hover {
+            border-color: var(--color-text-tertiary);
+            background: var(--color-bg);
+            color: var(--color-text-primary);
+        }
+
+        .wechat-share-guide-copy:focus-visible,
+        .wechat-share-guide-close:focus-visible {
+            outline: 2px solid var(--color-accent);
+            outline-offset: 2px;
+        }
+
+        @keyframes wechatArrowNudge {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(3px, -3px); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .wechat-share-guide,
+            .wechat-share-guide-body {
+                transition: none;
+            }
+            .wechat-share-guide-arrow {
+                animation: none;
+            }
+        }
+
         .audio-error-message {
             display: flex;
             align-items: center;

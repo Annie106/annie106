@@ -209,6 +209,9 @@
             const backBtn = $('#backBtn');
             const backBtn2 = $('#backBtn2');
             const articleShare = $('#articleShare');
+            const wechatShareGuide = $('#wechatShareGuide');
+            const wechatShareGuideCopy = $('#wechatShareGuideCopy');
+            const wechatShareGuideClose = $('#wechatShareGuideClose');
 
             let currentView = 'home';
             let activeTag = 'all';
@@ -386,10 +389,73 @@
                 });
             }
 
-            // 分享文章：手机等支持系统分享面板的设备优先唤起面板；
+            // 是否在微信内置浏览器里打开。
+            // 微信各端的 UA 都会追加自己的标记：iOS / Android / Windows / Mac /
+            // 鸿蒙 NEXT 版都是 MicroMessenger，部分 Android 版本还会同时带
+            // WeChat/arm64，企业微信带 wxwork。
+            //
+            // 鸿蒙 NEXT（HarmonyOS 5）的微信换成了 ArkWeb 内核，UA 里会出现
+            // ArkWeb 标记，个别版本可能不再保留 MicroMessenger。这里做一层
+            // 兜底：只要是 ArkWeb 内核的嵌入网页、又拿不到系统分享面板
+            //（navigator.share 不可用），就按微信内处理，同样走
+            //「复制链接 + 引导浮层」，至少不会点了没反应。
+            //
+            // 注意用 ArkWeb 而不是 OpenHarmony / HarmonyOS 作为判断依据：
+            // 后两个标记在鸿蒙自带的华为浏览器里也有，会把普通浏览器误判成微信。
+            function isWeChatBrowser() {
+                const ua = navigator.userAgent || '';
+                if (/MicroMessenger|Weixin|wxwork/i.test(ua)) return true;
+                if (/ArkWeb/i.test(ua) && typeof navigator.share !== 'function') return true;
+                return false;
+            }
+
+            // 微信内置浏览器既不支持 Web Share API，也没有让网页主动唤起
+            // 「分享给朋友」面板的接口（官方 JS-SDK 也只能改分享卡片的标题/
+            // 缩略图，不能代替用户点右上角）。所以这里只能：先复制链接，
+            // 再弹引导浮层指向右上角「···」，让用户自己完成分享。
+            let wechatGuideHideTimer = null;
+
+            function openWechatShareGuide() {
+                if (!wechatShareGuide) return;
+                clearTimeout(wechatGuideHideTimer);
+                wechatShareGuide.hidden = false;
+                // 先强制一次样式重算，否则 opacity 0 → 1 会被合并进同一次
+                // 样式计算，淡入动画会被跳过（和 showToast 同样的坑）
+                void wechatShareGuide.offsetHeight;
+                wechatShareGuide.classList.add('visible');
+                document.body.classList.add('wechat-guide-open');
+                if (wechatShareGuideClose) wechatShareGuideClose.focus({ preventScroll: true });
+            }
+
+            function closeWechatShareGuide() {
+                if (!wechatShareGuide || wechatShareGuide.hidden) return;
+                wechatShareGuide.classList.remove('visible');
+                document.body.classList.remove('wechat-guide-open');
+                // 等淡出过渡走完再隐藏，否则会被 display:none 打断
+                clearTimeout(wechatGuideHideTimer);
+                wechatGuideHideTimer = setTimeout(function () {
+                    wechatShareGuide.hidden = true;
+                }, 240);
+            }
+
+            // 微信内分享：复制链接 + 引导浮层
+            function shareInWeChat(post) {
+                const url = buildArticleUrl(post.id);
+                Promise.resolve(copyLink(url)).then(function (ok) {
+                    openWechatShareGuide();
+                    // 复制失败时不谎称「已复制」，浮层里还有「再次复制链接」可以补救
+                    if (!ok) showToast('链接复制失败，可长按地址栏手动复制');
+                });
+            }
+
+            // 分享文章：微信内走引导浮层，其它浏览器优先唤起系统分享面板；
             // 面板不可用、或被浏览器拒绝时，自动退回「复制链接」，
             // 避免点了没反应。用户主动取消（AbortError）则什么都不做。
             function shareArticle(post) {
+                if (isWeChatBrowser()) {
+                    shareInWeChat(post);
+                    return;
+                }
                 const url = buildArticleUrl(post.id);
                 if (typeof navigator.share === 'function') {
                     let settled = false;
@@ -1003,6 +1069,35 @@
                     if (post) shareArticle(post);
                 });
             }
+
+            // ==================== 微信分享引导浮层 ====================
+            if (wechatShareGuide) {
+                if (wechatShareGuideClose) {
+                    wechatShareGuideClose.addEventListener('click', closeWechatShareGuide);
+                }
+                // 点遮罩空白处关闭；点浮层内容本身不关闭
+                wechatShareGuide.addEventListener('click', function(e) {
+                    if (e.target === wechatShareGuide) closeWechatShareGuide();
+                });
+                // 浮层里的「再次复制链接」：复制当前文章链接
+                if (wechatShareGuideCopy) {
+                    wechatShareGuideCopy.addEventListener('click', function() {
+                        const post = blogPosts.find(item => item.id === currentArticleId);
+                        if (!post) return;
+                        const url = buildArticleUrl(post.id);
+                        Promise.resolve(copyLink(url)).then(function(ok) {
+                            showToast(ok ? '链接已复制，粘贴给好友即可' : '链接复制失败，可长按地址栏手动复制');
+                        });
+                    });
+                }
+            }
+
+            // Esc 关闭引导浮层（桌面版微信 / 外接键盘时用得上）
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && wechatShareGuide && !wechatShareGuide.hidden) {
+                    closeWechatShareGuide();
+                }
+            });
 
             function returnToArticlePosition() {
                 if (history.state && history.state.annieArticleId === currentArticleId) {
