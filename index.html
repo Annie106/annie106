@@ -272,7 +272,7 @@
 
         <!-- ==================== 页脚 ==================== -->
         <footer class="site-footer">
-            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.19.209</p>
+            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.19.213</p>
         </footer>
     </div>
 
@@ -290,13 +290,15 @@
          只能提示用户点右上角「···」→「分享给朋友」 -->
     <div class="wechat-share-guide" id="wechatShareGuide" role="dialog" aria-modal="true"
          aria-labelledby="wechatShareGuideTitle" hidden>
-        <div class="wechat-share-guide-arrow">
-            <span>分享入口在这里</span>
-            <i class="ri-arrow-right-up-line" aria-hidden="true"></i>
+        <div class="wechat-share-guide-arrow" id="wechatShareGuideArrow">
+            <span id="wechatShareGuideArrowText">分享入口在这里</span>
+            <i class="ri-arrow-right-up-line" id="wechatShareGuideArrowIcon" aria-hidden="true"></i>
         </div>
         <div class="wechat-share-guide-body">
             <p class="wechat-share-guide-title" id="wechatShareGuideTitle">
-                点击右上角 <i class="ri-more-fill" aria-hidden="true"></i> 分享给朋友
+                <span id="wechatShareGuideTitleText">点击右上角</span>
+                <i class="ri-more-fill" aria-hidden="true" id="wechatShareGuideMoreIcon"></i>
+                <span id="wechatShareGuideTitleTail">分享给朋友</span>
             </p>
             <p class="wechat-share-guide-desc">链接已复制，可以直接粘贴给好友</p>
             <div class="wechat-share-guide-actions">

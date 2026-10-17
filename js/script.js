@@ -411,39 +411,57 @@
 
             // 微信内置浏览器既不支持 Web Share API，也没有让网页主动唤起
             // 「分享给朋友」面板的接口（官方 JS-SDK 也只能改分享卡片的标题/
-            // 缩略图，不能代替用户点右上角）。所以这里只能：先复制链接，
-            // 再弹引导浮层指向右上角「···」，让用户自己完成分享。
+            // 缩略图，不能代替用户点）。所以这里只能：先复制链接，
+            // 再弹引导浮层指向分享入口，让用户自己完成分享。
             let wechatGuideHideTimer = null;
 
-            // 顶部气泡要让开站点导航条。
-            // 导航栏的 z-index 被提到浮层之上（否则会被遮罩整块盖住），
-            // 而气泡是浮层的子元素、层级低于导航栏，位置重叠时会被导航栏
-            // 直接挡住看不见。所以必须把气泡挪到导航栏下沿再往下一点。
-            // 导航条是 sticky 的，滚动位置不同高度会变，每次打开都重新量。
-            function syncWechatGuideTop() {
-                if (!wechatShareGuide) return;
-                const header = $('.site-header');
-                let top = 12;
-                if (header) {
-                    const rect = header.getBoundingClientRect();
-                    // 导航条已滚出视口顶部时 rect.bottom 可能为负，兜底回 12
-                    top = Math.max(12, Math.round(rect.bottom) + 10);
+            // Windows / macOS 桌面版微信的分享入口在窗口左上角（「···」在左边），
+            // 手机端（iOS / Android / 鸿蒙）才在右上角。这里按 UA 区分，
+            // 把气泡和文案的指向一起换掉，避免桌面端点错方向。
+            function isWeChatDesktop() {
+                const ua = navigator.userAgent || '';
+                // Windows 微信带 WindowsWechat，macOS 微信带 MacWechat
+                if (/WindowsWechat|MacWechat/i.test(ua)) return true;
+                // 兜底：UA 是桌面系统、又不是手机/平板，就按桌面端处理
+                const isDesktopOS = /Windows NT|Macintosh|X11|Linux x86_64/i.test(ua);
+                const isMobile = /Android|iPhone|iPad|iPod|Mobile|HarmonyOS|OpenHarmony/i.test(ua);
+                return isDesktopOS && !isMobile;
+            }
+
+            // 按平台切换引导浮层的指向：手机 → 右上角，桌面 → 左上角
+            function applyWechatGuideDirection() {
+                const desktop = isWeChatDesktop();
+                const arrowText = $('#wechatShareGuideArrowText');
+                const arrowIcon = $('#wechatShareGuideArrowIcon');
+                const titleText = $('#wechatShareGuideTitleText');
+                const arrow = $('#wechatShareGuideArrow');
+
+                if (arrow) {
+                    arrow.classList.toggle('is-left', desktop);
                 }
-                wechatShareGuide.style.setProperty('--wechat-guide-top', `${top}px`);
+                if (arrowText) {
+                    arrowText.textContent = desktop ? '分享入口在左上角' : '分享入口在这里';
+                }
+                if (arrowIcon) {
+                    arrowIcon.className = desktop
+                        ? 'ri-arrow-left-up-line'
+                        : 'ri-arrow-right-up-line';
+                }
+                if (titleText) {
+                    titleText.textContent = desktop ? '点击左上角' : '点击右上角';
+                }
+                if (wechatShareGuide) {
+                    wechatShareGuide.classList.toggle('is-desktop', desktop);
+                }
             }
 
             function openWechatShareGuide() {
                 if (!wechatShareGuide) return;
                 clearTimeout(wechatGuideHideTimer);
                 wechatShareGuide.hidden = false;
-                // 先锁滚动，再量导航条位置：加锁会让滚动条消失、布局轻微变化，
-                // 顺序反了量到的底边可能差几像素
+                applyWechatGuideDirection();
                 document.documentElement.classList.add('wechat-guide-open');
                 document.body.classList.add('wechat-guide-open');
-                syncWechatGuideTop();
-                // 锁滚动 / 隐藏滚动条会触发一次重新布局，sticky 导航条的位置
-                // 可能因此变化，下一帧再量一次更稳
-                window.requestAnimationFrame(syncWechatGuideTop);
                 // 强制一次样式重算，否则 opacity 0 → 1 会被合并进同一次
                 // 样式计算，淡入动画会被跳过（和 showToast 同样的坑）
                 void wechatShareGuide.offsetHeight;

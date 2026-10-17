@@ -1458,11 +1458,14 @@
             flex-direction: column;
             justify-content: space-between;
             gap: 16px;
-            /* --wechat-guide-top 由 JS 按导航条底边写入（导航条浮在遮罩之上，
-               气泡位置重叠会被它挡住）。JS 没写入时退回「安全区 + 12px」。 */
-            padding: var(--wechat-guide-top, calc(env(safe-area-inset-top, 0px) + 12px)) 14px
+            /* 气泡贴在遮罩顶部；导航栏此时在遮罩下方（被压暗），
+               气泡以更高层级叠在它上面显示，正是想要的效果。
+               12px 是安全距离，避免贴着微信标题栏。 */
+            padding: calc(env(safe-area-inset-top, 0px) + 12px) 14px
                 calc(env(safe-area-inset-bottom, 0px) + 16px);
-            background: rgba(0, 0, 0, 0.66);
+            /* 0.62 是和之前样式一致的遮罩浓度（0.66 会把背景压得更黑、
+               导航栏的白色描边显得更扎眼） */
+            background: rgba(0, 0, 0, 0.62);
             opacity: 0;
             transition: opacity 0.24s ease;
             -webkit-tap-highlight-color: transparent;
@@ -1489,13 +1492,12 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        /* 浮层打开时导航栏照常显示，并且要浮在遮罩之上。
-           浮层是 position: fixed + inset: 0 + z-index: 1200，
-           而导航条只有 z-index: 100，不提高的话会被整块遮罩盖住、
-           看起来像「导航栏消失了」。 */
+        /* 导航栏保持在遮罩「下方」，被整体压暗成图 2 的样子。
+           不要再把它的 z-index 抬到遮罩之上：那样导航条不被压暗，
+           它的白色描边和 inset 高光会在深色遮罩上格外刺眼，
+           看起来像一圈突兀的白框。 */
         body.wechat-guide-open .site-header {
             visibility: visible;
-            z-index: 1300;
         }
 
         .wechat-share-guide.visible {
@@ -1503,16 +1505,16 @@
         }
 
         /* 顶部提示气泡：白底胶囊 + 右上角箭头。
-           气泡被导航条挤到下方后离「···」更远，所以加一条向上的引导线，
-           把视线继续往右上角带；文字说明也不能省，避免它被当成页面图标。 */
+           气泡要浮在遮罩之上、并且叠在导航栏上方显示，
+           所以给它单独的 z-index（导航条此时在遮罩下方，不会被挡住）。 */
         .wechat-share-guide-arrow {
             position: relative;
+            z-index: 2;
             align-self: flex-end;
             display: inline-flex;
             align-items: center;
             gap: 6px;
             max-width: calc(100% - 8px);
-            margin-bottom: 22px;
             padding: 8px 14px;
             border-radius: 999px;
             background: rgba(255, 255, 255, 0.96);
@@ -1524,21 +1526,25 @@
             white-space: nowrap;
         }
 
-        /* 气泡右上方的短引导线，指向微信标题栏的「···」 */
-        .wechat-share-guide-arrow::after {
-            content: '';
-            position: absolute;
-            right: 14px;
-            bottom: 100%;
-            width: 1px;
-            height: 22px;
-            background: linear-gradient(to top, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
-        }
-
         .wechat-share-guide-arrow i {
             font-size: 1rem;
             line-height: 1;
             animation: wechatArrowNudge 1.4s ease-in-out infinite;
+        }
+
+        /* 桌面版微信（Windows / macOS）的分享入口在左上角，
+           气泡跟着靠左，箭头动画方向也翻过来 */
+        .wechat-share-guide-arrow.is-left {
+            align-self: flex-start;
+        }
+
+        .wechat-share-guide-arrow.is-left i {
+            animation-name: wechatArrowNudgeLeft;
+        }
+
+        @keyframes wechatArrowNudgeLeft {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-2px, -2px); }
         }
 
         /* 卡片从底部弹出：手机上拇指更容易够到按钮，
