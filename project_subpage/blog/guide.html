@@ -951,6 +951,7 @@
 ├── index.html               ← 主页面，最常改的就是它
 ├── movie.html               ← 电影播放页
 ├── favicon.svg              ← 浏览器标签页上的小图标
+├── share_cover.jpg          ← 分享给微信/QQ 时的封面缩略图
 ├── README.md                ← 说明书，不影响网页
 │
 ├── css/
@@ -987,7 +988,7 @@
                 </h3>
                 <p><code>index.html</code> 是整个博客的骨架。首页、文章列表、文章详情、电影、关于，五个界面全挤在这一个文件里。你的头像、名字、导航栏、社交图标、页脚也都在这里改。</p>
                 <p><code>movie.html</code> 是独立的视频播放页，想加视频改它底部的 <code>VIDEO_LIST</code>。</p>
-                <p><code>favicon.svg</code> 是浏览器标签页上那个小图标。<code>README.md</code> 是纯文字说明，不显示在网页上。</p>
+                <p><code>favicon.svg</code> 是浏览器标签页上那个小图标。<code>share_cover.jpg</code> 是把链接分享到微信、QQ 时显示的封面缩略图，改法见「6.9 换分享卡片封面」。<code>README.md</code> 是纯文字说明，不显示在网页上。</p>
 
                 <h3 class="guide-subtitle">
                     <i class="ri-palette-line"></i>
@@ -1239,10 +1240,53 @@
                     <p>用 <code>file://</code> 直接双击 <code>index.html</code> 时，浏览器的剪贴板权限被禁用，点「分享」会弹出一个输入框让你手动复制。用 http 服务器预览、或者部署到网上之后就正常了。</p>
                 </div>
 
-                <!-- 6.8 音乐 -->
+                <div class="guide-tip">
+                    <div class="guide-tip-title">
+                        <i class="ri-wechat-line"></i>
+                        在微信里点「分享」会先复制链接，再弹引导
+                    </div>
+                    <p>微信内置浏览器既没有系统分享面板，也不允许网页主动弹出「分享给朋友」。所以微信里点「分享」时，会先<strong>自动复制链接</strong>，再弹出一个提示浮层，告诉用户点右上角的「···」→「分享给朋友」。链接已经复制好了，也可以直接粘贴给好友。</p>
+                    <p>鸿蒙 NEXT 版微信用的是 ArkWeb 内核，同样按微信内处理，不需要额外配置。判断逻辑在 <code>js/script.js</code> 的 <code>isWeChatBrowser()</code>。</p>
+                </div>
+
+                <!-- 6.8 分享卡片封面 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-image-line"></i>
+                    6.8 换分享卡片封面
+                </h3>
+                <p>把链接发到微信、QQ 时，聊天窗口里会显示一张缩略图。这张图由页面 <code>&lt;head&gt;</code> 里的 <code>og:image</code> 指定，图片文件是根目录的 <code>share_cover.jpg</code>。</p>
+                <p>换图的完整步骤：</p>
+                <ol>
+                    <li>把新图放进根目录（建议正方形、至少 300×300，文件名可以沿用 <code>share_cover.jpg</code>）；</li>
+                    <li>打开 <code>index.html</code>，在 <code>&lt;head&gt;</code> 里找到这三处，把地址里的文件名改成新文件名：</li>
+                </ol>
+                <pre><code>&lt;meta property="og:image" content="https://你的域名/share_cover.jpg"&gt;
+&lt;meta name="twitter:image" content="https://你的域名/share_cover.jpg"&gt;
+&lt;link rel="image_src" href="https://你的域名/share_cover.jpg"&gt;</code></pre>
+                <p>同时把 <code>og:image:width</code> 和 <code>og:image:height</code> 改成新图的真实尺寸。</p>
+
+                <div class="guide-warning">
+                    <div class="guide-warning-title">
+                        <i class="ri-error-warning-line"></i>
+                        两个必须避开的坑
+                    </div>
+                    <p><strong>① 必须写绝对地址。</strong> <code>content="share_cover.jpg"</code> 这种相对路径微信抓不到，卡片会显示灰色占位图标。要写完整的 <code>https://你的域名/share_cover.jpg</code>。</p>
+                    <p><strong>② 不要用外部图床或 CDN 的头像地址。</strong> 如果那个图床开了 Referer 鉴权（防盗链），微信抓取时不带本站 Referer，会直接拿到 403，同样显示灰图标。鉴权本身也不能关，否则流量会被盗刷。<strong>正确做法是把图片放进仓库，由 GitHub Pages 直接提供。</strong></p>
+                </div>
+
+                <div class="guide-tip">
+                    <div class="guide-tip-title">
+                        <i class="ri-refresh-line"></i>
+                        改完没生效？是缓存
+                    </div>
+                    <p>微信会<strong>长期缓存</strong>抓取结果，同一个链接可能一直显示旧图、甚至一直是灰图标。测试时务必换一个<strong>从没分享过的链接</strong>（比如在网址后面加 <code>?v=2</code>），否则很容易误判成"改了没用"。</p>
+                    <p>另外，本站所有文章共用 <code>index.html?article=N</code> 一个页面、靠 JavaScript 换内容，而微信不会执行 JavaScript 后再抓图，所以<strong>全站共用同一张封面</strong>。标题会随文章变，图片不会。想让每篇文章有不同封面，需要为每篇文章单独生成静态 HTML 页。</p>
+                </div>
+
+                <!-- 6.9 音乐 -->
                 <h3 class="guide-subtitle">
                     <i class="ri-music-2-line"></i>
-                    6.8 换背景音乐
+                    6.9 换背景音乐
                 </h3>
                 <p>打开 <code>js/background-music.js</code>，最上面就是歌单：</p>
                 <pre><code>const musicList = [
@@ -1262,10 +1306,10 @@
                     <p>这是浏览器的规矩：所有网站都不许在用户没操作时自动放声音。访客得先点一下页面音乐才会播。这不是 bug。</p>
                 </div>
 
-                <!-- 6.9 视频 -->
+                <!-- 6.10 视频 -->
                 <h3 class="guide-subtitle">
                     <i class="ri-film-line"></i>
-                    6.9 改电影列表
+                    6.10 改电影列表
                 </h3>
                 <p>打开 <code>movie.html</code>，搜索 <code>VIDEO_LIST</code>：</p>
                 <pre><code>const VIDEO_LIST = [
@@ -1274,17 +1318,17 @@
 ];</code></pre>
                 <p><code>name</code> 是列表里显示的名字，<code>url</code> 是播放地址。照格式增删，注意逗号。</p>
 
-                <!-- 6.10 页脚 -->
+                <!-- 6.11 页脚 -->
                 <h3 class="guide-subtitle">
                     <i class="ri-layout-bottom-line"></i>
-                    6.10 改页脚
+                    6.11 改页脚
                 </h3>
                 <p>搜索 <code>site-footer</code>，年份、名字、链接都能直接改。</p>
 
-                <!-- 6.11 关于页面 -->
+                <!-- 6.12 关于页面 -->
                 <h3 class="guide-subtitle">
                     <i class="ri-user-3-line"></i>
-                    6.11 改「关于」页面
+                    6.12 改「关于」页面
                 </h3>
                 <p>「关于」不是单独的网页文件，它是 <code>index.html</code> 里内置的一个界面。点导航栏的「关于」时，程序直接切过去显示，所以改它也是在 <code>index.html</code> 里改。</p>
                 <p>如果想让别人直接打开「关于」页面，可以把博客首页链接后加上 <code>?view=about</code>，例如 <code>https://你的网址/?view=about</code>。打开这个链接会直接显示关于页面，不需要在关于页面增加分享按钮；离开关于页后这个参数会自动清除。</p>
@@ -1339,10 +1383,10 @@
                     <p><code>js/script.js</code> 的 <code>siteConfig</code> 里有一个 <code>aboutText</code> 字段，看着像是关于页的正文，但程序并没有读取它，在那里改不会有任何变化。详见 6.12 节。</p>
                 </div>
 
-                <!-- 6.12 坑 -->
+                <!-- 6.13 坑 -->
                 <h3 class="guide-subtitle">
                     <i class="ri-alert-line"></i>
-                    6.12 有个地方改了没用
+                    6.13 有个地方改了没用
                 </h3>
                 <p>在 <code>js/script.js</code> 里搜索 <code>siteConfig</code>，会看到一段配置：</p>
                 <pre><code>const siteConfig = {
@@ -1365,10 +1409,10 @@
                     <p>要改个人信息，请去 <code>index.html</code> 里改（看 6.5 节）。这个坑很多人踩过，改了半天没动静就是因为改错了地方。</p>
                 </div>
 
-                <!-- 6.13 配色 -->
+                <!-- 6.14 配色 -->
                 <h3 class="guide-subtitle">
                     <i class="ri-palette-line"></i>
-                    6.13 换整体配色
+                    6.14 换整体配色
                 </h3>
                 <p>打开 <code>css/style.css</code>，最上面就是颜色定义，搜索 <code>:root</code>：</p>
                 <pre><code>:root {

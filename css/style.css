@@ -1458,9 +1458,9 @@
             flex-direction: column;
             justify-content: space-between;
             gap: 16px;
-            /* --wechat-guide-top 保留为可选微调变量：
-               默认 12px，气泡就贴在遮罩顶部，不需要给导航栏让位 */
-            padding: calc(env(safe-area-inset-top, 0px) + var(--wechat-guide-top, 12px)) 14px
+            /* --wechat-guide-top 由 JS 按导航条底边写入（导航条浮在遮罩之上，
+               气泡位置重叠会被它挡住）。JS 没写入时退回「安全区 + 12px」。 */
+            padding: var(--wechat-guide-top, calc(env(safe-area-inset-top, 0px) + 12px)) 14px
                 calc(env(safe-area-inset-bottom, 0px) + 16px);
             background: rgba(0, 0, 0, 0.66);
             opacity: 0;
@@ -1503,14 +1503,16 @@
         }
 
         /* 顶部提示气泡：白底胶囊 + 右上角箭头。
-           它不指向微信「···」（那在网页视口外），只负责把注意力引到右上角，
-           所以自身必须带文字说明，不能只剩一个箭头。 */
+           气泡被导航条挤到下方后离「···」更远，所以加一条向上的引导线，
+           把视线继续往右上角带；文字说明也不能省，避免它被当成页面图标。 */
         .wechat-share-guide-arrow {
+            position: relative;
             align-self: flex-end;
             display: inline-flex;
             align-items: center;
             gap: 6px;
             max-width: calc(100% - 8px);
+            margin-bottom: 22px;
             padding: 8px 14px;
             border-radius: 999px;
             background: rgba(255, 255, 255, 0.96);
@@ -1520,6 +1522,17 @@
             font-weight: 500;
             line-height: 1.4;
             white-space: nowrap;
+        }
+
+        /* 气泡右上方的短引导线，指向微信标题栏的「···」 */
+        .wechat-share-guide-arrow::after {
+            content: '';
+            position: absolute;
+            right: 14px;
+            bottom: 100%;
+            width: 1px;
+            height: 22px;
+            background: linear-gradient(to top, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
         }
 
         .wechat-share-guide-arrow i {

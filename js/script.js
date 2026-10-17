@@ -415,16 +415,39 @@
             // 再弹引导浮层指向右上角「···」，让用户自己完成分享。
             let wechatGuideHideTimer = null;
 
+            // 顶部气泡要让开站点导航条。
+            // 导航栏的 z-index 被提到浮层之上（否则会被遮罩整块盖住），
+            // 而气泡是浮层的子元素、层级低于导航栏，位置重叠时会被导航栏
+            // 直接挡住看不见。所以必须把气泡挪到导航栏下沿再往下一点。
+            // 导航条是 sticky 的，滚动位置不同高度会变，每次打开都重新量。
+            function syncWechatGuideTop() {
+                if (!wechatShareGuide) return;
+                const header = $('.site-header');
+                let top = 12;
+                if (header) {
+                    const rect = header.getBoundingClientRect();
+                    // 导航条已滚出视口顶部时 rect.bottom 可能为负，兜底回 12
+                    top = Math.max(12, Math.round(rect.bottom) + 10);
+                }
+                wechatShareGuide.style.setProperty('--wechat-guide-top', `${top}px`);
+            }
+
             function openWechatShareGuide() {
                 if (!wechatShareGuide) return;
                 clearTimeout(wechatGuideHideTimer);
                 wechatShareGuide.hidden = false;
-                // 先强制一次样式重算，否则 opacity 0 → 1 会被合并进同一次
+                // 先锁滚动，再量导航条位置：加锁会让滚动条消失、布局轻微变化，
+                // 顺序反了量到的底边可能差几像素
+                document.documentElement.classList.add('wechat-guide-open');
+                document.body.classList.add('wechat-guide-open');
+                syncWechatGuideTop();
+                // 锁滚动 / 隐藏滚动条会触发一次重新布局，sticky 导航条的位置
+                // 可能因此变化，下一帧再量一次更稳
+                window.requestAnimationFrame(syncWechatGuideTop);
+                // 强制一次样式重算，否则 opacity 0 → 1 会被合并进同一次
                 // 样式计算，淡入动画会被跳过（和 showToast 同样的坑）
                 void wechatShareGuide.offsetHeight;
                 wechatShareGuide.classList.add('visible');
-                document.documentElement.classList.add('wechat-guide-open');
-                document.body.classList.add('wechat-guide-open');
                 if (wechatShareGuideClose) wechatShareGuideClose.focus({ preventScroll: true });
             }
 

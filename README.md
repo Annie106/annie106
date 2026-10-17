@@ -11,6 +11,7 @@
 ├── index.html                 # 博客入口：包含首页、文章列表、文章详情、内嵌电影页、内嵌关于页
 ├── movie.html                 # 独立视频播放页，视频列表配置在 VIDEO_LIST 数组
 ├── favicon.svg                # 网站图标
+├── share_cover.jpg            # 分享卡片封面（微信/QQ 链接预览用，1080×1080）
 ├── css/
 │   └── style.css              # 博客样式及响应式布局
 ├── js/
@@ -43,11 +44,11 @@
 - 文章卡片二级菜单支持三种类型：打开站内文章、跳转到文章配置的独立页面（`externalPage`）、或自定义链接（`link`）
 - 文章详情支持内嵌独立 HTML 页面（`embeddedPage`），自动调整高度并适配主题
 - 文章分享：打开文章时地址栏带上 `?article=<id>`，文章页顶部的「分享」按钮和卡片菜单均可复制该链接；别人打开链接直达对应文章，链接失效时自动回到首页
-- 微信内分享：微信内置浏览器（UA 含 `MicroMessenger`）不支持 Web Share API，也没有让网页主动唤起「分享给朋友」面板的接口，因此点击分享按钮会先复制链接、再弹出指向右上角「···」的引导浮层；鸿蒙 NEXT 版微信（ArkWeb 内核）同样按微信内处理；其它浏览器仍走系统分享面板/复制链接
+- 微信内分享：微信内置浏览器（UA 含 `MicroMessenger`）不支持 Web Share API，也没有让网页主动唤起「分享给朋友」面板的接口，因此点击分享按钮会先复制链接、再弹出指向右上角「···」的引导浮层；鸿蒙 NEXT 版微信（ArkWeb 内核，UA 可能不带 `MicroMessenger`）同样按微信内处理；其它浏览器仍走系统分享面板/复制链接
 - 单篇文章可通过 `isPublic: false` 暂停正文访问，点击文章或打开其直达链接会在文章区域嵌入 `project_subpage/blog/article_unavailable.html` 提示页；将其改为 `true` 即可重新开放
 - 关于页面可通过 `?view=about` 直达，无需添加分享按钮
 - 所有 HTML 页面使用根目录的 `favicon.svg` 作为浏览器图标
-- 分享卡片封面：当前 `og:image` 用的是 CDN 头像地址 `https://1837491863.cdn.123clouddisk.com/1837491863/46000074`（按站点主人的要求先试这个）。**注意该 CDN 开了 Referer 鉴权**，实测不带 Referer 或空 Referer 均返回 403，只有带 `Referer: https://annie106.github.io/annie106/` 才返回 200；微信抓取时不带本站 Referer，所以很可能抓不到。若卡片仍是灰图标，把 `index.html` 里 `og:image` / `twitter:image` / `link rel="image_src"` 三处换回仓库内的 `https://annie106.github.io/annie106/share_cover.jpg`（500×500 头像裁切图，已随仓库提供）。换图后微信有缓存，旧链接可能仍显示旧图
+- 分享卡片封面：根目录 `share_cover.jpg`（1080×1080），通过 `index.html` 里的 `og:image` / `twitter:image` / `link rel="image_src"` 暴露给微信等平台抓取。**必须是绝对地址**，相对路径抓不到。**不要填 CDN 头像地址**——那个 CDN 开了 Referer 鉴权（实测不带 Referer 返回 403，只有带本站 Referer 才 200），而微信抓取时不带本站 Referer，填了只会显示灰图标；鉴权也不能关，否则流量会被盗刷。所以封面必须放在仓库里由 GitHub Pages 提供。换图后微信有缓存，旧链接可能仍显示旧图
 - 反馈表单支持文章问题、Bug 反馈、功能建议、排版样式和其他类型
 - 新增博客使用指南文章，提供完整的项目配置、修改和部署教程
 - 页面状态记忆：离开文章、切换标签页或关闭页面后返回时，自动恢复之前的视图、滚动位置和筛选状态
@@ -69,6 +70,26 @@
 
   > **为什么微信里不能一键分享？** 微信内置浏览器不实现 Web Share API，也没有任何公开接口能让网页主动弹出「分享给朋友」面板。官方微信 JS-SDK 只能**配置**分享卡片的标题、摘要和缩略图，真正发起分享仍需用户手动点右上角「···」；且 JS-SDK 要求认证公众号、HTTPS 域名以及后端签名服务（用 `appId` + `secret` 换 `jsapi_ticket`），纯静态的 GitHub Pages 站点无法满足。所以本站采用「复制链接 + 引导浮层」的方案。
 - **关于页面链接**：在博客首页链接后加上 `?view=about`，例如 `https://你的网址/?view=about`，即可直接打开内置关于页。
+- **分享卡片封面**：微信/QQ/微博等把链接转发出去时，会抓取页面的 `og:image` 作为缩略图。相关标签在 `index.html` 的 `<head>` 里，三处地址必须保持一致：
+
+  | 标签 | 作用 |
+  | --- | --- |
+  | `<meta property="og:image">` | 微信、QQ、Facebook 等主流平台 |
+  | `<meta name="twitter:image">` | Twitter / X |
+  | `<link rel="image_src">` | 部分旧版微信 / QQ 抓取器的兜底 |
+
+  换封面图时要做三件事：
+
+  1. 把新图放进仓库根目录（例如替换 `share_cover.jpg`）；
+  2. 把上面三处地址里的文件名改成新文件名，**同时改 `og:image:width` / `og:image:height`** 为新图真实尺寸；
+  3. 用**从没分享过的链接**测试（例如加 `?v=2`），因为微信会强缓存抓取结果。
+
+  > **两个坑，务必避开：**
+  >
+  > 1. **必须用绝对地址。** `content="share_cover.jpg"` 这种相对路径微信抓不到，会退回灰色占位图标。要写成 `https://你的域名/share_cover.jpg`。
+  > 2. **不要填第三方 CDN 的头像地址。** 本项目头像托管在开了 **Referer 鉴权**的 CDN 上，实测不带 Referer 返回 403、只有带本站 Referer 才 200；而微信抓取时不带本站 Referer，所以填 CDN 地址只会显示灰图标。鉴权也不能关——关了流量会被盗刷。**正确做法是把图放进仓库，由 GitHub Pages 直接提供。**
+  >
+  > 另外，微信抓取的是"被分享的那个 URL"。本站所有文章共用 `index.html?article=N` 一个页面、靠 JS 换内容，而微信不会执行 JS 后再抓，所以**全站共用同一张封面**，标题可以随文章变（`updateShareMeta()` 会改 `og:title`），但图片不会。想让每篇文章有独立封面，需要为每篇文章生成单独的静态 HTML 页。
 - **网站图标**：根目录的 `favicon.svg` 是所有 HTML 页面的浏览器图标。子目录页面通过相对路径引用它；新建或移动页面时，记得检查 `<link rel="icon">` 的路径。
 - **背景音乐**：编辑 `js/background-music.js` 中的 `musicList` 数组；每项包含歌曲标题、艺术家和音频地址。当前配置为单曲循环。
 - **电影列表**：编辑 `movie.html` 中的 `VIDEO_LIST` 数组，为视频填写名称和播放链接。
