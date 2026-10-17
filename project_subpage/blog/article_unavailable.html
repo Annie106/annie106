@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>文章暂不开放 · Annie</title>
+  <link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
+  <script>
+    (function () {
+      const systemPrefersDark = window.matchMedia
+        && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      let savedTheme = null;
+      try { savedTheme = localStorage.getItem('annie-theme'); } catch (e) {}
+      document.documentElement.setAttribute(
+        'data-theme',
+        savedTheme === 'light' || savedTheme === 'dark'
+          ? savedTheme
+          : (systemPrefersDark ? 'dark' : 'light')
+      );
+    })();
+  </script>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .unavailable-page {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      padding: 48px 0 72px;
+    }
+
+    .unavailable-card {
+      width: 100%;
+      max-width: 520px;
+      padding: 48px 40px;
+      text-align: center;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      animation: unavailableEnter 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+
+    .unavailable-icon {
+      display: grid;
+      place-items: center;
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 24px;
+      border-radius: 18px;
+      background: var(--color-tag-bg);
+      color: var(--color-text-primary);
+      font-size: 1.5rem;
+    }
+
+    .unavailable-label {
+      margin-bottom: 10px;
+      color: var(--color-text-tertiary);
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+    }
+
+    .unavailable-title {
+      margin-bottom: 12px;
+      color: var(--color-text-primary);
+      font-size: 1.5rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .unavailable-description {
+      margin-bottom: 28px;
+      color: var(--color-text-secondary);
+      font-size: 0.9375rem;
+      line-height: 1.8;
+    }
+
+    .unavailable-home-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 22px;
+      border: 1px solid var(--color-accent);
+      border-radius: var(--radius-md);
+      background: var(--color-accent);
+      color: var(--color-bg);
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background var(--transition-fast), border-color var(--transition-fast),
+        color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .unavailable-home-link:hover {
+      border-color: var(--color-accent-hover);
+      background: var(--color-accent-hover);
+      color: var(--color-bg);
+      transform: translateY(-1px);
+    }
+
+    .unavailable-home-link:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 4px;
+    }
+
+    @keyframes unavailableEnter {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 480px) {
+      .unavailable-page { padding: 32px 0 56px; }
+      .unavailable-card { padding: 36px 24px; }
+      .unavailable-title { font-size: 1.375rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .unavailable-card { animation: none; }
+      .unavailable-home-link { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <main class="unavailable-page">
+      <section class="unavailable-card" aria-labelledby="unavailableTitle">
+        <div class="unavailable-icon" aria-hidden="true">
+          <i class="ri-lock-2-line"></i>
+        </div>
+        <p class="unavailable-label">暂未开放</p>
+        <h1 class="unavailable-title" id="unavailableTitle">当前文章不对外开放</h1>
+        <p class="unavailable-description">这篇文章目前暂不对外开放，感谢你的理解。</p>
+        <a href="../../index.html" class="unavailable-home-link">
+          <i class="ri-arrow-left-line" aria-hidden="true"></i>
+          返回博客
+        </a>
+      </section>
+    </main>
+  </div>
+  <script src="../../js/theme.js"></script>
+</body>
+</html>

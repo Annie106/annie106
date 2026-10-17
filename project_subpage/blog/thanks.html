@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>感谢反馈 · Annie</title>
+<link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  html, body { overflow-x: hidden; }
+
+  .thanks-page {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 120px 24px 96px;
+    text-align: center;
+    animation: pageEnter 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  @keyframes pageEnter {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .thanks-page .thanks-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 24px;
+    border-radius: 50%;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-primary);
+    font-size: 1.5rem;
+  }
+
+  .thanks-page h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+
+  .thanks-page p {
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+    margin-bottom: 36px;
+  }
+
+  /* 删除「返回首页」按钮后，倒计时成为页面最后一行：
+     保留与上文之间约 12px 的间距（正文段落 36px 下边距 - 24px） */
+  .thanks-page .redirect-countdown {
+    margin-top: -24px;
+    margin-bottom: 0;
+    color: var(--color-text-tertiary);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .thanks-page { animation: none; }
+  }
+
+  @media (max-width: 640px) {
+    .thanks-page { padding: 80px 20px 72px; }
+    .thanks-page h1 { font-size: 1.375rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="main-container">
+  <div class="thanks-page">
+
+    <div class="thanks-icon">
+      <i class="ri-check-line"></i>
+    </div>
+
+    <h1>感谢你的反馈</h1>
+
+    <p>
+      你的意见已提交，会用于改进这个博客。<br>
+      页面将在倒计时结束后自动返回首页。
+    </p>
+    <p class="redirect-countdown" id="redirectCountdown" role="status" aria-live="polite">
+      3 秒后自动返回首页
+    </p>
+
+  </div>
+</div>
+
+<script>
+  (function () {
+    const countdown = document.getElementById('redirectCountdown');
+    let secondsRemaining = 3;
+
+    const countdownTimer = window.setInterval(function () {
+      secondsRemaining -= 1;
+
+      if (secondsRemaining > 0) {
+        countdown.textContent = secondsRemaining + ' 秒后自动返回首页';
+        return;
+      }
+
+      window.clearInterval(countdownTimer);
+      window.location.replace('../../index.html');
+    }, 1000);
+  })();
+</script>
+
+</body>
+</html>

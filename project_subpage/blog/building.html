@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Annie · 项目构建中</title>
+  <link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
+  <script>
+    (function () {
+      const systemPrefersDark = window.matchMedia
+        && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      let savedTheme = null;
+      try { savedTheme = localStorage.getItem('annie-theme'); } catch (e) {}
+      document.documentElement.setAttribute(
+        'data-theme',
+        savedTheme === 'light' || savedTheme === 'dark'
+          ? savedTheme
+          : (systemPrefersDark ? 'dark' : 'light')
+      );
+    })();
+  </script>
+  <link rel="stylesheet" href="../../css/style.css">
+  <style>
+    .building-page {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      padding: 48px 0 72px;
+    }
+
+    .building-card {
+      width: 100%;
+      max-width: 520px;
+      padding: 48px 40px;
+      text-align: center;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      animation: buildingEnter 0.45s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+
+    .building-icon {
+      display: grid;
+      place-items: center;
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 24px;
+      border-radius: 18px;
+      background: var(--color-tag-bg);
+      color: var(--color-text-primary);
+      font-size: 1.5rem;
+    }
+
+    .building-label {
+      margin-bottom: 10px;
+      color: var(--color-text-tertiary);
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .building-title {
+      margin-bottom: 12px;
+      color: var(--color-text-primary);
+      font-size: 1.5rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .building-description {
+      margin-bottom: 28px;
+      color: var(--color-text-secondary);
+      font-size: 0.9375rem;
+      line-height: 1.8;
+    }
+
+    .building-home-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px 22px;
+      border: 1px solid var(--color-accent);
+      border-radius: var(--radius-md);
+      background: var(--color-accent);
+      color: var(--color-bg);
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background var(--transition-fast), border-color var(--transition-fast),
+        color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .building-home-link:hover {
+      border-color: var(--color-accent-hover);
+      background: var(--color-accent-hover);
+      color: var(--color-bg);
+      transform: translateY(-1px);
+    }
+
+    .building-home-link:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 4px;
+    }
+
+    @keyframes buildingEnter {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 480px) {
+      .building-page { padding: 32px 0 56px; }
+      .building-card { padding: 36px 24px; }
+      .building-title { font-size: 1.375rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .building-card { animation: none; }
+      .building-home-link { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <main class="building-page">
+      <section class="building-card" aria-labelledby="buildingTitle">
+        <div class="building-icon" aria-hidden="true">
+          <i class="ri-tools-line"></i>
+        </div>
+        <p class="building-label">页面建设中</p>
+        <h1 class="building-title" id="buildingTitle">项目正在构建中</h1>
+        <p class="building-description">该页面尚未完成，内容正在准备中。敬请期待。</p>
+        <a href="../../index.html" class="building-home-link" id="returnToBlog">
+          <i class="ri-arrow-left-line" aria-hidden="true"></i>
+          返回首页
+        </a>
+      </section>
+    </main>
+  </div>
+
+  <script src="../../js/theme.js"></script>
+  <script>
+    const returnToBlog = document.getElementById('returnToBlog');
+    const blogHome = new URL(returnToBlog.href);
+    const referrer = document.referrer ? new URL(document.referrer) : null;
+
+    if (referrer && referrer.origin === blogHome.origin && referrer.pathname === blogHome.pathname) {
+      returnToBlog.addEventListener('click', function(event) {
+        event.preventDefault();
+        window.history.back();
+      });
+    }
+  </script>
+</body>
+</html>

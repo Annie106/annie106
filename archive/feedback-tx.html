@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>反馈 · Annie</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
+<script>
+  (function () {
+    const systemPrefersDark = window.matchMedia
+      && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    let savedTheme = null;
+    try {
+      savedTheme = localStorage.getItem('annie-theme');
+    } catch (error) {
+      console.warn('无法读取已保存的主题设置，将使用系统偏好。', error);
+    }
+    document.documentElement.setAttribute(
+      'data-theme',
+      savedTheme === 'light' || savedTheme === 'dark'
+        ? savedTheme
+        : (systemPrefersDark ? 'dark' : 'light')
+    );
+  })();
+</script>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  html, body { overflow-x: hidden; }
+  html { color-scheme: light; }
+  html[data-theme="dark"] { color-scheme: dark; }
+
+  .feedback-page {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 64px 24px 96px;
+    animation: pageEnter 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
+    color: var(--color-text-primary);
+  }
+
+  @keyframes pageEnter {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: var(--color-text-tertiary);
+    text-decoration: none;
+    margin-bottom: 48px;
+    transition: color var(--transition-fast);
+  }
+  html:not(.is-touch-input) .back-link:hover { color: var(--color-text-primary); }
+  .back-link i { font-size: 1rem; transition: transform var(--transition-fast); }
+  html:not(.is-touch-input) .back-link:hover i { transform: translateX(-3px); }
+  .back-link:focus-visible,
+  .btn-primary:focus-visible,
+  .btn-ghost:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+  }
+
+  .feedback-intro h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+    margin-bottom: 12px;
+    line-height: 1.35;
+  }
+  .feedback-intro .subtitle {
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+    line-height: 1.75;
+    margin-bottom: 40px;
+  }
+
+  .notice-card {
+    padding: 24px 28px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 28px;
+    box-shadow: var(--shadow-xs);
+  }
+  .notice-card p {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+    margin: 0;
+  }
+  .notice-card p + p { margin-top: 12px; }
+
+  .disclaimer {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+    line-height: 1.75;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+    margin-top: 16px;
+  }
+
+  /* 勾选框 */
+  .agree-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    margin-bottom: 32px;
+    user-select: none;
+    position: relative;
+  }
+
+  .agree-checkbox input {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    cursor: pointer;
+    z-index: 2;
+    margin: 0;
+  }
+
+  .agree-checkbox svg {
+    display: block;
+    width: 1.25em;
+    height: 1.25em;
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
+    overflow: visible;
+    transition: color 0.4s ease;
+  }
+
+  .agree-checkbox svg .box {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .agree-checkbox svg .check {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+  }
+
+  .agree-checkbox input:checked ~ svg { color: var(--color-text-primary); }
+
+  .agree-checkbox input:focus-visible ~ svg {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+
+  .agree-checkbox input:checked ~ svg .check {
+    animation: drawCheck 0.45s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards;
+  }
+
+  @keyframes drawCheck { to { stroke-dashoffset: 0; } }
+
+  .agree-checkbox .checkbox-text {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+
+  /* 按钮 */
+  .action-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 28px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--color-bg);
+    background: var(--color-accent);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background var(--transition-fast),
+                transform var(--transition-fast),
+                box-shadow var(--transition-fast),
+                opacity var(--transition-fast);
+  }
+  html:not(.is-touch-input) .btn-primary:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0); box-shadow: none;
+  }
+  .btn-primary:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-primary:disabled:hover {
+    background: var(--color-accent);
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-primary i { font-size: 1rem; transition: transform var(--transition-fast); }
+  html:not(.is-touch-input) .btn-primary:hover:not(:disabled) i { transform: translateX(3px); }
+
+  .btn-ghost {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+    background: none;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 6px 0;
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+  html:not(.is-touch-input) .btn-ghost:hover { color: var(--color-text-secondary); }
+
+  /* 等待态 */
+  .feedback-waiting {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  .feedback-waiting.visible { display: block; opacity: 1; }
+
+  .waiting-card {
+    padding: 48px 32px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .waiting-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 24px;
+    border-radius: 50%;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-primary);
+    font-size: 1.5rem;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.06); opacity: 0.75; }
+  }
+
+  .waiting-card h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 12px;
+  }
+
+  .waiting-card p {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+    margin: 0 auto 28px;
+    max-width: 400px;
+  }
+
+  .waiting-card .hint {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+    line-height: 1.7;
+    padding-top: 16px;
+    margin-top: 24px;
+    border-top: 1px solid var(--color-border);
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .waiting-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .feedback-page,
+    .waiting-icon { animation: none; }
+    .feedback-waiting { transition: none; }
+    .agree-checkbox input:checked ~ svg .check { animation: none; stroke-dashoffset: 0; }
+  }
+
+  @media (max-width: 640px) {
+    .feedback-page { padding: 40px 20px 72px; }
+    .feedback-intro h1 { font-size: 1.5rem; }
+    .notice-card { padding: 20px 22px; }
+    .waiting-card { padding: 36px 22px; }
+    .action-row { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<div class="main-container">
+  <div class="feedback-page">
+
+    <a href="../index.html" class="back-link">
+      <i class="ri-arrow-left-line"></i>
+      返回首页
+    </a>
+
+    <!-- ========== 说明态 ========== -->
+    <div class="feedback-intro" id="introState">
+      <h1>反馈</h1>
+      <p class="subtitle">
+        你的意见会帮助这个博客变得更好。反馈内容不会公开展示，仅用于改进。
+      </p>
+
+      <div class="notice-card">
+        <p>
+          点击下方按钮后，问卷将在新标签页中打开。
+          填写并提交后，关闭问卷标签页即可自动回到博客。
+        </p>
+        <p>
+          问卷没有标准答案，也不需要署名。你可以只回答感兴趣的部分。
+        </p>
+        <p class="disclaimer">
+          反馈为自愿提交。问卷由腾讯问卷平台提供并托管，数据收集与处理遵循腾讯问卷的隐私政策。
+          所有反馈仅用于改进本博客，不会公开或用于商业用途。博客不对反馈内容的完整性作保证，
+          亦不承担因提交反馈而产生的任何直接或间接责任。如有疑问，可通过关于页面联系。
+        </p>
+      </div>
+
+      <label class="agree-checkbox" for="agreeCheckbox">
+        <input type="checkbox" id="agreeCheckbox">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <rect class="box" x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
+          <path class="check" d="M 18 33 L 28 43 L 46 22"></path>
+        </svg>
+        <span class="checkbox-text">我已阅读并同意上述免责声明</span>
+      </label>
+
+      <div class="action-row">
+        <button class="btn-primary" id="startBtn" type="button" disabled>
+          开始填写
+          <i class="ri-arrow-right-line"></i>
+        </button>
+        <button class="btn-ghost" id="backBtn" type="button">
+          暂不填写
+        </button>
+      </div>
+    </div>
+
+    <!-- ========== 等待态 ========== -->
+    <div class="feedback-waiting" id="waitingState">
+      <div class="waiting-card">
+        <div class="waiting-icon">
+          <i class="ri-external-link-line"></i>
+        </div>
+        <h2>问卷已在新标签页打开</h2>
+        <p>
+          请在新标签页中完成问卷。<br>
+          填写完成后关闭该标签页，页面会自动回到博客。
+        </p>
+
+        <div class="waiting-actions">
+          <button class="btn-primary" id="doneBtn" type="button">
+            我已填写完成
+            <i class="ri-arrow-right-line"></i>
+          </button>
+          <button class="btn-ghost" id="cancelBtn" type="button">
+            取消
+          </button>
+        </div>
+
+        <p class="hint">
+          如果新标签页没有打开，请检查浏览器的弹窗拦截提示，允许本站打开弹窗后重试。
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="../js/touch-hover.js"></script>
+<script src="../js/theme.js"></script>
+
+<script>
+(function () {
+  /* ============================================================
+     腾讯问卷地址
+     ============================================================ */
+  const SURVEY_URL = 'https://wj.qq.com/s2/28167012/aers/';
+
+  const introState    = document.getElementById('introState');
+  const waitingState  = document.getElementById('waitingState');
+  const startBtn      = document.getElementById('startBtn');
+  const backBtn       = document.getElementById('backBtn');
+  const doneBtn       = document.getElementById('doneBtn');
+  const cancelBtn     = document.getElementById('cancelBtn');
+  const agreeCheckbox = document.getElementById('agreeCheckbox');
+
+  let surveyWindow = null;
+  let pollTimer = null;
+
+  /* ---------- 返回博客：优先回到来源页，否则回首页 ---------- */
+  function returnToBlog() {
+    const ref = document.referrer;
+    if (ref && ref.indexOf(location.origin) === 0 && ref !== location.href) {
+      window.location.href = ref;
+    } else {
+      window.location.href = '../index.html';
+    }
+  }
+
+  /* ---------- 勾选 → 启用按钮 ---------- */
+  agreeCheckbox.addEventListener('change', function () {
+    startBtn.disabled = !agreeCheckbox.checked;
+  });
+
+  /* ---------- 开始填写 ---------- */
+  startBtn.addEventListener('click', function () {
+    if (!agreeCheckbox.checked) return;
+
+    let win = null;
+    try {
+      win = window.open(SURVEY_URL, '_blank', 'noopener=no');
+    } catch (e) {
+      win = null;
+    }
+
+    if (win && !win.closed) {
+      surveyWindow = win;
+      enterWaitingMode();
+    } else {
+      /* 弹窗被拦截，直接在当前页打开 */
+      window.location.href = SURVEY_URL;
+    }
+  });
+
+  /* ---------- 暂不填写 → 返回上一页 ---------- */
+  backBtn.addEventListener('click', function () {
+    if (window.history.length > 1 || (document.referrer && document.referrer !== '')) {
+      window.history.back();
+      setTimeout(function () {
+        if (document.visibilityState === 'visible') {
+          window.location.href = '../index.html';
+        }
+      }, 600);
+    } else {
+      window.location.href = '../index.html';
+    }
+  });
+
+  /* ---------- 进入等待态 ---------- */
+  function enterWaitingMode() {
+    introState.style.transition = 'opacity 0.25s ease';
+    introState.style.opacity = '0';
+
+    setTimeout(function () {
+      introState.style.display = 'none';
+      introState.style.opacity = '';
+      introState.style.transition = '';
+
+      waitingState.style.display = 'block';
+      void waitingState.offsetHeight;
+      waitingState.classList.add('visible');
+    }, 250);
+
+    /* 轮询检测问卷标签是否关闭 */
+    pollTimer = setInterval(function () {
+      if (surveyWindow && surveyWindow.closed) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+        returnToBlog();
+      }
+    }, 700);
+  }
+
+  /* ---------- 我已填写完成 ---------- */
+  doneBtn.addEventListener('click', function () {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    if (surveyWindow && !surveyWindow.closed) {
+      try { surveyWindow.close(); } catch (e) {}
+    }
+    returnToBlog();
+  });
+
+  /* ---------- 取消 ---------- */
+  cancelBtn.addEventListener('click', function () {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    if (surveyWindow && !surveyWindow.closed) {
+      try { surveyWindow.close(); } catch (e) {}
+    }
+    surveyWindow = null;
+
+    waitingState.classList.remove('visible');
+    setTimeout(function () {
+      waitingState.style.display = 'none';
+      introState.style.display = 'block';
+      introState.style.opacity = '0';
+      void introState.offsetHeight;
+      introState.style.opacity = '1';
+      setTimeout(function () { introState.style.opacity = ''; }, 300);
+    }, 300);
+
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  });
+
+})();
+</script>
+
+</body>
+</html>

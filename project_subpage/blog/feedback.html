@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Annie · 问题反馈</title>
+<link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
+<script>
+  (function () {
+    const systemPrefersDark = window.matchMedia
+      && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    let savedTheme = null;
+    try { savedTheme = localStorage.getItem('annie-theme'); } catch (e) {}
+    document.documentElement.setAttribute(
+      'data-theme',
+      savedTheme === 'light' || savedTheme === 'dark'
+        ? savedTheme
+        : (systemPrefersDark ? 'dark' : 'light')
+    );
+  })();
+</script>
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  html, body { overflow-x: hidden; }
+  html { color-scheme: light; }
+  html[data-theme="dark"] { color-scheme: dark; }
+
+  .feedback-page {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 64px 24px 96px;
+    animation: pageEnter 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
+    color: var(--color-text-primary);
+  }
+
+  @keyframes pageEnter {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .article-context-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin-bottom: 24px;
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+  }
+
+  .article-context-card i {
+    font-size: 1.25rem;
+    color: var(--color-text-tertiary);
+  }
+
+  .article-context-card .label {
+    font-weight: 500;
+    color: var(--color-text-tertiary);
+  }
+
+  .article-context-card .article-title {
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: var(--color-text-tertiary);
+    text-decoration: none;
+    margin-bottom: 48px;
+    transition: color var(--transition-fast);
+  }
+  html:not(.is-touch-input) .back-link:hover { color: var(--color-text-primary); }
+  .back-link i { font-size: 1rem; transition: transform var(--transition-fast); }
+  html:not(.is-touch-input) .back-link:hover i { transform: translateX(-3px); }
+  .back-link:focus-visible,
+  .btn-primary:focus-visible,
+  .btn-ghost:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+  }
+
+  .feedback-intro h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+    margin-bottom: 12px;
+    line-height: 1.35;
+  }
+  .feedback-intro .subtitle {
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+    line-height: 1.75;
+    margin-bottom: 40px;
+  }
+
+  .notice-card {
+    padding: 24px 28px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 28px;
+    box-shadow: var(--shadow-xs);
+  }
+  .notice-card p {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+    margin: 0;
+  }
+  .notice-card p + p { margin-top: 12px; }
+
+  .disclaimer {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+    line-height: 1.75;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+    margin-top: 16px;
+  }
+
+  /* 勾选框 */
+  .agree-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    margin-bottom: 32px;
+    user-select: none;
+    position: relative;
+  }
+
+  .agree-checkbox input {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    cursor: pointer;
+    z-index: 2;
+    margin: 0;
+  }
+
+  .agree-checkbox svg {
+    display: block;
+    width: 1.25em;
+    height: 1.25em;
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
+    overflow: visible;
+    transition: color 0.4s ease;
+  }
+
+  .agree-checkbox svg .box {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .agree-checkbox svg .check {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+  }
+
+  .agree-checkbox input:checked ~ svg { color: var(--color-text-primary); }
+
+  .agree-checkbox input:focus-visible ~ svg {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+
+  .agree-checkbox input:checked ~ svg .check {
+    animation: drawCheck 0.45s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards;
+  }
+
+  @keyframes drawCheck { to { stroke-dashoffset: 0; } }
+
+  .agree-checkbox .checkbox-text {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+
+  /* 表单 */
+  .feedback-form {
+    display: grid;
+    gap: 24px;
+  }
+
+  .form-field,
+  .field {
+    display: grid;
+    gap: 8px;
+  }
+
+  .form-field label,
+  .field-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+
+  .required {
+    color: var(--color-text-tertiary);
+    font-weight: 400;
+    margin-left: 2px;
+  }
+
+  .form-field input,
+  .form-field textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: 0.9375rem;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    box-sizing: border-box;
+  }
+
+  .form-field textarea {
+    min-height: 160px;
+    resize: vertical;
+  }
+
+  .form-field input::placeholder,
+  .form-field textarea::placeholder {
+    color: var(--color-text-tertiary);
+    opacity: 1;
+  }
+
+  .form-field input:focus-visible,
+  .form-field textarea:focus-visible {
+    outline: none;
+    border-color: var(--color-text-secondary);
+    box-shadow: 0 0 0 3px var(--color-border);
+  }
+
+  .feedback-form .agree-checkbox { margin: 0; }
+
+  /* 单选组 */
+  .radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .radio-group label {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    padding: 8px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: border-color var(--transition-fast),
+                background var(--transition-fast),
+                color var(--transition-fast);
+    user-select: none;
+  }
+
+  .radio-group label:hover { border-color: var(--color-text-tertiary); }
+
+  .radio-group input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .radio-group input:checked + span {
+    color: var(--color-text-primary);
+    font-weight: 500;
+  }
+
+  .radio-group label:has(input:checked) {
+    border-color: var(--color-text-primary);
+    background: var(--color-surface);
+  }
+
+  .radio-group label:has(input:focus-visible) {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* 评分组 */
+  .rating-group { display: flex; gap: 8px; }
+
+  .rating-group label {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: border-color var(--transition-fast),
+                background var(--transition-fast),
+                color var(--transition-fast);
+    user-select: none;
+  }
+
+  .rating-group label:hover { border-color: var(--color-text-tertiary); }
+
+  .rating-group input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .rating-group label:has(input:checked) {
+    border-color: var(--color-text-primary);
+    background: var(--color-text-primary);
+    color: var(--color-bg);
+  }
+
+  .rating-group label:has(input:focus-visible) {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  .rating-hint {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    margin-top: 4px;
+  }
+
+  /* 「其他」补充输入框 */
+  .other-input {
+    display: none;
+    margin-top: 10px;
+  }
+
+  .other-input.visible { display: block; }
+
+  .other-input input,
+  .contact-input input[type="text"],
+  .contact-input input[type="email"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: 0.875rem;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    box-sizing: border-box;
+  }
+
+  .other-input input::placeholder,
+  .contact-input input::placeholder { color: var(--color-text-tertiary); }
+
+  .other-input input:focus-visible,
+  .contact-input input:focus-visible {
+    outline: none;
+    border-color: var(--color-text-secondary);
+    box-shadow: 0 0 0 3px var(--color-border);
+  }
+
+  .contact-input input:disabled {
+    background: var(--color-surface);
+    cursor: not-allowed;
+  }
+
+  /* 联系方式（仅在选择「允许」时出现） */
+  .contact-input {
+    display: none;
+    margin-top: 14px;
+    padding: 18px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+
+  .contact-input.visible {
+    display: grid;
+    gap: 16px;
+    animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  .contact-input .field-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+
+  /* 按钮 */
+  .action-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 28px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--color-bg);
+    background: var(--color-accent);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background var(--transition-fast),
+                transform var(--transition-fast),
+                box-shadow var(--transition-fast),
+                opacity var(--transition-fast);
+  }
+  html:not(.is-touch-input) .btn-primary:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0); box-shadow: none;
+  }
+  .btn-primary:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-primary:disabled:hover {
+    background: var(--color-accent);
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-primary i { font-size: 1rem; transition: transform var(--transition-fast); }
+  html:not(.is-touch-input) .btn-primary:hover:not(:disabled) i { transform: translateX(3px); }
+
+  .btn-primary.loading {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+  .btn-primary.loading i { animation: spin 1s linear infinite; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .btn-ghost {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+    background: none;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 6px 0;
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+  html:not(.is-touch-input) .btn-ghost:hover { color: var(--color-text-secondary); }
+
+  .submit-hint {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    line-height: 1.6;
+    margin-top: -4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .feedback-page,
+    .back-link i,
+    .btn-primary,
+    .btn-primary i,
+    .agree-checkbox svg,
+    .form-field input,
+    .form-field textarea,
+    .radio-group label,
+    .rating-group label,
+    .other-input input,
+    .contact-input input { transition: none; }
+    .agree-checkbox input:checked ~ svg .check { animation: none; stroke-dashoffset: 0; }
+    .btn-primary.loading i { animation: none; }
+    .contact-input.visible { animation: none; }
+  }
+
+  @media (max-width: 640px) {
+    .feedback-page { padding: 40px 20px 72px; }
+    .feedback-intro h1 { font-size: 1.5rem; }
+    .notice-card { padding: 20px 22px; }
+    .action-row { flex-wrap: wrap; }
+    .rating-group label { width: 40px; height: 40px; }
+    .contact-input { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="main-container">
+  <div class="feedback-page">
+
+    <a href="../../index.html" class="back-link">
+      <i class="ri-arrow-left-line"></i>
+      返回首页
+    </a>
+
+    <div class="feedback-intro">
+      <div id="articleContextCard" class="article-context-card" hidden>
+        <i class="ri-article-line"></i>
+        <div>
+          <span class="label">反馈的文章：</span>
+          <span class="article-title" id="articleContextTitle"></span>
+        </div>
+      </div>
+
+      <h1>问题反馈（测试阶段）</h1>
+      <p class="subtitle">
+        你的意见会帮助这个博客变得更好。请填写下方表单提交反馈。
+      </p>
+
+      <div class="notice-card">
+        <p>反馈后请耐心等待，我们会处理你的反馈。</p>
+        <p class="disclaimer">
+          反馈为自愿提交，数据可能会被保留，会在第三方服务商中保留30天。请勿在表单中填写密码或其他敏感信息。
+        </p>
+      </div>
+
+      <form class="feedback-form" id="feedbackForm" action="https://api.web3forms.com/submit" method="POST">
+        <input type="hidden" name="access_key" value="14cc0dde-c616-4604-a802-84686ae0c843">
+        <input type="hidden" name="redirect" value="thanks.html">
+        <input type="hidden" name="subject" value="博客问题反馈">
+        <input type="hidden" name="from_name" value="Annie 的博客">
+
+        <!-- 自动填充文章信息 -->
+        <input type="hidden" name="article_id" id="article_id" value="">
+        <input type="hidden" name="article_title" id="article_title" value="">
+
+        <!-- ① 反馈类型：必选 -->
+        <div class="field">
+          <label class="field-label">反馈类型<span class="required">（必选）</span></label>
+          <div class="radio-group">
+            <label><input type="radio" name="type" value="文章问题" required><span>文章问题</span></label>
+            <label><input type="radio" name="type" value="Bug反馈"><span>Bug 反馈</span></label>
+            <label><input type="radio" name="type" value="功能建议"><span>功能建议</span></label>
+            <label><input type="radio" name="type" value="排版样式"><span>排版样式</span></label>
+            <label><input type="radio" name="type" value="其他" id="typeOther"><span>其他</span></label>
+          </div>
+          <div class="other-input" id="typeOtherInput">
+            <input type="text" name="type_other" id="typeOtherText" placeholder="请简要说明具体类型">
+          </div>
+        </div>
+
+        <!-- ② 整体评价：必选 -->
+        <div class="field">
+          <label class="field-label">整体评价<span class="required">（必选）</span></label>
+          <div class="rating-group">
+            <label><input type="radio" name="rating" value="1" required><span>1</span></label>
+            <label><input type="radio" name="rating" value="2"><span>2</span></label>
+            <label><input type="radio" name="rating" value="3"><span>3</span></label>
+            <label><input type="radio" name="rating" value="4"><span>4</span></label>
+            <label><input type="radio" name="rating" value="5"><span>5</span></label>
+          </div>
+          <p class="rating-hint">1 表示不满意，5 表示很满意</p>
+        </div>
+
+        <!-- ③ 反馈内容：必填 -->
+        <div class="form-field">
+          <label for="feedbackMessage">反馈内容<span class="required">（必填）</span></label>
+          <textarea
+            id="feedbackMessage"
+            name="message"
+            rows="6"
+            placeholder="请描述你的建议或遇到的问题"
+            required
+          ></textarea>
+        </div>
+
+        <!-- ④ 是否允许联系 -->
+        <div class="field">
+          <label class="field-label">是否允许我们联系你<span class="required">（必选）</span></label>
+          <div class="radio-group">
+            <label><input type="radio" name="contact_allowed" value="允许" id="contactYes"><span>允许</span></label>
+            <label><input type="radio" name="contact_allowed" value="不允许" id="contactNo" checked><span>不允许</span></label>
+          </div>
+          <p class="rating-hint">选择「允许」后需留下联系方式，方便我们回复你</p>
+
+          <!-- 选择「允许」时才出现 -->
+          <div class="contact-input" id="contactInput">
+            <div class="field">
+              <span class="field-label">联系方式类型<span class="required">（必选）</span></span>
+              <div class="radio-group">
+                <label><input type="radio" name="contact_type" value="微信" id="contactTypeWechat"><span>微信</span></label>
+                <label><input type="radio" name="contact_type" value="邮箱" id="contactTypeEmail"><span>邮箱</span></label>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="contactValue">你的联系方式<span class="required">（必填）</span></label>
+              <input
+                type="text"
+                id="contactValue"
+                name="contact_value"
+                placeholder="请先选择联系方式类型"
+                autocomplete="off"
+                disabled
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- ⑤ 同意声明：必填 -->
+        <label class="agree-checkbox" for="agreeCheckbox">
+          <input type="checkbox" id="agreeCheckbox" name="consent" value="同意" required>
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <rect class="box" x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
+            <path class="check" d="M 18 33 L 28 43 L 46 22"></path>
+          </svg>
+          <span class="checkbox-text">我已阅读并同意上述说明</span>
+        </label>
+
+        <div class="action-row">
+          <button class="btn-primary" id="submitBtn" type="submit" disabled>
+            提交反馈
+            <i class="ri-send-plane-line" aria-hidden="true"></i>
+          </button>
+          <a class="btn-ghost" href="../../index.html">返回首页</a>
+        </div>
+
+        <p class="submit-hint" id="submitHint">请填写必填项后提交</p>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<script src="../../js/touch-hover.js"></script>
+<script src="../../js/theme.js"></script>
+
+<script>
+(function () {
+  const form           = document.getElementById('feedbackForm');
+  const typeOther      = document.getElementById('typeOther');
+  const typeOtherInput = document.getElementById('typeOtherInput');
+  const typeOtherText  = document.getElementById('typeOtherText');
+  const submitBtn      = document.getElementById('submitBtn');
+  const submitHint     = document.getElementById('submitHint');
+  const redirectField  = form.querySelector('input[name="redirect"]');
+  const articleIdInput = document.getElementById('article_id');
+  const articleTitleInput = document.getElementById('article_title');
+
+  const contactRadios     = form.querySelectorAll('input[name="contact_allowed"]');
+  const contactInput      = document.getElementById('contactInput');
+  const contactTypeRadios = form.querySelectorAll('input[name="contact_type"]');
+  const contactValue      = document.getElementById('contactValue');
+  const contactValueLabel = form.querySelector('label[for="contactValue"]');
+
+  /* ============================================================
+     ★ 核心：一句 checkValidity() 搞定所有必填校验
+     浏览器会自动检查所有带 required 的字段，
+     包括单选组（只要组里有一个 required 就算整组必填）
+     ============================================================ */
+  function updateSubmitState() {
+    const ok = form.checkValidity();
+    submitBtn.disabled = !ok;
+    submitHint.textContent = ok
+      ? '信息已填写完整，可以提交'
+      : '请填写必填项后提交';
+  }
+
+  // 从 URL 读取文章信息
+  const urlParams = new URLSearchParams(window.location.search);
+  const articleId = urlParams.get('article');
+  const articleTitle = decodeURIComponent(urlParams.get('title'));
+
+  if (articleId) {
+    articleIdInput.value = articleId;
+  }
+  if (articleTitle) {
+    articleTitleInput.value = articleTitle;
+    // 显示文章上下文卡片
+    document.getElementById('articleContextCard').hidden = false;
+    document.getElementById('articleContextTitle').textContent = articleTitle;
+  }
+
+  /* 「其他」选中时，动态把补充输入框设为必填 */
+  form.querySelectorAll('input[name="type"]').forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      if (typeOther.checked) {
+        typeOtherInput.classList.add('visible');
+        typeOtherText.required = true;
+        typeOtherText.focus();
+      } else {
+        typeOtherInput.classList.remove('visible');
+        typeOtherText.required = false;
+        typeOtherText.value = '';
+      }
+      updateSubmitState();
+    });
+  });
+
+  /* ============================================================
+     联系方式：只有选择「允许」时才出现，并动态切换必填状态
+     ============================================================ */
+  function isContactAllowed() {
+    const checked = form.querySelector('input[name="contact_allowed"]:checked');
+    return !!checked && checked.value === '允许';
+  }
+
+  function updateContactField() {
+    const allowed = isContactAllowed();
+
+    contactInput.classList.toggle('visible', allowed);
+
+    if (allowed) {
+      // 整组联系方式类型变为必选
+      contactTypeRadios[0].required = true;
+    } else {
+      // 隐藏时清空并取消必填，避免影响校验
+      contactTypeRadios.forEach(function (r) {
+        r.required = false;
+        r.checked = false;
+      });
+      contactValue.required = false;
+      contactValue.disabled = true;
+      contactValue.type = 'text';
+      contactValue.placeholder = '请先选择联系方式类型';
+      contactValueLabel.firstChild.textContent = '你的联系方式';
+      contactValue.value = '';
+    }
+  }
+
+  contactRadios.forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      updateContactField();
+      updateSubmitState();
+    });
+  });
+
+  /* 微信 / 邮箱 切换时更新输入框类型与提示文案 */
+  contactTypeRadios.forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      contactValue.disabled = false;
+      contactValue.required = true;
+      if (radio.value === '邮箱') {
+        contactValue.type = 'email';
+        contactValue.placeholder = '请输入你的邮箱地址';
+        contactValueLabel.firstChild.textContent = '你的邮箱地址';
+      } else {
+        contactValue.type = 'text';
+        contactValue.placeholder = '请输入你的微信号';
+        contactValueLabel.firstChild.textContent = '你的微信号';
+      }
+      contactValue.value = '';
+      updateSubmitState();
+    });
+  });
+
+  /* 所有输入变化都重新算一次 */
+  form.addEventListener('input', updateSubmitState);
+  form.addEventListener('change', updateSubmitState);
+
+  /* 初始化 */
+  updateContactField();
+  updateSubmitState();
+
+  /* ============================================================
+     提交后的跳转
+     web3forms 的 redirect 只在「原生表单提交」时生效，而且必须是绝对的
+     https 地址。所以这里在页面打开时按当前环境准备好这个字段。
+     注意：如果本地是双击 HTML 用 file:// 打开的，服务端只能把浏览器重定向
+     回 file:// 地址，浏览器会以安全理由直接拦掉（ERR_UNSAFE_REDIRECT）。
+     这种情况下干脆不带 redirect，让 web3forms 显示它自己的成功页，
+     至少不会报错。想看跳转效果，请用 http 服务器预览或直接访问线上站。
+     ============================================================ */
+  const THANKS_URL = 'thanks.html';
+
+  if (/^https?:$/.test(window.location.protocol)) {
+    redirectField.value = new URL(THANKS_URL, window.location.href).href;
+  } else {
+    redirectField.remove();
+  }
+
+  form.addEventListener('submit', function (e) {
+    if (!form.checkValidity()) {
+      e.preventDefault();
+      updateSubmitState();
+      return;
+    }
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+    submitHint.textContent = '正在提交……';
+  });
+
+})();
+</script>
+
+</body>
+</html>

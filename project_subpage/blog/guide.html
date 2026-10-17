@@ -1,0 +1,1902 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>使用指南</title>
+    <link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+    <link rel="stylesheet" href="../../css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    <style>
+        /* ==================== 内嵌页面样式 ==================== */
+        /* 作为 iframe 嵌入文章时，这里必须清掉站点样式表里的
+           body { min-height: 100vh; display: flex; padding: 0 24px }，
+           否则内嵌页面会被撑到视口高度，文章底部留出一大块空白 */
+        html, body {
+            box-sizing: border-box;
+            margin: 0 !important;
+            padding: 0 !important;
+            min-height: 0 !important;
+            height: auto !important;
+            display: block !important;
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        /* iOS 在 iframe / 横屏下会自动放大文字，导致内嵌页面字号突然变大、
+           排版被撑破，这里强制按 CSS 尺寸显示 */
+        html {
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        /* 站点样式表里的 body::before 是给外层页面用的「顶部渐变虚化」层：
+           position: fixed + backdrop-filter，会盖在内嵌内容最上面 150px，
+           把文章标题糊成一片灰白，这里必须关掉 */
+        body::before,
+        body::after {
+            content: none !important;
+            display: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+
+        /* 长网址、长代码不换行会把版面撑破（移动端尤其明显，
+           撑破后又被 overflow-x: hidden 裁掉 → 右边文字莫名消失） */
+        .guide-content,
+        .guide-content p,
+        .guide-content li,
+        .guide-content h1,
+        .guide-content h2,
+        .guide-content h3,
+        .guide-intro,
+        .guide-intro p,
+        .guide-version,
+        .config-block-title,
+        .guide-tip,
+        .guide-tip-title {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            min-width: 0;
+        }
+
+        /* 链接里的长 URL 强制断行（否则会把窄屏版面撑破、右侧文字被裁）。
+           链接的颜色、下划线、悬停效果已由 css/style.css 里的全局 a 规则统一处理，
+           这里不再重复定义。 */
+        .guide-content a,
+        .guide-intro a {
+            word-break: break-all;
+            overflow-wrap: anywhere;
+        }
+
+        .guide-content code {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        img,
+        pre,
+        table,
+        iframe {
+            max-width: 100%;
+        }
+
+        /* ==================== 字体：与博客界面保持一致 ==================== */
+        /* 博客全局正文与文章段落使用 --font-sans；目录也继承同一字体变量。
+           用相同的 fallback，确保站点变量未加载时中文字体仍保持一致。 */
+        .guide-content-wrapper {
+            width: 100%;
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 24px 16px 40px;
+            font-family: var(--font-sans, 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif);
+            color: var(--color-text-primary);
+            box-sizing: border-box;
+
+        }
+
+        /* 宽屏给目录留一列；正文行宽仍限制在舒适范围内。 */
+        @media (min-width: 780px) {
+            .guide-content-wrapper {
+                max-width: 1130px;
+                padding-left: 240px;
+                padding-right: 30px;
+            }
+
+            .guide-intro,
+            .guide-section,
+            .guide-version-row {
+                max-width: 860px;
+            }
+        }
+
+        /* 界面类文字（标题、标签、表格、徽标）统一用无衬线，和博客界面一致 */
+        .guide-section-title,
+        .guide-subtitle,
+        .guide-version,
+        .config-block-title,
+        .guide-tip-title,
+        .guide-warning-title,
+        .guide-table,
+        .guide-step-num,
+        .guide-kbd,
+        .guide-filetree-title {
+            font-family: var(--font-sans, 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif);
+        }
+
+        .guide-intro {
+            font-size: 1.1rem;
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        /* 版本号徽标：放在简介上方，低调不抢视线 */
+        .guide-version-row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .guide-version {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            font-size: 0.78rem;
+            line-height: 1.6;
+            color: var(--color-text-tertiary);
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 999px;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+        }
+
+        .guide-version i {
+            font-size: 0.9rem;
+        }
+
+        .guide-section {
+            margin-bottom: 40px;
+            background: var(--color-surface);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .guide-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .guide-section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--color-text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .guide-section-title i {
+            color: var(--color-text-tertiary);
+        }
+
+        /* 小节标题（每个大章节内部的小标题） */
+        .guide-subtitle {
+            font-size: 1.02rem;
+            font-weight: 600;
+            margin: 30px 0 12px;
+            color: var(--color-text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--color-divider);
+        }
+
+        .guide-subtitle:first-child {
+            margin-top: 0;
+        }
+
+        .guide-subtitle i {
+            color: var(--color-text-tertiary);
+            font-size: 1.05em;
+        }
+
+        .guide-content {
+            font-family: inherit;
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: var(--color-text-primary);
+            text-align: left;
+        }
+
+        .guide-content p {
+            font-family: inherit;
+            margin-bottom: 16px;
+        }
+
+        .guide-content ul,
+        .guide-content ol {
+            margin: 16px 0 16px 24px;
+            color: var(--color-text-primary);
+        }
+
+        .guide-content li {
+            margin-bottom: 8px;
+        }
+
+        .guide-content li > ul,
+        .guide-content li > ol {
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+
+        .guide-content code {
+            font-family: 'SF Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+            background: var(--color-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.88em;
+            border: 1px solid var(--color-border);
+            color: var(--color-text-primary);
+        }
+
+        .guide-content pre {
+            background: var(--color-bg);
+            padding: 18px;
+            border-radius: var(--radius-md);
+            overflow-x: auto;
+            border: 1px solid var(--color-border);
+            margin: 20px 0;
+        }
+
+        .guide-content pre code {
+            font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+            background: none;
+            padding: 0;
+            border: none;
+            font-size: 0.95em;
+            line-height: 1.7;
+        }
+
+        /* 键盘按键样式 */
+        .guide-kbd {
+            display: inline-block;
+            padding: 1px 7px;
+            font-size: 0.82em;
+            line-height: 1.7;
+            color: var(--color-text-primary);
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            border-bottom-width: 2px;
+            border-radius: 5px;
+            white-space: nowrap;
+        }
+
+        /* 步骤编号圆点 */
+        .guide-step-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--color-bg);
+            background: var(--color-accent);
+            border-radius: 50%;
+            line-height: 1;
+        }
+
+        /* 提示框 */
+        .guide-tip {
+            background: rgba(13, 13, 13, 0.03);
+            border-left: 4px solid var(--color-accent);
+            padding: 16px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+
+        .guide-tip-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--color-text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .guide-tip-title i {
+            color: var(--color-accent);
+        }
+
+        .guide-tip p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 结语：放在所有章节之外，作为全文收尾的独立区域。
+           间距与章节之间保持一致（相邻外边距会合并，最终就是 40px）。 */
+        .guide-outro {
+            margin-top: 40px;
+        }
+
+        .guide-outro .guide-tip {
+            margin: 0;
+        }
+
+        /* 警告框 */
+        .guide-warning {
+            background: rgba(255, 107, 107, 0.08);
+            border-left: 4px solid #ff6b6b;
+            padding: 16px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+
+        .guide-warning-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #c92a2a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .guide-warning-title i {
+            color: #ff6b6b;
+        }
+
+        .guide-warning p:last-child {
+            margin-bottom: 0;
+        }
+
+        .config-block {
+            margin: 24px 0;
+        }
+
+        .config-block-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--color-text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .config-block-title i {
+            color: var(--color-text-tertiary);
+        }
+
+        /* ==================== 表格 ==================== */
+        .guide-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            margin: 18px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .guide-table {
+            width: 100%;
+            min-width: 520px;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .guide-table th,
+        .guide-table td {
+            border: 1px solid var(--color-border);
+            padding: 10px 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .guide-table th {
+            background: var(--color-bg);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .guide-table td:first-child {
+            white-space: nowrap;
+        }
+
+        .guide-table code {
+            font-size: 0.86em;
+        }
+
+        /* ==================== 深色模式适配 ==================== */
+        [data-theme="dark"] .guide-content code,
+        [data-theme="dark"] .guide-content pre,
+        [data-theme="dark"] .guide-kbd,
+        [data-theme="dark"] .guide-table th {
+            background: var(--color-bg);
+            border-color: var(--color-border);
+        }
+
+        [data-theme="dark"] .guide-tip {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        [data-theme="dark"] .guide-warning {
+            background: rgba(248, 81, 73, 0.12);
+        }
+
+        [data-theme="dark"] .guide-warning-title {
+            color: #ff8f88;
+        }
+
+        [data-theme="dark"] .guide-section {
+            background: var(--color-surface);
+            border-color: var(--color-border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* ==================== 移动端响应式优化 ==================== */
+        @media (max-width: 768px) {
+            .guide-content-wrapper {
+                padding: 16px 12px 32px;
+                max-width: 100%;
+                margin: 0;
+            }
+
+            /* 窄屏别再居中：居中的长段落会把行宽压得很窄、还容易溢出 */
+            .guide-intro {
+                text-align: left;
+                font-size: 1rem;
+                line-height: 1.7;
+                margin-bottom: 24px;
+            }
+
+            /* 版本徽标在窄屏保持居中，作为简介前的一个小标识 */
+            .guide-version-row {
+                justify-content: center;
+                margin-bottom: 16px;
+            }
+
+            .guide-version {
+                font-size: 0.75rem;
+                padding: 3px 10px;
+            }
+
+            .guide-section {
+                padding: 20px;
+                margin-bottom: 20px;
+                border-radius: var(--radius-md);
+            }
+
+            .guide-section:last-child {
+                margin-bottom: 20px;
+            }
+
+            /* 窄屏下章节间距是 20px，结语与上面清单的间距保持一致
+               （相邻外边距会合并，取两者中较大的那个） */
+            .guide-outro {
+                margin-top: 20px;
+            }
+
+            .guide-section-title {
+                font-size: 1.1rem;
+                margin-bottom: 16px;
+            }
+
+            .guide-section-title i {
+                font-size: 1.1em;
+            }
+
+            .guide-subtitle {
+                font-size: 0.98rem;
+                margin: 24px 0 10px;
+            }
+
+            .guide-content {
+                font-size: 1rem;
+                line-height: 1.7;
+            }
+
+            .guide-content p {
+                margin-bottom: 14px;
+            }
+
+            .guide-content ul,
+            .guide-content ol {
+                margin: 14px 0 14px 20px;
+            }
+
+            .guide-content li {
+                margin-bottom: 6px;
+            }
+
+            .guide-content code {
+                font-size: 0.85em;
+            }
+
+            /* 代码块保持原有换行与对齐，超出部分在块内横向滚动。
+               之前改成 pre-wrap 后，行尾注释会被挤成一条窄柱，反而更难读 */
+            .guide-content pre {
+                padding: 14px;
+                margin: 16px 0;
+                white-space: pre;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                font-size: 0.82rem;
+            }
+
+            .guide-content pre code {
+                white-space: pre;
+                font-size: 0.95em;
+            }
+
+            /* 让横向滚动条在移动端也能看出「这里可以滑」 */
+            .guide-content pre::-webkit-scrollbar,
+            .guide-table-wrap::-webkit-scrollbar {
+                height: 6px;
+            }
+
+            .guide-content pre::-webkit-scrollbar-thumb,
+            .guide-table-wrap::-webkit-scrollbar-thumb {
+                background: var(--color-border);
+                border-radius: 3px;
+            }
+
+            .guide-content pre::-webkit-scrollbar-track,
+            .guide-table-wrap::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            /* 窄屏下取消固定最小宽度，让表格自适应换行。
+               保留 min-width 的话表格会超出屏幕，右侧内容被裁掉，
+               必须横向滑动才能看全，对小白很不友好 */
+            .guide-table {
+                font-size: 0.84rem;
+                min-width: 0;
+            }
+
+            .guide-table th,
+            .guide-table td {
+                padding: 8px;
+                word-break: break-word;
+                overflow-wrap: anywhere;
+            }
+
+            /* 第一列通常是「名词 / 字段 / 文件名」，短而关键：
+               取消不换行限制并给一个合适的宽度，
+               太窄会把 GitHub 这类词硬断成两行 */
+            .guide-table th:first-child,
+            .guide-table td:first-child {
+                white-space: normal;
+                width: 84px;
+                min-width: 84px;
+                word-break: normal;
+                overflow-wrap: normal;
+            }
+
+            .guide-tip,
+            .guide-warning {
+                padding: 14px;
+                margin: 16px 0;
+            }
+
+            .guide-tip-title,
+            .guide-warning-title {
+                font-size: 0.95rem;
+            }
+
+            .config-block-title {
+                font-size: 1rem;
+                margin-bottom: 12px;
+            }
+
+            .config-block {
+                margin: 20px 0;
+            }
+        }
+
+    </style>
+    <style id="guideTocStyles">
+        /* 目录实际挂载到父页面：iframe 高度等于文章全高，iframe 内 fixed
+           无法固定到父页面视口。独立打开时则挂载到本页面。 */
+        .guide-toc {
+            position: fixed;
+            top: var(--guide-toc-top, 170px);
+            left: var(--guide-toc-left, 16px);
+            z-index: 110;
+            width: 200px;
+            max-height: var(--guide-toc-height, 60vh);
+            display: flex;
+            flex-direction: column;
+            font-family: var(--font-sans, sans-serif);
+            color: var(--color-text-primary);
+            box-sizing: border-box;
+        }
+        .guide-toc[hidden], .guide-toc-toggle[hidden], .guide-toc-backdrop[hidden] { display: none !important; }
+        .guide-toc-title {
+            padding: 0 10px 10px;
+            border-bottom: 1px solid var(--color-divider);
+            color: var(--color-text-secondary);
+            font-size: .8rem;
+            font-weight: 600;
+        }
+        .guide-toc-list {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            padding: 8px 0;
+        }
+        .guide-toc-link {
+            display: block;
+            padding: 6px 10px;
+            border-radius: 8px;
+            color: var(--color-text-secondary);
+            font-size: .8rem;
+            line-height: 1.45;
+            text-decoration: none !important;
+            overflow-wrap: anywhere;
+        }
+        .guide-toc-link:hover, .guide-toc-link:focus-visible,
+        .guide-toc-link.is-active {
+            background: var(--color-surface);
+            color: var(--color-text-primary);
+        }
+        .guide-toc-link.is-active { font-weight: 600; }
+        .guide-toc-link.is-sub { padding-left: 22px; font-size: .76rem; }
+        .guide-toc-toggle, .guide-toc-backdrop { display: none; }
+        @media (max-width: 779px) {
+            .guide-toc-toggle {
+                display: block;
+                position: fixed;
+                z-index: 122;
+                top: var(--guide-toc-top, 100px);
+                right: 16px;
+                padding: 9px 12px;
+                border: 1px solid var(--color-border);
+                border-radius: 10px;
+                background: var(--color-surface);
+                color: var(--color-text-primary);
+                box-shadow: var(--shadow-md);
+                font: 500 .85rem var(--font-sans, sans-serif);
+                cursor: pointer;
+            }
+            .guide-toc {
+                top: 0;
+                left: 0;
+                width: min(82vw, 300px);
+                max-height: none;
+                height: 100vh;
+                height: 100dvh;
+                padding: 22px 12px;
+                background: var(--color-bg);
+                box-shadow: var(--shadow-lg);
+                transform: translateX(-105%);
+                visibility: hidden;
+                transition: transform .25s ease, visibility .25s;
+                z-index: 121;
+            }
+            .guide-toc.is-open { transform: translateX(0); visibility: visible; }
+            .guide-toc-backdrop.is-open {
+                display: block;
+                position: fixed;
+                inset: 0;
+                z-index: 120;
+                background: rgba(0, 0, 0, .38);
+            }
+            .guide-toc-link { padding: 10px 12px; font-size: .88rem; }
+            .guide-toc-link.is-sub { font-size: .82rem; }
+        }
+
+        /* 回到顶部：和目录一样挂到父页面，iframe 内 fixed 是无效的。
+           滚动一段距离后才出现，避免刚进页面就占地方。 */
+        .guide-top-btn {
+            position: fixed;
+            right: 20px;
+            bottom: 24px;
+            z-index: 115;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: 1px solid var(--color-border);
+            border-radius: 50%;
+            background: var(--color-surface);
+            color: var(--color-text-primary);
+            box-shadow: var(--shadow-md);
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(8px);
+            transition: opacity .2s ease, transform .2s ease, visibility .2s ease,
+                        background .2s ease, color .2s ease, border-color .2s ease;
+        }
+        .guide-top-btn.is-visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .guide-top-btn[hidden] { display: none !important; }
+        .guide-top-btn svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+        }
+        html:not(.is-touch-input) .guide-top-btn:hover {
+            background: var(--color-text-primary);
+            color: var(--color-bg);
+            border-color: var(--color-text-primary);
+        }
+        .guide-top-btn:focus-visible {
+            outline: 2px solid var(--color-accent);
+            outline-offset: 3px;
+        }
+        @media (max-width: 779px) {
+            .guide-top-btn {
+                right: 14px;
+                /* 避开 iOS 底部横条 */
+                bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+                width: 40px;
+                height: 40px;
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .guide-toc { transition: none; }
+            .guide-top-btn { transition: none; }
+        }
+
+
+        /* 超小屏幕优化 */
+        @media (max-width: 480px) {
+            .guide-content-wrapper {
+                padding: 12px 8px 28px;
+            }
+
+            .guide-section {
+                padding: 16px;
+            }
+
+            .guide-content {
+                font-size: 0.95rem;
+            }
+
+            .guide-content pre {
+                font-size: 0.78rem;
+            }
+
+            .guide-table {
+                font-size: 0.8rem;
+                /* 这里也必须放开 min-width，否则会盖掉 768px 断点的设置，
+                   表格被撑到 420px 宽，超出屏幕后右侧文字被裁 */
+                min-width: 0;
+            }
+
+            .guide-table th,
+            .guide-table td {
+                padding: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="guide-toc" id="guideToc" aria-label="本页目录" hidden>
+        <div class="guide-toc-title">本页目录</div>
+        <div class="guide-toc-list" id="guideTocList"></div>
+    </nav>
+    <button class="guide-toc-toggle" id="guideTocToggle" type="button" aria-controls="guideToc" aria-expanded="false" hidden>目录</button>
+    <div class="guide-toc-backdrop" id="guideTocBackdrop" hidden></div>
+    <button class="guide-top-btn" id="guideTopBtn" type="button" aria-label="回到顶部" title="回到顶部" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 19V5"></path>
+            <path d="M5 12l7-7 7 7"></path>
+        </svg>
+    </button>
+    <div class="guide-content-wrapper">
+        <!-- 版本号徽标 -->
+        <div class="guide-version-row">
+            <span class="guide-version">
+                <i class="ri-price-tag-3-line"></i> 适用 v 0.4.x.x
+            </span>
+        </div>
+
+        <!-- 简介 -->
+        <div class="guide-intro">
+            <p>这是一个部署、修改和使用此博客的操作指南。</p>
+            <p>本指南将带你从零开始，了解如何修改、使用并部署这个博客。</p>
+            <p>GitHub项目地址：<a href="https://github.com/annie106/annie106" target="_blank" rel="noopener noreferrer">https://github.com/annie106/annie106</a></p>
+        </div>
+
+        <!-- ==================== 名词 ==================== -->
+        <section class="guide-section">
+            <h2 class="guide-section-title">
+                <i class="ri-bookmark-3-line"></i>
+                开始之前：你需要知道四个词的含义
+            </h2>
+            <div class="guide-content">
+                <p>后面会一直出现这四个词，先混个脸熟。</p>
+                <ul>
+                    <li><strong>GitHub</strong>：放代码的网站。可以理解成程序员的网盘，顺便还能免费帮你把网站挂到网上。</li>
+                    <li><strong>仓库</strong>：GitHub 上的一个项目文件夹。你的博客就是一个仓库。</li>
+                    <li><strong>VS Code</strong>：微软出的免费编辑器，我们用改博客里的文字和颜色，可以当成高级记事本。</li>
+                    <li><strong>GitHub Pages</strong>：GitHub 附赠的免费托管服务。打开它，你的博客就有公开网址了。</li>
+                </ul>
+                <p>操作十分简单，无需服务器和域名</p>
+            </div>
+        </section>
+
+        <!-- ==================== 1. 注册 ==================== -->
+        <section class="guide-section">
+            <h2 class="guide-section-title">
+                <i class="ri-user-add-line"></i>
+                第一步：注册 GitHub
+            </h2>
+            <div class="guide-content">
+                <p>打开 <a href="https://github.com" target="_blank" rel="noopener noreferrer">github.com</a>，点右上角 Sign up注册。已经有账号就跳过。</p>
+                <p>只有<strong>用户名</strong>需要多想一下：它会出现在你以后的博客网址里，所以用英文加数字，别用中文和空格。</p>
+                <div class="guide-tip">
+                    <div class="guide-tip-title">
+                        <i class="ri-information-line"></i>
+                        用户名想清楚再填
+                    </div>
+                    <p>假设你填 <code>xiaoming</code>，以后博客网址就是 <code>https://xiaoming.github.io/仓库名</code>。注册完基本改不了。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 2. 下载源码 ==================== -->
+        <section class="guide-section">
+            <h2 class="guide-section-title">
+                <i class="ri-download-2-line"></i>
+                第二步：下载源码
+            </h2>
+            <div class="guide-content">
+                <h3 class="guide-subtitle">
+                    <span class="guide-step-num">A</span>
+                    下载 ZIP（最简单）
+                </h3>
+                <p>打开 <a href="https://github.com/annie106/annie106" target="_blank" rel="noopener noreferrer">github.com/annie106/annie106</a>，点右上角绿色的 <strong>Code</strong> 按钮，菜单最下面有一项 <strong>Download ZIP</strong>，点它。</p>
+                <p>下载完找到压缩包，右键解压（Windows 11 可以直接选「全部解压缩」）。</p>
+
+                <div class="guide-warning">
+                    <div class="guide-warning-title">
+                        <i class="ri-error-warning-line"></i>
+                        先解压，再改
+                    </div>
+                    <p>别在压缩包的预览窗口里直接改文件，改动存不进去，网页也会打不开。一定要先解压出来。</p>
+                </div>
+
+                <h3 class="guide-subtitle">
+                    <span class="guide-step-num">B</span>
+                    Fork 一份（打算做成自己的网站就选这个）
+                </h3>
+                <p>在项目页面右上角点 <strong>Fork</strong>，再点 <strong>Create fork</strong>。GitHub 会把整个项目复制到你的账号下，之后你改的是自己那份。</p>
+                <p>好处是仓库已经在你自己名下了，第八步开 Pages、传文件都不用再折腾。</p>
+
+                <div class="guide-tip">
+                    <div class="guide-tip-title">
+                        <i class="ri-question-line"></i>
+                        选哪个
+                    </div>
+                    <p>只想先看看长什么样：选 A。<br>
+                    打算直接做成自己的网站：选 B。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 3. VS Code ==================== -->
+        <section class="guide-section">
+            <h2 class="guide-section-title">
+                <i class="ri-code-s-slash-line"></i>
+                第三步：装 VS Code
+            </h2>
+            <div class="guide-content">
+                <p>去 <a href="https://code.visualstudio.com/" target="_blank" rel="noopener noreferrer">code.visualstudio.com</a> 下载，双击安装包一路点下一步。安装时如果看到「添加到右键菜单」之类的选项，建议勾上，以后右键文件夹就能直接打开。</p>
+
+                <p>装完打开 VS Code，按 <span class="guide-kbd">Ctrl</span> + <span class="guide-kbd">Shift</span> + <span class="guide-kbd">X</span> 打开扩展面板，搜 <code>Chinese</code> 装上中文语言包，重启一下界面就变中文了。</p>
+
+                <p>再搜 <code>Live Server</code>（作者 Ritwick Dey）装上。这个插件能让你改一下、浏览器立刻自动刷新，强烈建议装。</p>
+
+                <p>然后点左上角「文件」→「打开文件夹」，选中你解压出来的博客文件夹。</p>
+
+                <div class="guide-warning">
+                    <div class="guide-warning-title">
+                        <i class="ri-error-warning-line"></i>
+                        打开的是文件夹，不是单个文件
+                    </div>
+                    <p>要打开整个博客文件夹，这样左边会列出所有文件。如果只打开了 index.html，左边是空的，改起来会迷路。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 4. 预览 ==================== -->
+        <section class="guide-section">
+            <h2 class="guide-section-title">
+                <i class="ri-eye-line"></i>
+                第四步：在电脑上预览
+            </h2>
+            <div class="guide-content">
+                <p>用 VS Code 打开博客文件夹后，在左边点一下 <code>index.html</code>，然后点 VS Code <strong>右下角状态栏</strong>上的 <strong>Go Live</strong>。浏览器会自动打开，之后你每次保存文件它都会自动刷新。</p>
+                <p>找不到 Go Live 的话，就在左边文件列表里右键 <code>index.html</code>，选「Open with Live Server」。</p>
+
+                <div class="guide-tip">
+                    <div class="guide-tip-title">
+                        <i class="ri-information-line"></i>
+                        别用双击 index.html 的方式预览
+                    </div>
+                    <p>直接双击打开的话，地址栏是 <code>file:///C:/...</code> 这种形式，浏览器会限制一部分功能：背景音乐点了没反应、文章里的内嵌页面显示空白、点微信图标复制不了。所以测试时请用 Live Server。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 5. 文件说明 ==================== -->
+        <section class="guide-section">
+            <h2 class="guide-section-title">
+                <i class="ri-folder-3-line"></i>
+                第五步：这些文件都是干嘛的
+            </h2>
+            <div class="guide-content">
+                <p>先把整个文件夹的样子看一遍：</p>
+
+                <pre><code>博客文件夹/
+│
+├── index.html               ← 主页面，最常改的就是它
+├── movie.html               ← 电影播放页
+├── favicon.svg              ← 浏览器标签页上的小图标
+├── README.md                ← 说明书，不影响网页
+│
+├── css/
+│   └── style.css            ← 所有样式：颜色、字号、间距、深色模式
+│
+├── js/
+│   ├── script.js            ← 文章内容、标签、页面切换
+│   ├── theme.js             ← 深色模式切换
+│   ├── touch-hover.js       ← 修手机点击后按钮常亮的问题
+│   ├── background-music.js  ← 背景音乐
+│   └── copyToClipboard.js   ← 点图标复制联系方式
+│
+├── project_subpage/         ← 子页面都放这里
+│   ├── blog/                ← 博客自带的页面
+│   │   ├── building.html    ← 没做完的项目
+│   │   ├── articl...le.html ← 未开放文章的提示页
+│   │   ├── feedback.html    ← 反馈表单
+│   │   ├── thanks.html      ← 反馈提交成功页
+│   │   └── guide.html       ← 你正在看的这份指南
+│   └── projects/            ← 你自己的项目页
+│       ├── appeal-guide/
+│       │   └── index.html   ← 你自己的项目
+│       └── download/
+│           └── index.html   ← 你自己的项目
+│
+└── archive/                 ← 归档，不参与网页显示
+    ├── music-player.js      ← 旧版播放器，现在没用到
+    └── feedback-tx.html     ← 旧版反馈页，现在没用到
+</code></pre>
+
+                <h3 class="guide-subtitle">
+                    <i class="ri-file-text-line"></i>
+                    根目录
+                </h3>
+                <p><code>index.html</code> 是整个博客的骨架。首页、文章列表、文章详情、电影、关于，五个界面全挤在这一个文件里。你的头像、名字、导航栏、社交图标、页脚也都在这里改。</p>
+                <p><code>movie.html</code> 是独立的视频播放页，想加视频改它底部的 <code>VIDEO_LIST</code>。</p>
+                <p><code>favicon.svg</code> 是浏览器标签页上那个小图标。<code>README.md</code> 是纯文字说明，不显示在网页上。</p>
+
+                <h3 class="guide-subtitle">
+                    <i class="ri-palette-line"></i>
+                    css 文件夹
+                </h3>
+                <p>只有 <code>style.css</code> 一个文件，但它是整个博客的化妆师。颜色、字号、行高、圆角、深色模式的配色全在这里，想换色调只改这一个文件就够。</p>
+
+                <h3 class="guide-subtitle">
+                    <i class="ri-code-line"></i>
+                    js 文件夹
+                </h3>
+                <p><code>script.js</code> 是博客的大脑，也是第二重要的文件。<strong>你写的所有文章都在这里面</strong>，标签筛选、页面切换也归它管。</p>
+                <p><code>theme.js</code> 管深浅色切换，还会记住访客的选择。<code>touch-hover.js</code> 修的是「手机上点一下按钮，按钮就一直亮着不恢复」的问题，它给页面加一个标记，样式表据此决定要不要显示鼠标悬停效果。<code>background-music.js</code> 管背景音乐，歌单在文件最开头。<code>copyToClipboard.js</code> 就是「点一下微信图标自动复制」那个功能。</p>
+                <p><code>archive/</code> 文件夹里是留档的旧文件，页面不会加载它们。<code>music-player.js</code> 是旧版播放器（现在用 <code>background-music.js</code>），<code>feedback-tx.html</code> 是旧版腾讯问卷反馈页（现在用 <code>blog/feedback.html</code>）。不用管它们，删了也不影响网页。</p>
+
+                <div class="guide-tip">
+                    <div class="guide-tip-title">
+                        <i class="ri-folder-open-line"></i>
+                        关于 project_subpage
+                    </div>
+                    <p><code>project_subpage/</code> 下面分成两个文件夹：<code>blog/</code> 是博客自带的页面（没做完的项目、未开放文章提示页、反馈表单、反馈成功页、这份指南），<code>projects/</code> 是放你自己项目页的地方。想加新页面，在 <code>projects/</code> 里建一个文件夹放 <code>index.html</code> 就行。</p>
+                    <p>这些页面可以配置成「把子页面嵌进来显示」或「点一下跳过去」，写法在 6.6 节。移动或改名之后，记得同步改 <code>js/script.js</code> 里写死的路径，否则会 404。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 6. 改内容 ==================== -->
+        <section class="guide-section">
+            <h2 class="guide-section-title">
+                <i class="ri-equalizer-2-line"></i>
+                第六步：把它改成你自己的样子
+            </h2>
+            <div class="guide-content">
+                <div class="guide-warning">
+                    <div class="guide-warning-title">
+                        <i class="ri-error-warning-line"></i>
+                        动手之前先备份
+                    </div>
+                    <p>把 <code>index.html</code> 和 <code>js/script.js</code> 各复制一份，名字后面加个「备份」。改坏了随时能拿回来。</p>
+                </div>
+
+                <div class="guide-tip">
+                    <div class="guide-tip-title">
+                        <i class="ri-search-line"></i>
+                        通用技巧：用搜索找位置
+                    </div>
+                    <p>下面经常说「搜索某个词」。做法是在 VS Code 里按 <span class="guide-kbd">Ctrl</span> + <span class="guide-kbd">F</span>，把那个词粘进去按回车，光标就跳过去了。</p>
+                </div>
+
+                <!-- 6.1 头像 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-image-line"></i>
+                    6.1 换头像
+                </h3>
+                <p>打开 <code>index.html</code>，搜索 <code>class="avatar"</code>：</p>
+                <pre><code>&lt;img
+    class="avatar"
+    src="图片地址"
+    alt="头像"
+    loading="lazy"
+/&gt;</code></pre>
+                <p>改 <code>src</code> 引号里的东西就行。填网络图片的网址（要 <code>https://</code> 开头），或者把图片放进博客文件夹再填相对路径，比如 <code>images/avatar.jpg</code>。第二种更稳，网络图片哪天挂了就显示不出来。</p>
+                <p>图片建议用正方形，边长 200 到 500 像素就够，太大只会让网页变慢。</p>
+
+                <!-- 6.2 图标 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-price-tag-2-line"></i>
+                    6.2 换网站图标
+                </h3>
+                <p>所有 HTML 页面都引用根目录的 <code>favicon.svg</code>。根目录页面搜索 <code>rel="icon"</code>，引用路径是：</p>
+                <pre><code>&lt;link rel="icon" type="image/svg+xml" href="favicon.svg"&gt;</code></pre>
+                <p>子目录页面也要加同样的标签，但 <code>href</code> 要按页面所在目录写相对路径。例如 <code>project_subpage/blog/</code> 下的页面用 <code>../../favicon.svg</code>，<code>project_subpage/projects/download/</code> 下的页面用 <code>../../../favicon.svg</code>。新建或移动 HTML 页面时检查一下路径，避免图标 404。</p>
+                <p>想换图标时，直接替换根目录的 <code>favicon.svg</code>，所有引用它的页面都会一起更新。</p>
+
+                <!-- 6.3 导航栏 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-menu-2-line"></i>
+                    6.3 改顶部导航栏
+                </h3>
+                <p>搜索 <code>nav-links</code>：</p>
+                <pre><code>&lt;ul class="nav-links" id="navLinks"&gt;
+    &lt;li&gt;&lt;a href="#" class="active" data-nav="home"&gt;首页&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href="#" data-nav="blog"&gt;文章&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href="movie.html" data-nav="movie"&gt;电影&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href="about-rh-studio.html" data-nav="about"&gt;关于&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</code></pre>
+                <p>每行结构都是 <code>&lt;li&gt;&lt;a ...&gt;显示的文字&lt;/a&gt;&lt;/li&gt;</code>。改文字就改中间那几个字；想删一项整行删掉；想加一项复制一整行粘在下面再改。</p>
+
+                <div class="guide-warning">
+                    <div class="guide-warning-title">
+                        <i class="ri-error-warning-line"></i>
+                        别碰 data-nav
+                    </div>
+                    <p><code>data-nav="home"</code> 这种东西是给程序认的，删了或改了，点导航就没反应。你只改标签中间的文字。</p>
+                </div>
+
+                <p>顺带说一句「关于」这一项：它指向的 <code>about-rh-studio.html</code> 其实不存在，但不影响使用——点它的时候程序会直接切到 <code>index.html</code> 内置的关于界面。想改关于页内容，搜索 <code>view-about</code>。</p>
+
+                <!-- 6.4 功能栏 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-apps-2-line"></i>
+                    6.4 改右侧那排图标
+                </h3>
+                <p>就是微信、QQ、邮箱、深浅色那一排。搜索 <code>class="social-links"</code>：</p>
+                <pre><code>&lt;div class="social-links"&gt;
+    &lt;a href="javascript:void(0);" onclick="copyToClipboard('你的微信号', '微信号已复制')" title="微信"&gt;
+        &lt;i class="ri-wechat-fill"&gt;&lt;/i&gt;
+    &lt;/a&gt;
+
+    &lt;a href="javascript:void(0);" onclick="copyToClipboard('你的QQ号', 'QQ号已复制')" title="QQ"&gt;
+        &lt;i class="ri-qq-fill"&gt;&lt;/i&gt;
+    &lt;/a&gt;
+
+    &lt;a href="javascript:void(0);" onclick="copyToClipboard('你的邮箱', '邮箱已复制')" title="邮箱"&gt;
+        &lt;i class="ri-mail-line"&gt;&lt;/i&gt;
+    &lt;/a&gt;
+
+    &lt;a href="#" title="RSS 订阅"&gt;&lt;i class="ri-rss-line"&gt;&lt;/i&gt;&lt;/a&gt;
+
+    &lt;button class="theme-toggle" id="themeToggle" aria-label="切换深色模式" title="切换主题"&gt;
+        &lt;i class="ri-moon-line"&gt;&lt;/i&gt;
+    &lt;/button&gt;
+&lt;/div&gt;</code></pre>
+                <p>换成自己的联系方式，就改 <code>copyToClipboard()</code> 括号里第一个东西，两边都要留英文单引号。第二个是点击后的提示文字，随便写。</p>
+                <p>想换图标：<code>&lt;i class="ri-wechat-fill"&gt;&lt;/i&gt;</code> 里的 <code>ri-wechat-fill</code> 就是图标名，去 <a href="https://remixicon.com/" target="_blank" rel="noopener noreferrer">remixicon.com</a> 挑一个替换掉。</p>
+                <p>想加一个，就复制一整段 <code>&lt;a ...&gt;...&lt;/a&gt;</code> 粘在下面。比如加抖音：</p>
+                <pre><code>&lt;a href="https://www.douyin.com/user/你的主页" target="_blank" rel="noopener noreferrer" title="抖音"&gt;
+    &lt;i class="ri-tiktok-fill"&gt;&lt;/i&gt;
+&lt;/a&gt;</code></pre>
+                <p>不想要哪个就整行删掉。</p>
+
+                <div class="guide-warning">
+                    <div class="guide-warning-title">
+                        <i class="ri-error-warning-line"></i>
+                        最后那个按钮别删
+                    </div>
+                    <p>结尾那个 <code>theme-toggle</code> 是深浅色切换开关，删了网页不会坏，但访客就没法切深色模式了。它身上的 <code>id="themeToggle"</code> 也不能删。</p>
+                </div>
+
+                <!-- 6.5 首页文字 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-text"></i>
+                    6.5 改首页文字
+                </h3>
+                <p>都在 <code>index.html</code> 里，搜索 <code>hero-section</code> 找到这一整块。常见几处：</p>
+                <ul>
+                    <li>大名字：搜 <code>hero-name</code></li>
+                    <li>一句话简介：搜 <code>hero-bio</code></li>
+                    <li>详细描述：搜 <code>hero-description</code></li>
+                    <li>所在地、职业、起始年份：搜 <code>hero-meta</code>，一行一个 <code>&lt;span&gt;</code></li>
+                    <li>左上角站点名和副标题：搜 <code>site-title</code></li>
+                </ul>
+                <p>「所在地」那几项里，前面 <code>&lt;i class="ri-map-pin-line"&gt;&lt;/i&gt;</code> 是图标，后面才是文字。改文字就行。</p>
+
+                <!-- 6.6 文章 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-article-line"></i>
+                    6.6 写文章、改文章
+                </h3>
+                <p>文章都在 <code>js/script.js</code> 开头。打开它，搜索 <code>const blogPosts</code>，里面每一项就是一篇文章：</p>
+                <pre><code>{
+    id: 1,
+    title: '文章标题',
+    date: '2026-05-03',
+    excerpt: '这里写摘要，会显示在文章卡片上',
+    tags: ['随笔'],
+    pinned: false,
+    featured: true,
+    content: `
+        &lt;p&gt;正文第一段&lt;/p&gt;
+        &lt;h2&gt;一个小标题&lt;/h2&gt;
+        &lt;p&gt;正文第二段&lt;/p&gt;
+    `,
+},</code></pre>
+
+                <p>各字段的意思：</p>
+                <ul>
+                    <li><code>id</code>：文章编号，<strong>不能跟别的文章重复</strong></li>
+                    <li><code>title</code> / <code>date</code> / <code>excerpt</code>：标题、日期、摘要。日期就是个文字，不会自动排序</li>
+                    <li><code>tags</code>：标签，用来看筛选按钮，可以有多个，写成 <code>['随笔', '阅读']</code></li>
+                    <li><code>pinned</code>：写 <code>true</code> 就是置顶</li>
+                    <li><code>featured</code>：<code>true</code> 显示在首页，<code>false</code> 只在文章页显示</li>
+                    <li><code>isPublic</code>：可选。设为 <code>false</code> 后，点文章或打开文章直达链接会跳到 <code>project_subpage/blog/article_unavailable.html</code>；改为 <code>true</code> 或删掉此字段即可重新开放。没有设置时默认开放</li>
+                    <li><code>content</code>：正文，写在反引号（键盘左上角 <span class="guide-kbd">`</span> 那个键）中间，可以用 <code>&lt;p&gt;</code> 分段、<code>&lt;h2&gt;</code> 加小标题</li>
+                    <li><code>embeddedPage</code>：填相对路径如 <code>'project_subpage/projects/xxx/index.html'</code>，这篇文章会把那个网页嵌进来显示</li>
+                    <li><code>externalPage</code>：填路径，点文章直接跳过去。跟上面那个二选一</li>
+                </ul>
+
+                <p>加新文章就复制一整段（从 <code>{</code> 到 <code>},</code>），粘到数组里改掉内容和 <code>id</code>。</p>
+                <div class="guide-warning">
+                    <div class="guide-warning-title">
+                        <i class="ri-lock-line"></i>
+                        暂停展示不等于保密
+                    </div>
+                    <p><code>isPublic: false</code> 会阻止文章显示在站内文章页，并把访客带到提示页；正文不会插入前端页面 DOM。可是这是静态博客，文章数据仍在公开的 <code>js/script.js</code> 文件中，访客仍可能查看源码。因此这个开关只是控制页面展示，不能用来保护敏感或机密内容。</p>
+                </div>
+
+                <div class="guide-warning">
+                    <div class="guide-warning-title">
+                        <i class="ri-error-warning-line"></i>
+                        新手最容易栽在这三个地方
+                    </div>
+                    <ul>
+                        <li><strong>id 重复</strong>：两篇用同一个 id，会导致点击错乱，其中一篇打不开</li>
+                        <li><strong>逗号漏了</strong>：每篇结尾那个 <code>},</code> 的逗号不能少</li>
+                        <li><strong>引号写成中文的</strong>：必须是英文单引号 <code>'</code>，不能是 <code>‘</code> 或 <code>’</code></li>
+                    </ul>
+                    <p>保存后如果网页突然一片空白，八成就是上面某一条。按 <span class="guide-kbd">Ctrl</span> + <span class="guide-kbd">Z</span> 撤销再检查。</p>
+                </div>
+
+                <p>首页顶上那排筛选按钮，搜索 <code>'all', '置顶'</code> 能找到，改成你自己常用的标签。<code>'all'</code> 是「全部」，建议留着。</p>
+
+                <p>文章卡片右上角那个「⋯」菜单可以给某篇文章单独配，搜索 <code>const articleMenus</code>：</p>
+                <pre><code>const articleMenus = {
+    10: [
+        { label: '返回文章列表', type: 'link', url: 'index.html#blog' },
+    ],
+};</code></pre>
+                <p>前面的 <code>10</code> 是文章 id。没配过的文章会自动显示「复制文章链接」「查看评论」「问题反馈」三个默认项。</p>
+                <p>菜单项支持三种类型：<code>link</code>（打开指定网址或页面）、<code>article</code>（打开站内文章详情）、<code>externalPage</code>（打开这篇文章自己配置的独立页面）。想加一项就照上面的格式复制一行。</p>
+                <p>反馈表单在 <code>project_subpage/blog/feedback.html</code>，反馈类型包括「文章问题」「Bug 反馈」「功能建议」「排版样式」和「其他」。</p>
+
+                <!-- 6.7 分享文章 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-share-line"></i>
+                    6.7 把文章分享给别人
+                </h3>
+                <p>每篇开放文章都有一个专属链接，形式是 <code>你的网址/?article=文章id</code>。别人打开这个链接，会直接看到那篇文章，不用自己去找。把 <code>isPublic</code> 设为 <code>false</code> 的文章会跳转到未开放提示页，而不会显示正文。</p>
+                <p>拿到链接有两种办法：</p>
+                <ul>
+                    <li><strong>文章里点「分享」</strong>：打开文章后，标题上方有一个「分享」按钮。手机点它会唤起系统分享面板（微信、QQ 等），电脑点它会直接把链接复制到剪贴板，然后右上角弹出提示。</li>
+                    <li><strong>卡片菜单里复制</strong>：在文章卡片的「⋯」菜单里点「复制文章链接」，效果一样，不用先进文章。</li>
+                </ul>
+
+                <div class="guide-tip">
+                    <div class="guide-tip-title">
+                        <i class="ri-information-line"></i>
+                        链接里的数字就是文章 id
+                    </div>
+                    <p><code>?article=10</code> 里的 <code>10</code> 就是文章数据里的 <code>id</code>。所以<strong>改 id 会让已经发出去的链接失效</strong>——想改文章内容就改标题和正文，别动 <code>id</code>。</p>
+                    <p>如果链接里的 id 不存在（文章被删了），页面会自动回到首页并清掉地址栏里的参数；如果文章设为未开放，则会跳转到 <code>project_subpage/blog/article_unavailable.html</code>。</p>
+                </div>
+
+                <div class="guide-warning">
+                    <div class="guide-warning-title">
+                        <i class="ri-error-warning-line"></i>
+                        本地双击打开时分享会受限
+                    </div>
+                    <p>用 <code>file://</code> 直接双击 <code>index.html</code> 时，浏览器的剪贴板权限被禁用，点「分享」会弹出一个输入框让你手动复制。用 http 服务器预览、或者部署到网上之后就正常了。</p>
+                </div>
+
+                <!-- 6.8 音乐 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-music-2-line"></i>
+                    6.8 换背景音乐
+                </h3>
+                <p>打开 <code>js/background-music.js</code>，最上面就是歌单：</p>
+                <pre><code>const musicList = [
+    {
+        title: "歌曲名",
+        artist: "歌手",
+        src: "音频地址"
+    }
+];</code></pre>
+                <p>注意字段名是 <code>src</code> 不是 url，三个字段都得有。音频可以填网络直链，也可以把文件放进博客文件夹再填相对路径，比如 <code>music/song.mp3</code>。</p>
+
+                <div class="guide-tip">
+                    <div class="guide-tip-title">
+                        <i class="ri-information-line"></i>
+                        音乐不会自己响
+                    </div>
+                    <p>这是浏览器的规矩：所有网站都不许在用户没操作时自动放声音。访客得先点一下页面音乐才会播。这不是 bug。</p>
+                </div>
+
+                <!-- 6.9 视频 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-film-line"></i>
+                    6.9 改电影列表
+                </h3>
+                <p>打开 <code>movie.html</code>，搜索 <code>VIDEO_LIST</code>：</p>
+                <pre><code>const VIDEO_LIST = [
+    { name: '影片名', url: '播放地址' },
+    { name: '另一部', url: '播放地址' },
+];</code></pre>
+                <p><code>name</code> 是列表里显示的名字，<code>url</code> 是播放地址。照格式增删，注意逗号。</p>
+
+                <!-- 6.10 页脚 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-layout-bottom-line"></i>
+                    6.10 改页脚
+                </h3>
+                <p>搜索 <code>site-footer</code>，年份、名字、链接都能直接改。</p>
+
+                <!-- 6.11 关于页面 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-user-3-line"></i>
+                    6.11 改「关于」页面
+                </h3>
+                <p>「关于」不是单独的网页文件，它是 <code>index.html</code> 里内置的一个界面。点导航栏的「关于」时，程序直接切过去显示，所以改它也是在 <code>index.html</code> 里改。</p>
+                <p>如果想让别人直接打开「关于」页面，可以把博客首页链接后加上 <code>?view=about</code>，例如 <code>https://你的网址/?view=about</code>。打开这个链接会直接显示关于页面，不需要在关于页面增加分享按钮；离开关于页后这个参数会自动清除。</p>
+                <p>打开 <code>index.html</code>，搜索 <code>view-about</code>，能找到这一整块。从上到下依次是这几处：</p>
+                <ul>
+                    <li>小标签、大标题、一句话标语：搜 <code>about-eyebrow</code>、<code>about-title</code>、<code>about-tagline</code></li>
+                    <li>标题下面那段介绍：搜 <code>about-lead</code></li>
+                    <li>「关于我们」的正文段落：搜 <code>about-copy</code></li>
+                    <li>右边的信息列表：搜 <code>about-facts</code></li>
+                    <li>最下面的内容方向标签：搜 <code>about-topics</code></li>
+                </ul>
+
+                <p>标题和标语都是普通文字，直接改标签中间的字：</p>
+                <pre><code>&lt;p class="about-eyebrow"&gt;RH STUDIO · ABOUT&lt;/p&gt;
+&lt;h1 class="about-title"&gt;RH 工作室&lt;span&gt;.&lt;/span&gt;&lt;/h1&gt;
+&lt;p class="about-tagline"&gt;一间安静写字的小小工作室 · 用博客记录生活的回响&lt;/p&gt;</code></pre>
+                <p>标题里那个 <code>&lt;span&gt;.&lt;/span&gt;</code> 是跟着的小圆点，不想要就把这半截删掉。</p>
+
+                <p>「关于我们」的正文，一段一个 <code>&lt;p&gt;</code>。想加一段就复制一整行粘在下面再改字：</p>
+                <pre><code>&lt;section class="about-copy"&gt;
+    &lt;h2&gt;关于我们&lt;/h2&gt;
+    &lt;p&gt;第一段正文&lt;/p&gt;
+    &lt;p&gt;第二段正文&lt;/p&gt;
+&lt;/section&gt;</code></pre>
+
+                <p>右边的信息列表，一项就是一个 <code>&lt;div&gt;</code>，前面 <code>&lt;dt&gt;</code> 是名目，后面 <code>&lt;dd&gt;</code> 是内容：</p>
+                <pre><code>&lt;dl class="about-facts"&gt;
+    &lt;div&gt;&lt;dt&gt;创始人 / 负责人&lt;/dt&gt;&lt;dd&gt;Annie&lt;/dd&gt;&lt;/div&gt;
+    &lt;div&gt;&lt;dt&gt;工作室性质&lt;/dt&gt;&lt;dd&gt;个人工作室 · 独立博客&lt;/dd&gt;&lt;/div&gt;
+    &lt;div&gt;&lt;dt&gt;联络邮箱&lt;/dt&gt;&lt;dd&gt;&lt;a href="mailto:你的邮箱"&gt;你的邮箱&lt;/a&gt;&lt;/dd&gt;&lt;/div&gt;
+&lt;/dl&gt;</code></pre>
+                <p>邮箱那一项里，<code>href="mailto:..."</code> 后面要换成真实邮箱，这样访客点一下就能直接发信。想删一项，就把对应的整个 <code>&lt;div&gt;</code> 删掉。</p>
+
+                <p>最下面的内容方向是一串 <code>&lt;span&gt;</code>，想加一个词就复制一个 <code>&lt;span&gt;新词&lt;/span&gt;</code> 粘进去：</p>
+                <pre><code>&lt;div class="about-topic-list"&gt;
+    &lt;span&gt;生活随笔&lt;/span&gt;&lt;span&gt;读书札记&lt;/span&gt;&lt;span&gt;旅行碎片&lt;/span&gt;
+&lt;/div&gt;</code></pre>
+
+                <div class="guide-tip">
+                    <div class="guide-tip-title">
+                        <i class="ri-information-line"></i>
+                        导航里那个 about-rh-studio.html 不用管
+                    </div>
+                    <p>导航栏「关于」的 <code>href</code> 写的是 <code>about-rh-studio.html</code>，这个文件其实不存在，但不影响使用——点击时程序会拦下跳转，直接切到内置的关于界面。所以不用去新建这个文件，也别改 <code>data-nav="about"</code>。</p>
+                </div>
+
+                <div class="guide-warning">
+                    <div class="guide-warning-title">
+                        <i class="ri-error-warning-line"></i>
+                        别在 script.js 里改关于页
+                    </div>
+                    <p><code>js/script.js</code> 的 <code>siteConfig</code> 里有一个 <code>aboutText</code> 字段，看着像是关于页的正文，但程序并没有读取它，在那里改不会有任何变化。详见 6.12 节。</p>
+                </div>
+
+                <!-- 6.12 坑 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-alert-line"></i>
+                    6.12 有个地方改了没用
+                </h3>
+                <p>在 <code>js/script.js</code> 里搜索 <code>siteConfig</code>，会看到一段配置：</p>
+                <pre><code>const siteConfig = {
+    authorName: '...',
+    subtitle: '...',
+    bio: '...',
+    location: '...',
+    occupation: '...',
+    blogStartYear: '...',
+    email: '...',
+    aboutText: `...`,
+};</code></pre>
+
+                <div class="guide-warning">
+                    <div class="guide-warning-title">
+                        <i class="ri-error-warning-line"></i>
+                        改这里不会有任何变化
+                    </div>
+                    <p>这段配置目前的代码<strong>并没有真正读取它</strong>，只是留在文件里备用。你在里面改名字、改简介，网页上不会有反应。</p>
+                    <p>要改个人信息，请去 <code>index.html</code> 里改（看 6.5 节）。这个坑很多人踩过，改了半天没动静就是因为改错了地方。</p>
+                </div>
+
+                <!-- 6.13 配色 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-palette-line"></i>
+                    6.13 换整体配色
+                </h3>
+                <p>打开 <code>css/style.css</code>，最上面就是颜色定义，搜索 <code>:root</code>：</p>
+                <pre><code>:root {
+    --color-bg: #ffffff;              /* 页面背景 */
+    --color-surface: #fafafa;         /* 卡片背景 */
+    --color-border: #eaeaea;          /* 边框 */
+    --color-text-primary: #1a1a1a;    /* 主要文字 */
+    --color-text-secondary: #6b6b6b;  /* 次要文字 */
+    --color-text-tertiary: #999999;   /* 更浅的说明文字 */
+    --color-accent: #0d0d0d;          /* 强调色，按钮之类 */
+}</code></pre>
+                <p>这是浅色模式的颜色，改这些色值就能换主题色。色值是 <code>#</code> 加六位数字或字母，可以搜个「在线取色器」选好颜色复制过来。</p>
+                <p>深色模式的颜色在下面一点，搜索 <code>[data-theme="dark"]</code> 能找到。<strong>两边要分别改</strong>——只改浅色的话，切到深色模式还是老样子。</p>
+            </div>
+        </section>
+
+        <!-- ==================== 7. 字号字体 ==================== -->
+        <section class="guide-section">
+            <h2 class="guide-section-title">
+                <i class="ri-font-size-2"></i>
+                第七步：改字号和字体
+            </h2>
+            <div class="guide-content">
+                <p>所有字号都在 <code>css/style.css</code> 里，单位是 <code>rem</code>，<strong>1rem 差不多等于 16px</strong>。</p>
+
+                <h3 class="guide-subtitle">
+                    <i class="ri-text"></i>
+                    文章正文字号
+                </h3>
+                <p>搜索 <code>.article-content</code>：</p>
+                <pre><code>.article-content {
+    font-family: var(--font-serif);
+    font-size: 1.05rem;      /* 改这个数字 */
+    line-height: 1.78;       /* 行高，越大行距越松 */
+}</code></pre>
+                <p>觉得字小就把 <code>1.05rem</code> 改成 <code>1.15rem</code>；觉得行挤就把 <code>1.78</code> 改成 <code>1.9</code>。</p>
+                <p>文章大标题搜 <code>.article-full-title</code>，首页大名字搜 <code>.hero-name</code>，里面都有 <code>font-size: 2rem;</code>，改小一点就写 <code>1.6rem</code>。</p>
+
+                <h3 class="guide-subtitle">
+                    <i class="ri-global-line"></i>
+                    想整体调大，有个省事的办法
+                </h3>
+                <p>在 <code>css/style.css</code> 的 <code>:root</code> 里加一行：</p>
+                <pre><code>:root {
+    font-size: 17px;        /* 默认是 16px */
+}</code></pre>
+                <p>因为全站字号都是用 <code>rem</code> 算的（相对根字号），改这一个数，所有文字会按比例一起变大。</p>
+
+                <div class="guide-tip">
+                    <div class="guide-tip-title">
+                        <i class="ri-information-line"></i>
+                        调完记得看手机效果
+                    </div>
+                    <p>字调太大会让手机上排版错位。改完按 <span class="guide-kbd">F12</span> 打开开发者工具，点左上角那个手机图标切到手机视图看一眼。</p>
+                </div>
+
+                <h3 class="guide-subtitle">
+                    <i class="ri-font-family"></i>
+                    换字体
+                </h3>
+                <p>字体也在 <code>css/style.css</code> 最上面：</p>
+                <pre><code>:root {
+    --font-sans: 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif;
+    --font-serif: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+}</code></pre>
+                <p><code>--font-sans</code> 管导航、标题这类界面文字，<code>--font-serif</code> 管文章正文。浏览器会从左往右找第一个你电脑上装了的字体，所以想换字体就把名字放到最前面。</p>
+            </div>
+        </section>
+
+        <!-- ==================== 8. 上传 ==================== -->
+        <section class="guide-section">
+            <h2 class="guide-section-title">
+                <i class="ri-upload-cloud-2-line"></i>
+                第八步：传到 GitHub，变成真正的网站
+            </h2>
+            <div class="guide-content">
+                <p>改满意了，就可以让别人也能访问了。这一步分两件事：先把文件传上去，再开启 Pages。</p>
+
+                <h3 class="guide-subtitle">
+                    <span class="guide-step-num">A</span>
+                    网页上传（最简单）
+                </h3>
+                <p>登录 GitHub，点右上角的 <strong>+</strong>，选 <strong>New repository</strong>。仓库名用英文，比如 <code>myblog</code>——这个名字也会出现在你的网址里。下面选 <strong>Public</strong>（公开），因为私有仓库用不了免费的 Pages。其他初始化选项都不要勾，直接点 <strong>Create repository</strong>。</p>
+                <p>创建好之后，页面上有个 <strong>uploading an existing file</strong> 的链接，点进去。然后把你博客文件夹里的<strong>所有文件和文件夹</strong>一起拖进上传区域。</p>
+                <p>注意是拖文件夹<strong>里面的东西</strong>，不要把最外面那层文件夹本身拖进去。等它传完，下面随便写一句说明，点绿色的 <strong>Commit changes</strong>。</p>
+
+                <div class="guide-warning">
+                    <div class="guide-warning-title">
+                        <i class="ri-error-warning-line"></i>
+                        网页上传的毛病
+                    </div>
+                    <p>传不了空文件夹，而且以后每改一次都得重新传一遍。打算长期写博客的话，建议用下面那种。</p>
+                </div>
+
+                <h3 class="guide-subtitle">
+                    <span class="guide-step-num">B</span>
+                    GitHub Desktop（推荐）
+                </h3>
+                <p>GitHub 官方的桌面软件，图形界面，不用敲命令。去 <a href="https://desktop.github.com/" target="_blank" rel="noopener noreferrer">desktop.github.com</a> 下载装上，用你的账号登录。</p>
+                <p>点 <strong>File</strong> → <strong>Add local repository</strong>，选中你的博客文件夹。如果它提示这不是一个 Git 仓库，就点它给的那个 <strong>create a repository</strong> 链接确认创建。</p>
+                <p>回到主界面，左下角有个 <strong>Summary</strong> 框，随便写句说明，比如「改了头像」。然后点 <strong>Commit to main</strong>，再点右上角的 <strong>Publish repository</strong>。弹窗里记得把 <strong>Keep this code private</strong> 的勾去掉（必须公开），确认仓库名，发布。</p>
+                <p>以后每次改完文件，就重复「写说明 → Commit → 点 <strong>Push origin</strong>」这三下。</p>
+
+                <h3 class="guide-subtitle">
+                    <span class="guide-step-num">C</span>
+                    命令行
+                </h3>
+                <p>在博客文件夹里打开终端，一行一行执行：</p>
+                <pre><code>git init
+git add .
+git commit -m "第一次提交"
+git branch -M main
+git remote add origin https://github.com/你的用户名/你的仓库名.git
+git push -u origin main</code></pre>
+                <p>以后更新只要三行：</p>
+                <pre><code>git add .
+git commit -m "更新说明"
+git push</code></pre>
+
+                <h3 class="guide-subtitle">
+                    <i class="ri-rocket-2-line"></i>
+                    开启 Pages，拿到网址
+                </h3>
+                <p>文件传上去了但还不能访问。最后一步：进你的仓库页面，点上面的 <strong>Settings</strong>，左边菜单里找到 <strong>Pages</strong>。把 <strong>Source</strong> 从 None 改成 <strong>Deploy from a branch</strong>，<strong>Branch</strong> 选 <strong>main</strong>，右边文件夹保持 <strong>/ (root)</strong>，点 <strong>Save</strong>。</p>
+                <p>等一两分钟刷新这个页面，顶上会冒出一个绿色提示，里面就是你的网址：</p>
+                <pre><code>https://你的用户名.github.io/仓库名/</code></pre>
+                <p>比如用户名 <code>xiaoming</code>、仓库名 <code>myblog</code>，网址就是 <code>https://xiaoming.github.io/myblog/</code>。如果仓库名刚好跟用户名一样，网址会短一点。</p>
+                <p>以后更新内容：本地改好 → 传上去 → 等一两分钟 → 刷新网站，改动就生效了。</p>
+
+                <div class="guide-warning">
+                    <div class="guide-warning-title">
+                        <i class="ri-error-warning-line"></i>
+                        打开是 404？
+                    </div>
+                    <p>先检查首页文件名是不是 <code>index.html</code>，大小写必须完全一致，<code>Index.html</code> 不行。再检查文件是不是传到了仓库根目录，而不是套在子文件夹里。刚开 Pages 那几分钟打不开是正常的。还有，网址结尾那个斜杠别漏。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 9. 不能删 ==================== -->
+        <section class="guide-section">
+            <h2 class="guide-section-title">
+                <i class="ri-shield-check-line"></i>
+                第九步：哪些东西不能删
+            </h2>
+            <div class="guide-content">
+                <p>删错文件是把博客搞坏的最快方式，动手前看一眼。</p>
+
+                <h3 class="guide-subtitle">
+                    <i class="ri-forbid-2-line"></i>
+                    删了网页就会坏的
+                </h3>
+
+                <div class="guide-table-wrap">
+                    <table class="guide-table">
+                        <thead>
+                            <tr>
+                                <th>文件</th>
+                                <th>删掉会怎样</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>index.html</code></td>
+                                <td>整个网站打不开，直接 404。这是首页，必须有。</td>
+                            </tr>
+                            <tr>
+                                <td><code>css/style.css</code></td>
+                                <td>网页变成裸奔状态：没有颜色、没有排版，文字全挤成一团。内容还在但完全没法看。</td>
+                            </tr>
+                            <tr>
+                                <td><code>js/script.js</code></td>
+                                <td>文章全部消失（数据就在这个文件里），导航点了没反应，页面也切不动。这个最不能删。</td>
+                            </tr>
+                            <tr>
+                                <td><code>js/theme.js</code></td>
+                                <td>深浅色按钮失灵，点了没反应。</td>
+                            </tr>
+                            <tr>
+                                <td><code>js/touch-hover.js</code></td>
+                                <td>网页不会坏，但手机上点深色模式按钮、播放按钮之后，按钮会一直保持按下的样式不恢复。</td>
+                            </tr>
+                            <tr>
+                                <td><code>js/copyToClipboard.js</code></td>
+                                <td>点微信、QQ、邮箱图标没反应。不报错，就是没效果。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 class="guide-subtitle">
+                    <i class="ri-checkbox-circle-line"></i>
+                    删了也没事的
+                </h3>
+                <p><code>archive/music-player.js</code> 是旧版播放器，页面根本没加载它。<code>README.md</code> 是纯文字说明，不参与网页显示。</p>
+
+                <h3 class="guide-subtitle">
+                    <i class="ri-alert-line"></i>
+                    看你用不用得上的
+                </h3>
+                <p><code>js/background-music.js</code>：不想要背景音乐就删掉，记得顺手把 <code>index.html</code> 最下面加载它的那行 <code>&lt;script&gt;</code> 一起删掉。</p>
+                <p><code>movie.html</code>：不用电影功能就删掉，同时把导航栏里对应的那行 <code>&lt;li&gt;</code> 也删掉，不然点进去是空白。</p>
+                <p><code>project_subpage/</code> 里的页面也属于可选项。删了之后文章卡片「⋯」菜单里的「评论」「反馈」点进去会 404，页脚里指向它们的链接也会失效。不想用就把引用它们的链接一起改掉。</p>
+
+                <h3 class="guide-subtitle">
+                    <i class="ri-file-warning-line"></i>
+                    代码里也有几处不能乱动
+                </h3>
+                <ul>
+                    <li>导航栏上的 <code>id="navLinks"</code> —— 删了手机端菜单按钮会失效</li>
+                    <li>导航项里的 <code>data-nav="home"</code> 之类 —— 删了导航点了没反应</li>
+                    <li>深色模式按钮的 <code>id="themeToggle"</code> —— 删了切换开关失效</li>
+                    <li><code>index.html</code> 最下面那几行 <code>&lt;script src="js/..."&gt;&lt;/script&gt;</code> —— 这是加载功能脚本的，删一行少一个功能</li>
+                    <li>文章里的 <code>id</code> —— 不能重复，也最好别改，改了菜单配置会对不上</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ==================== 10. FAQ ==================== -->
+        <section class="guide-section">
+            <h2 class="guide-section-title">
+                <i class="ri-question-line"></i>
+                几个常见问题
+            </h2>
+            <div class="guide-content">
+                <p><strong>改完文件，网页没变化？</strong><br>
+                九成是浏览器缓存，按 <span class="guide-kbd">Ctrl</span> + <span class="guide-kbd">F5</span> 强制刷新。还不行就看看文件是不是真保存了——VS Code 里文件名旁边有小圆点就表示没保存。</p>
+
+                <p><strong>网页突然一片空白？</strong><br>
+                一般是 <code>js/script.js</code> 被改坏了：漏逗号、引号不配对、或 id 重复。按 <span class="guide-kbd">Ctrl</span> + <span class="guide-kbd">Z</span> 撤销再检查。也可以按 <span class="guide-kbd">F12</span> 打开开发者工具切到 Console，红色报错会告诉你第几行有问题。</p>
+
+                <p><strong>图片不显示？</strong><br>
+                检查路径拼写（大小写敏感，<code>Images/a.jpg</code> 和 <code>images/a.jpg</code> 是两个东西）、图片是否真在那个文件夹、网络图片的网址能否直接打开。</p>
+
+                <p><strong>部署完样式全乱了？</strong><br>
+                多半是 <code>css/style.css</code> 没传上去，或者传的时候目录结构变了。去仓库里核对路径跟本地是否一致。</p>
+
+                <p><strong>能用记事本改吗？</strong><br>
+                能，但另存为时编码必须选 UTF-8，不然中文会变乱码。</p>
+            </div>
+        </section>
+
+        <!-- ==================== 11. 清单 ==================== -->
+        <section class="guide-section">
+            <h2 class="guide-section-title">
+                <i class="ri-list-check"></i>
+                一页纸清单
+            </h2>
+            <div class="guide-content">
+                <ol>
+                    <li>注册 GitHub，想好用户名</li>
+                    <li>下载源码：Download ZIP 解压，或者 Fork 一份</li>
+                    <li>装 VS Code + 中文包 + Live Server</li>
+                    <li>用 VS Code 打开博客文件夹，点 Go Live 确认能打开</li>
+                    <li>备份 <code>index.html</code> 和 <code>js/script.js</code></li>
+                    <li>在 <code>index.html</code> 里改头像、名字、导航、社交图标、页脚</li>
+                    <li>在 <code>js/script.js</code> 里写文章（id 别重复）</li>
+                    <li>在 <code>css/style.css</code> 里调配色和字号</li>
+                    <li>传到 GitHub，Settings → Pages 开启，拿到网址</li>
+                    <li>把网址发给朋友</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- ==================== 结语 ==================== -->
+        <div class="guide-outro">
+            <div class="guide-tip">
+                <div class="guide-tip-title">
+                    <i class="ri-heart-line"></i>
+                    保持创造
+                </div>
+                <p>博客是一个持续成长的过程。不要停止学习和创造。</p>
+                <p>祝你 blogging 愉快！——— Annie</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 接收主页面传来的主题信息
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'annie-theme') {
+                document.documentElement.setAttribute('data-theme', event.data.theme);
+            }
+        });
+
+        // 作为 iframe 嵌入时，主动告诉父页面自己的内容高度，
+        // 让外层可以立刻贴合内容，不留空白
+        function reportContentHeight() {
+            const wrapper = document.querySelector('.guide-content-wrapper');
+            if (!wrapper) return;
+            const bottom = wrapper.getBoundingClientRect().bottom + (window.scrollY || 0);
+            window.parent.postMessage({ type: 'annie-embedded-height', height: Math.ceil(bottom) }, '*');
+        }
+
+        // iframe 内的 fixed 只相对 iframe（它和文章一样高），不能固定在浏览器视口。
+        // 同源嵌入时把目录及其样式移到父文档，定位、滚动和点击统一使用父页面坐标。
+        (function initGuideToc() {
+            const toc = document.getElementById('guideToc');
+            const list = document.getElementById('guideTocList');
+            const toggle = document.getElementById('guideTocToggle');
+            const backdrop = document.getElementById('guideTocBackdrop');
+            const topBtn = document.getElementById('guideTopBtn');
+            // 保留原目录结构：各步骤与步骤内的小节标题均可快速定位。
+            const headings = Array.from(document.querySelectorAll('.guide-section-title, .guide-subtitle'));
+            if (!toc || !headings.length) return;
+
+            let host = window;
+            let frame = null;
+            try {
+                if (window.parent !== window && window.frameElement && window.parent.document.body) {
+                    host = window.parent;
+                    frame = window.frameElement;
+                }
+            } catch (e) { /* 跨域时退回独立页面模式 */ }
+
+            const hostDoc = host.document;
+            const hostRoot = hostDoc.documentElement;
+            let copiedStyle = null;
+            if (frame) {
+                copiedStyle = document.getElementById('guideTocStyles').cloneNode(true);
+                copiedStyle.id = 'guideTocStylesMounted';
+                hostDoc.head.appendChild(copiedStyle);
+                hostDoc.body.append(toc, toggle, backdrop, topBtn);
+            }
+            toc.hidden = false;
+            toggle.hidden = false;
+            backdrop.hidden = false;
+            topBtn.hidden = false;
+
+            const article = frame ? frame.closest('#view-article') : null;
+            let activeLink = null;
+            let isOpen = false;
+            // 点击目录后短暂锁定该条目，防止紧邻子标题在下一次滚动更新中抢走高亮。
+            let pinnedHeadingIndex = -1;
+            const links = headings.map(function (heading, index) {
+                if (!heading.id) heading.id = 'guide-section-' + index;
+                const link = hostDoc.createElement('a');
+                link.className = 'guide-toc-link' + (heading.classList.contains('guide-subtitle') ? ' is-sub' : '');
+                link.href = '#' + heading.id;
+                const label = heading.cloneNode(true);
+                label.querySelectorAll('i, .guide-step-num').forEach(function (icon) { icon.remove(); });
+                link.textContent = label.textContent.replace(/\s+/g, ' ').trim();
+                link.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    pinnedHeadingIndex = headings.indexOf(heading);
+                    // 点击章节标题后将它落在阅读判定线稍上方，同时给紧邻小节留出空间。
+                    const offset = getSafeTop() + 16;
+                    const position = frame
+                        ? host.scrollY + frame.getBoundingClientRect().top + heading.getBoundingClientRect().top
+                        : host.scrollY + heading.getBoundingClientRect().top;
+                    const target = Math.max(0, position - offset);
+                    // 在父页面滚动容器上执行平滑滚动；iframe 内容自身不滚动。
+                    host.scrollTo({ top: target, behavior: 'smooth' });
+                    // smooth 结束后校正一次极小误差，避免标题被吸顶栏遮住。
+                    host.setTimeout(function () {
+                        const actual = host.scrollY || hostRoot.scrollTop || 0;
+                        if (Math.abs(actual - target) > 3) {
+                            host.scrollTo({ top: target, behavior: 'smooth' });
+                        }
+                        queueUpdate();
+                    }, 450);
+                    closeDrawer();
+                    // 延后到父页面完成定位后再刷新高亮，避免立刻把点击的章节
+                    // 判成下面紧邻的小节（例如“第七步”变成“文章正文字号”）。
+                });
+                list.appendChild(link);
+                return link;
+            });
+
+            function getSafeTop() {
+                if (!frame) return 16;
+                const header = hostDoc.querySelector('.site-header');
+                const headerBottom = header ? header.getBoundingClientRect().bottom : 0;
+                const fade = host.getComputedStyle(hostDoc.body, '::before');
+                const fadeBottom = fade.content !== 'none' && fade.position === 'fixed'
+                    ? (parseFloat(fade.height) || 0) : 0;
+                return Math.max(0, headerBottom, fadeBottom) + 12;
+            }
+
+            function closeDrawer() {
+                isOpen = false;
+                toc.classList.remove('is-open');
+                backdrop.classList.remove('is-open');
+                toggle.setAttribute('aria-expanded', 'false');
+                toggle.setAttribute('aria-label', '打开本页目录');
+            }
+            toggle.setAttribute('aria-label', '打开本页目录');
+            toggle.addEventListener('click', function () {
+                isOpen = !isOpen;
+                toc.classList.toggle('is-open', isOpen);
+                backdrop.classList.toggle('is-open', isOpen);
+                toggle.setAttribute('aria-expanded', String(isOpen));
+                toggle.setAttribute('aria-label', isOpen ? '关闭本页目录' : '打开本页目录');
+            });
+            backdrop.addEventListener('click', closeDrawer);
+            function onKeydown(event) { if (event.key === 'Escape') closeDrawer(); }
+            hostDoc.addEventListener('keydown', onKeydown);
+
+            // 回到顶部：嵌入时滚的是父页面，单独打开时滚的是本页，
+            // 两种情况都通过 host 操作。嵌入模式下真正决定显示的是
+            // 「上方返回按钮是否已滚出视口」，阈值只是单独打开时的兜底。
+            const TOP_BTN_THRESHOLD = 240;
+            topBtn.addEventListener('click', function () {
+                host.scrollTo({ top: 0, behavior: 'smooth' });
+                // 部分浏览器对 fixed 元素的平滑滚动终点有误差，兜一次底。
+                host.setTimeout(function () {
+                    if ((host.scrollY || hostRoot.scrollTop || 0) > 4) {
+                        host.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                }, 450);
+            });
+
+            let raf = 0;
+            function queueUpdate() {
+                if (!raf) raf = host.requestAnimationFrame(function () { raf = 0; update(); });
+            }
+            function update() {
+                if (!toc.isConnected || (frame && !frame.isConnected)) return;
+                const frameRect = frame ? frame.getBoundingClientRect() : null;
+                const safeTop = getSafeTop();
+                const articleVisible = !article || host.getComputedStyle(article).display !== 'none';
+                const visible = !frame || (frameRect.bottom > safeTop + 32 && frameRect.top < host.innerHeight
+                    && articleVisible);
+                toc.hidden = !visible;
+                toggle.hidden = !visible;
+                if (!visible) { closeDrawer(); }
+
+                // 回到顶部按钮：文章视图可见、且上方的「返回」已经滚出视口时才出现
+                // （此时够不到返回按钮，正好用它对顶）。
+                if (topBtn) {
+                    const backBtn = hostDoc.getElementById('backBtn');
+                    let showTop;
+                    if (frame) {
+                        // 嵌入时以父页面为准：返回按钮底边被顶部安全区盖住即算看不见。
+                        const backGone = !backBtn || backBtn.getBoundingClientRect().bottom <= safeTop;
+                        const scrolledEnough = Math.max(0, -(frameRect ? frameRect.top : 0)) > TOP_BTN_THRESHOLD;
+                        showTop = articleVisible && backGone && scrolledEnough;
+                    } else {
+                        showTop = (host.scrollY || hostRoot.scrollTop || 0) > TOP_BTN_THRESHOLD;
+                    }
+                    topBtn.hidden = !!frame && !articleVisible;
+                    topBtn.classList.toggle('is-visible', showTop);
+                }
+
+                if (!visible) return;
+
+                const top = Math.max(safeTop, frameRect ? frameRect.top + 12 : safeTop);
+                const bottom = frameRect ? Math.min(frameRect.bottom, host.innerHeight - 16) : host.innerHeight - 16;
+                hostRoot.style.setProperty('--guide-toc-top', Math.round(top) + 'px');
+                hostRoot.style.setProperty('--guide-toc-height', Math.max(0, Math.round(bottom - top)) + 'px');
+                if (frameRect) {
+                    const wrapper = document.querySelector('.guide-content-wrapper');
+                    const left = frameRect.left + wrapper.getBoundingClientRect().left + 16;
+                    hostRoot.style.setProperty('--guide-toc-left', Math.round(left) + 'px');
+                }
+                // 手机抽屉本身固定在父页面；只更新当前章节高亮。
+                if (host.innerWidth >= 780 && isOpen) closeDrawer();
+
+                // 保留原来的 30% 阅读线逻辑。点击章节标题后暂时固定该目录项；
+                // 等用户继续滚动，直到该标题滚出顶部安全区，再恢复自动高亮。
+                const readingLine = Math.max(safeTop + 16, host.innerHeight * .3);
+                let current = 0;
+                headings.forEach(function (heading, index) {
+                    const y = (frameRect ? frameRect.top : 0) + heading.getBoundingClientRect().top;
+                    if (y <= readingLine) current = index;
+                });
+                if (pinnedHeadingIndex >= 0) {
+                    const pinnedRect = headings[pinnedHeadingIndex].getBoundingClientRect();
+                    const pinnedTop = (frameRect ? frameRect.top : 0) + pinnedRect.top;
+                    if (pinnedTop + pinnedRect.height > safeTop + 4) {
+                        current = pinnedHeadingIndex;
+                    } else {
+                        pinnedHeadingIndex = -1;
+                    }
+                }
+                const link = links[current];
+                if (link !== activeLink) {
+                    if (activeLink) activeLink.classList.remove('is-active');
+                    activeLink = link;
+                    link.classList.add('is-active');
+                    // 只滚动目录列表，不让浏览器顺带滚动父页面。
+                    if (link.offsetTop < list.scrollTop) list.scrollTop = link.offsetTop;
+                    else if (link.offsetTop + link.offsetHeight > list.scrollTop + list.clientHeight) {
+                        list.scrollTop = link.offsetTop + link.offsetHeight - list.clientHeight;
+                    }
+                }
+            }
+            host.addEventListener('scroll', queueUpdate, { passive: true });
+            host.addEventListener('resize', queueUpdate);
+            if (frame) window.addEventListener('resize', queueUpdate);
+            const observer = frame && article ? new MutationObserver(queueUpdate) : null;
+            if (observer) observer.observe(article, { attributes: true, attributeFilter: ['style', 'class'] });
+            window.addEventListener('pagehide', function () {
+                host.removeEventListener('scroll', queueUpdate);
+                host.removeEventListener('resize', queueUpdate);
+                if (frame) window.removeEventListener('resize', queueUpdate);
+                hostDoc.removeEventListener('keydown', onKeydown);
+                if (observer) observer.disconnect();
+                if (raf) host.cancelAnimationFrame(raf);
+                if (frame) { toc.remove(); toggle.remove(); backdrop.remove(); topBtn.remove(); copiedStyle.remove(); }
+            }, { once: true });
+            update();
+            window.addEventListener('load', queueUpdate, { once: true });
+        })();
+
+        // 页面加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查是否在内嵌模式
+            const isEmbedded = window.parent !== window;
+
+            if (!isEmbedded) return;
+
+            document.documentElement.style.height = 'auto';
+            document.documentElement.style.minHeight = '0';
+            document.body.style.margin = '0';
+            document.body.style.padding = '0';
+            document.body.style.minHeight = '0';
+            document.body.style.display = 'block';
+            document.body.style.overflowX = 'hidden';
+
+            reportContentHeight();
+            window.addEventListener('load', reportContentHeight);
+            window.addEventListener('resize', reportContentHeight);
+
+            // 图片、字体等延迟加载完后再报一次，避免高度测量偏小
+            setTimeout(reportContentHeight, 300);
+            setTimeout(reportContentHeight, 1200);
+        });
+    </script>
+</body>
+</html>

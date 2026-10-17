@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Annie · 个人博客</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <!-- 现代化图标库 Remix Icon -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- 深色模式：尽早设置主题，避免页面闪烁 -->
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('annie-theme');
+                var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var theme = (t === 'light' || t === 'dark') ? t : (dark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {}
+        })();
+    </script>
+</head>
+<body>
+
+    <div class="main-container" id="app">
+
+        <!-- ==================== 头部导航 ==================== -->
+        <header class="site-header">
+            <div class="site-branding">
+                <img
+                class="avatar"
+                src="https://1837491863.cdn.123clouddisk.com/1837491863/46000074#"
+                alt="Annie 的头像"
+                loading="lazy"
+                />
+                <div class="site-title-group">
+                    <a href="#" class="site-title" id="homeLink">Annie</a>
+                    <span class="site-subtitle">思考 · 记录 · 创造</span>
+                </div>
+            </div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="菜单">
+                <i class="ri-menu-line"></i>
+            </button>
+            <nav>
+                <ul class="nav-links" id="navLinks">
+                    <li><a href="#" class="active" data-nav="home">首页</a></li>
+                    <li><a href="#" data-nav="blog">文章</a></li>
+                    <li><a href="movie.html" data-nav="movie">电影</a></li>
+                    <li><a href="about-rh-studio.html" data-nav="about">关于</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <!-- ==================== 首页视图 ==================== -->
+        <div id="view-home" class="view active-view">
+            <!-- 个人简介区 -->
+            <section class="hero-section">
+                <div class="hero-content">
+                    <div class="hero-heading">
+                        <div class="hero-greeting">👋 你好，我是</div>
+                        <!-- ★ 修改姓名 ★ -->
+                        <h1 class="hero-name">Annie</h1>
+                    </div>
+                    <!-- ★ 修改个人简介 ★ -->
+                    <p class="hero-bio">思考 · 记录 · 创造</p>
+                    <p class="hero-description">我的网络cn：回忆；伍月；安妮</p>
+                    <div class="hero-meta">
+                        <!-- ★ 修改所在地、职业等信息 ★ -->
+                        <span><i class="ri-map-pin-line"></i> 辽宁</span>
+                        <span><i class="ri-briefcase-line"></i> 自由撰稿</span>
+                        <span><i class="ri-calendar-line"></i> 博客始于 2026</span>
+                    </div>
+                    <div class="social-links">
+                        <!-- ★ 微信：点击复制微信号 -->
+                        <a href="javascript:void(0);" onclick="copyToClipboard('sossil', '微信号已复制')" title="微信"><i class="ri-wechat-fill"></i></a>
+
+                        <!-- QQ：点击复制QQ号 -->
+                        <a href="javascript:void(0);" onclick="copyToClipboard('3810710631', 'QQ号已复制')" title="QQ"><i class="ri-qq-fill"></i></a>
+
+                        <!-- 邮箱：点击复制邮箱 -->
+                        <a href="javascript:void(0);" onclick="copyToClipboard('anniedv106@gmail.com', '邮箱地址已复制')" title="邮箱"><i class="ri-mail-line"></i></a>
+
+                        <a href="https://github.com/Annie106" target="_blank" rel="noopener noreferrer" title="GitHub：Annie106 (Annie_106)" aria-label="GitHub：Annie106 (Annie_106)"><i class="ri-github-fill"></i></a>
+
+                        <a href="#" title="RSS 订阅"><i class="ri-rss-line"></i></a>
+                        <button class="theme-toggle" id="themeToggle" aria-label="切换深色模式" title="切换主题">
+                            <i class="ri-moon-line"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="hero-player">
+                    <div class="music-player-card" id="musicPlayerCard" aria-live="polite">
+                        <div class="music-player-main">
+                            <div class="music-player-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M9 18V5l12-2v13"></path>
+                                    <circle cx="6" cy="18" r="3"></circle>
+                                    <circle cx="18" cy="16" r="3"></circle>
+                                </svg>
+                            </div>
+                            <div class="music-player-text">
+                                <h3 id="musicCardTitle">2020中秋节-活动BGM</h3>
+                                <p id="musicCardArtist">第五人格</p>
+                            </div>
+                            <div class="music-player-actions">
+                                <button class="music-icon-btn" type="button" aria-label="收藏">
+                                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+                                    </svg>
+                                </button>
+                                <button class="music-card-toggle" id="musicCardToggle" type="button" aria-label="播放或暂停音乐">
+                                    <i class="ri-play-line"></i>
+                                </button>
+                                <button class="music-card-collapse" id="musicCardCollapse" type="button" aria-label="收起播放器">
+                                    <i class="ri-arrow-down-s-line"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="music-track-progress-wrap">
+                            <span class="music-track-time" id="musicCurrentTime">00:00</span>
+                            <div class="music-track-progress" aria-label="播放进度">
+                                <span class="music-track-progress-bar" id="musicProgressBar"></span>
+                            </div>
+                            <span class="music-track-time" id="musicDuration">00:00</span>
+                        </div>
+
+                        <div class="music-player-progress-wrap">
+                            <button class="music-volume-trigger" id="musicVolumeToggle" type="button" aria-label="静音/开启声音">
+                                <i class="ri-volume-up-line"></i>
+                            </button>
+                            <input id="musicVolumeSlider" class="music-volume-slider" type="range" min="0" max="100" value="30" aria-label="音量调节">
+                            <span class="music-player-percent" id="musicPlayerPercent">30%</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 最新文章 -->
+            <div class="section-header">
+                <span class="section-label">最新文章</span>
+                <div class="tag-filter home-tag-filter" id="tagFilterHome">
+                    <span class="tag-pill active" data-tag="all">全部</span>
+                </div>
+            </div>
+            <div class="posts-list" id="postsListHome"></div>
+            <div style="text-align:center;margin-top:20px;">
+                <a href="#" class="tag-pill" data-nav="blog" style="text-decoration:none;cursor:pointer;">查看全部文章 →</a>
+            </div>
+        </div>
+
+        <!-- ==================== 文章列表视图 ==================== -->
+        <div id="view-blog" class="view" style="display:none;">
+            <div class="section-header">
+                <span class="section-label">全部文章</span>
+                <div class="tag-filter" id="tagFilterBlog">
+                    <span class="tag-pill active" data-tag="all">全部</span>
+                </div>
+            </div>
+            <div class="posts-list" id="postsListBlog"></div>
+        </div>
+
+        <!-- ==================== 电影视图 ==================== -->
+        <div id="view-movie" class="view" style="display:none;">
+            <div class="section-header">
+                <span class="section-label">电影</span>
+            </div>
+            <iframe class="movie-frame" id="movieFrame" src="about:blank" title="电影播放器" allow="autoplay; picture-in-picture" allowfullscreen></iframe>
+        </div>
+
+        <!-- ==================== 关于视图 ==================== -->
+        <div id="view-about" class="view about-view" style="display:none;">
+            <section class="about-intro">
+                <p class="about-eyebrow">RH STUDIO · ABOUT</p>
+                <h1 class="about-title">RH 工作室<span>.</span></h1>
+                <p class="about-tagline">一间安静写字的小小工作室 · 用博客记录生活的回响</p>
+                <p class="about-lead">专注个人博客创作与内容沉淀，为值得被记录的文字、思绪与故事，保留一方安静的空间。</p>
+            </section>
+
+            <div class="about-main">
+                <section class="about-copy">
+                    <h2>关于我们</h2>
+                    <p>RH 工作室是一间专注于个人博客创作与内容沉淀的个人工作室。我们不追逐流量，不制造喧嚣，只希望在快速更迭的数字时代里，为值得被记录的文字、思绪与故事，保留一方温润的土壤。</p>
+                    <p>工作室由 Annie 一手创立并主理，从选题策划、文字撰写，到页面运维与视觉打磨，皆由 Annie 亲力亲为。RH 是工作室的代号，也是 Annie 对“记录与人文”这份初心的缩写。</p>
+                    <p>博客内容涵盖生活随笔、读书札记、旅行碎片、独立思考，以及那些藏在日常缝隙里的温柔瞬间。我们相信，真诚的表达自有千钧之力。无论你是偶然路过，还是长期关注，都欢迎来 RH 的博客小坐片刻。</p>
+                </section>
+
+                <dl class="about-facts">
+                    <div><dt>创始人 / 负责人</dt><dd>Annie</dd></div>
+                    <div><dt>工作室性质</dt><dd>个人工作室 · 独立博客</dd></div>
+                    <div><dt>联络邮箱</dt><dd><a href="mailto:anniedv106@gmail.com">anniedv106@gmail.com</a></dd></div>
+                    <div><dt>GitHub</dt><dd><a href="https://github.com/Annie106" target="_blank" rel="noopener noreferrer">Annie106 (Annie_106)</a></dd></div>
+                    <div><dt>博客访问</dt><dd><a href="https://annie106.github.io/annie106" target="_blank" rel="noopener noreferrer">annie106.github.io/annie106</a></dd></div>
+                </dl>
+            </div>
+
+            <section class="about-topics">
+                <h2>博客内容方向</h2>
+                <div class="about-topic-list">
+                    <span>生活随笔</span><span>读书札记</span><span>旅行碎片</span>
+                    <span>独立观点</span><span>摄影随拍</span><span>慢生活</span>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==================== 文章详情视图 ==================== -->
+        <div id="view-article" class="article-detail" style="display:none;">
+        <div class="article-topbar">
+            <span class="back-link" id="backBtn"><i class="ri-arrow-left-line"></i> 返回</span>
+            <button class="article-share" id="articleShare" type="button" title="复制这篇文章的链接">
+                <i class="ri-share-line" aria-hidden="true"></i>
+                <span>分享</span>
+            </button>
+        </div>
+
+            <h1 class="article-full-title" id="articleTitle"></h1>
+            <div class="article-full-meta" id="articleMeta"></div>
+            <div class="article-content" id="articleContent"></div>
+            <div class="embedded-article-wrap" id="embeddedArticleWrap" hidden>
+                <div class="embedded-article-loading" id="embeddedArticleLoading" role="status" aria-live="polite">
+                    <span class="embedded-article-spinner" aria-hidden="true"></span>
+                    <span class="embedded-article-loading-text">正在加载页面…</span>
+                </div>
+                <iframe
+                    class="embedded-article-frame"
+                    id="embeddedPageFrame"
+                    title="文章内嵌页面"
+                ></iframe>
+            </div>
+            <hr class="divider-thin">
+            <span class="back-link" id="backBtn2"><i class="ri-arrow-left-line"></i> 返回</span>
+        </div>
+
+        <!-- ==================== 页脚 ==================== -->
+        <footer class="site-footer">
+            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.19.194</p>
+        </footer>
+    </div>
+
+    <div class="feedback-success-toast" id="feedbackSuccessToast" role="status" aria-live="polite" hidden>
+        <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
+        <span>反馈已提交，谢谢！</span>
+    </div>
+
+    <div class="site-toast" id="siteToast" role="status" aria-live="polite" hidden>
+        <i class="ri-link" aria-hidden="true"></i>
+        <span id="siteToastText"></span>
+    </div>
+
+    <div class="music-enable-hint" id="musicEnableHint" style="display: none;">
+        <div class="music-hint-content">
+            <i class="ri-music-line"></i>
+            <span>点击任意位置启用背景音乐</span>
+        </div>
+    </div>
+    <script src="js/touch-hover.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/copyToClipboard.js"></script>
+    <script src="js/background-music.js"></script>
+    <script>
+        (function () {
+            const url = new URL(window.location.href);
+            if (url.searchParams.get('feedback') !== 'success') return;
+
+            const toast = document.getElementById('feedbackSuccessToast');
+            if (!toast) return;
+
+            url.searchParams.delete('feedback');
+            window.history.replaceState(
+                window.history.state,
+                '',
+                url.pathname + url.search + url.hash
+            );
+
+            // 先显示并强制一次样式重算，让 opacity:0 成为已生效的起始状态，
+            // 否则隐藏态与显示态会被合并进同一次样式计算，淡入动画会被跳过
+            toast.hidden = false;
+            void toast.offsetHeight;
+            toast.classList.add('visible');
+            window.setTimeout(function () {
+                toast.classList.remove('visible');
+                // 等淡出过渡结束再隐藏，避免被 display:none 打断
+                window.setTimeout(function () {
+                    toast.hidden = true;
+                }, 300);
+            }, 5000);
+        })();
+    </script>
+</body>
+</html>
