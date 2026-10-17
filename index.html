@@ -6,6 +6,28 @@
     <title>Annie · 个人博客</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
+    <!-- ==================== 分享卡片元信息 ==================== -->
+    <!-- 微信 / QQ / 微博等抓取链接预览时，优先读这几条。
+         没有 og:image 时微信只能显示一个灰色链接占位图标，
+         所以分享封面必须是能公网访问的绝对地址（相对路径抓不到）。
+         注意：微信会缓存抓取结果，换图后旧链接可能仍显示旧图。 -->
+    <meta name="description" content="Annie 的个人博客：思考 · 记录 · 创造">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Annie · 个人博客">
+    <meta property="og:title" content="Annie · 个人博客">
+    <meta property="og:description" content="敏感、真实、讨厌冷暴力与敷衍。记录阅读、成长和日常灵感。">
+    <meta property="og:url" content="https://annie106.github.io/annie106/">
+    <meta property="og:image" content="https://annie106.github.io/annie106/share_cover.png">
+    <meta property="og:image:width" content="500">
+    <meta property="og:image:height" content="500">
+    <meta property="og:image:alt" content="Annie 个人博客">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Annie · 个人博客">
+    <meta name="twitter:description" content="敏感、真实、讨厌冷暴力与敷衍。记录阅读、成长和日常灵感。">
+    <meta name="twitter:image" content="https://annie106.github.io/annie106/share_cover.png">
+    <!-- 旧版微信 / QQ 抓取器更认这一条，保留作兜底 -->
+    <link rel="image_src" href="https://annie106.github.io/annie106/share_cover.png">
+
     <!-- 现代化图标库 Remix Icon -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
 
@@ -246,7 +268,7 @@
 
         <!-- ==================== 页脚 ==================== -->
         <footer class="site-footer">
-            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.19.204</p>
+            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.19.205</p>
         </footer>
     </div>
 
@@ -272,11 +294,11 @@
             <p class="wechat-share-guide-title" id="wechatShareGuideTitle">
                 点击右上角 <i class="ri-more-fill" aria-hidden="true"></i> 分享给朋友
             </p>
-            <p class="wechat-share-guide-desc">链接已复制，也可以直接粘贴给好友</p>
+            <p class="wechat-share-guide-desc">链接已复制，可以直接粘贴给好友</p>
             <div class="wechat-share-guide-actions">
                 <button class="wechat-share-guide-copy" id="wechatShareGuideCopy" type="button">
                     <i class="ri-file-copy-line" aria-hidden="true"></i>
-                    再次复制链接
+                    再次复制
                 </button>
                 <button class="wechat-share-guide-close" id="wechatShareGuideClose" type="button">
                     我知道了

@@ -795,9 +795,32 @@
                 embeddedArticleWrap.classList.add('is-ready');
             }
 
+            // 更新分享卡片元信息（og:title / og:description / og:image / og:url）。
+            // 微信抓取的是「被分享的那个 URL」，而本站文章都是 index.html?article=N
+            // 同一个页面靠 JS 换内容，微信不会执行 JS 后再抓，所以这里改 meta
+            // 对微信无效、对支持动态渲染的抓取器（部分浏览器 / Slack 等）有效。
+            // 保留它是为了：链接被其它平台抓取时标题能对上当前文章。
+            function updateShareMeta(post) {
+                const url = buildArticleUrl(post.id);
+                const setMeta = (selector, attr, value) => {
+                    const el = document.head.querySelector(selector);
+                    if (el) el.setAttribute(attr, value);
+                };
+                const title = post.title || 'Annie · 个人博客';
+                const desc = post.excerpt || '思考 · 记录 · 创造';
+                setMeta('meta[property="og:title"]', 'content', title);
+                setMeta('meta[property="og:description"]', 'content', desc);
+                setMeta('meta[property="og:url"]', 'content', url);
+                setMeta('meta[name="twitter:title"]', 'content', title);
+                setMeta('meta[name="twitter:description"]', 'content', desc);
+                // 浏览器标签页标题也一起换掉，复制链接时更清楚
+                document.title = `${title} · Annie`;
+            }
+
             function renderArticle(post) {
                 currentArticleId = post.id;
                 const isUnavailableArticle = !isArticlePublic(post);
+                updateShareMeta(post);
                 articleTitle.hidden = isUnavailableArticle;
                 articleMeta.hidden = isUnavailableArticle;
                 articleUnavailableNotice.hidden = !isUnavailableArticle;
