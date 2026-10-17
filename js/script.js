@@ -423,6 +423,7 @@
                 // 样式计算，淡入动画会被跳过（和 showToast 同样的坑）
                 void wechatShareGuide.offsetHeight;
                 wechatShareGuide.classList.add('visible');
+                document.documentElement.classList.add('wechat-guide-open');
                 document.body.classList.add('wechat-guide-open');
                 if (wechatShareGuideClose) wechatShareGuideClose.focus({ preventScroll: true });
             }
@@ -430,6 +431,7 @@
             function closeWechatShareGuide() {
                 if (!wechatShareGuide || wechatShareGuide.hidden) return;
                 wechatShareGuide.classList.remove('visible');
+                document.documentElement.classList.remove('wechat-guide-open');
                 document.body.classList.remove('wechat-guide-open');
                 // 等淡出过渡走完再隐藏，否则会被 display:none 打断
                 clearTimeout(wechatGuideHideTimer);

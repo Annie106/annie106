@@ -1447,54 +1447,94 @@
 
         /* ==================== 微信分享引导浮层 ==================== */
         /* 微信内置浏览器不允许网页主动唤起分享面板，只能引导用户点右上角「···」。
-           浮层顶部留出箭头指向的位置，整体半透明遮罩，点空白处也能关闭。 */
+           注意：微信的「···」在微信自己的标题栏里，位于网页视口之外，
+           所以箭头没法真正指到它，只能做成带文字的提示气泡放在顶部，
+           避免光秃秃一个箭头被误认成页面图标。 */
         .wechat-share-guide {
             position: fixed;
             inset: 0;
             z-index: 1200;
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
-            padding: 12px 18px 24px;
-            background: rgba(0, 0, 0, 0.62);
+            justify-content: space-between;
+            gap: 16px;
+            padding: calc(env(safe-area-inset-top, 0px) + 12px) 14px
+                calc(env(safe-area-inset-bottom, 0px) + 16px);
+            background: rgba(0, 0, 0, 0.66);
             opacity: 0;
             transition: opacity 0.24s ease;
             -webkit-tap-highlight-color: transparent;
+            overscroll-behavior: contain;
         }
 
         .wechat-share-guide[hidden] {
             display: none;
         }
 
-        /* 浮层打开时锁住背景滚动，避免手指滑动穿透到底层文章 */
+        /* 浮层打开时锁住背景滚动，避免手指滑动穿透到底层文章。
+           移动端微信对 body{overflow:hidden} 支持不稳，这里 html 和 body
+           一起加锁，并用 overscroll-behavior 兜住橡皮筋效果。 */
+        html.wechat-guide-open,
         body.wechat-guide-open {
             overflow: hidden;
+            overscroll-behavior: none;
+        }
+
+        /* 浮层自身仍要能滚动：横屏或小屏下气泡 + 卡片可能放不下。
+           这条和上面的定位规则合起来才是完整的 .wechat-share-guide。 */
+        .wechat-share-guide {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* 顶部提示气泡会和站点导航条叠在一起（看起来像个错位的图标），
+           浮层打开期间把导航条压到遮罩下面，避免视觉打架 */
+        body.wechat-guide-open .site-header {
+            visibility: hidden;
         }
 
         .wechat-share-guide.visible {
             opacity: 1;
         }
 
+        /* 顶部提示气泡：白底胶囊 + 右上角箭头。
+           它不指向微信「···」（那在网页视口外），只负责把注意力引到右上角，
+           所以自身必须带文字说明，不能只剩一个箭头。 */
         .wechat-share-guide-arrow {
-            flex: 0 0 auto;
-            margin-right: 8px;
-            color: #ffffff;
-            font-size: 2rem;
+            align-self: flex-end;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            max-width: calc(100% - 8px);
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.96);
+            color: #111111;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+            font-size: 0.8125rem;
+            font-weight: 500;
+            line-height: 1.4;
+            white-space: nowrap;
+        }
+
+        .wechat-share-guide-arrow i {
+            font-size: 1rem;
             line-height: 1;
             animation: wechatArrowNudge 1.4s ease-in-out infinite;
         }
 
+        /* 卡片从底部弹出：手机上拇指更容易够到按钮，
+           也不会像居中那样在屏幕中间戳一个洞、上下各留一大片空 */
         .wechat-share-guide-body {
-            width: min(100%, 360px);
+            width: 100%;
             margin-top: auto;
-            margin-bottom: auto;
-            padding: 24px 22px;
-            border-radius: var(--radius-lg);
+            padding: 22px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+            border-radius: 18px;
             background: var(--color-surface);
             box-shadow: var(--shadow-lg);
             text-align: center;
-            transform: translateY(12px);
-            transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(100%);
+            transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .wechat-share-guide.visible .wechat-share-guide-body {
@@ -1575,7 +1615,7 @@
 
         @keyframes wechatArrowNudge {
             0%, 100% { transform: translate(0, 0); }
-            50% { transform: translate(3px, -3px); }
+            50% { transform: translate(2px, -2px); }
         }
 
         @media (prefers-reduced-motion: reduce) {
