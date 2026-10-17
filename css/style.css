@@ -1458,7 +1458,9 @@
             flex-direction: column;
             justify-content: space-between;
             gap: 16px;
-            padding: calc(env(safe-area-inset-top, 0px) + 12px) 14px
+            /* --wechat-guide-top 由 JS 按站点导航条底边动态写入，
+               让顶部气泡落在导航栏下方，不压住导航文字 */
+            padding: calc(env(safe-area-inset-top, 0px) + var(--wechat-guide-top, 12px)) 14px
                 calc(env(safe-area-inset-bottom, 0px) + 16px);
             background: rgba(0, 0, 0, 0.66);
             opacity: 0;
@@ -1487,11 +1489,11 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        /* 顶部提示气泡会和站点导航条叠在一起（看起来像个错位的图标），
-           浮层打开期间把导航条压到遮罩下面，避免视觉打架 */
-        body.wechat-guide-open .site-header {
-            visibility: hidden;
-        }
+        /* 注意：这里不要隐藏 .site-header。
+           之前为了让顶部气泡不和导航文字重叠，把导航条 visibility: hidden 了，
+           结果导航直接消失、还留下一条空白带，属于过犹不及。
+           现在改成让气泡自己往下让位（见 .wechat-share-guide-arrow 的 margin-top），
+           导航条照常显示，只是被遮罩压暗。 */
 
         .wechat-share-guide.visible {
             opacity: 1;

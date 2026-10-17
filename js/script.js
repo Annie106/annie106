@@ -415,10 +415,26 @@
             // 再弹引导浮层指向右上角「···」，让用户自己完成分享。
             let wechatGuideHideTimer = null;
 
+            // 顶部气泡要让开站点导航条：量出导航条底边到视口顶部的距离，
+            // 写进 --wechat-guide-top，气泡就落在导航栏下方而不是压住它。
+            // 导航条是 sticky 的，滚动后位置会变，所以每次打开都重新量。
+            function syncWechatGuideTop() {
+                if (!wechatShareGuide) return;
+                const header = $('.site-header');
+                let top = 12;
+                if (header) {
+                    const rect = header.getBoundingClientRect();
+                    // 导航条已经滚出视口顶部时 rect.bottom 可能为负，按 12 处理
+                    top = Math.max(12, Math.round(rect.bottom) + 12);
+                }
+                wechatShareGuide.style.setProperty('--wechat-guide-top', `${top}px`);
+            }
+
             function openWechatShareGuide() {
                 if (!wechatShareGuide) return;
                 clearTimeout(wechatGuideHideTimer);
                 wechatShareGuide.hidden = false;
+                syncWechatGuideTop();
                 // 先强制一次样式重算，否则 opacity 0 → 1 会被合并进同一次
                 // 样式计算，淡入动画会被跳过（和 showToast 同样的坑）
                 void wechatShareGuide.offsetHeight;
