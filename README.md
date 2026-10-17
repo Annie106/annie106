@@ -47,7 +47,7 @@
 - 单篇文章可通过 `isPublic: false` 暂停正文访问，点击文章或打开其直达链接会在文章区域嵌入 `project_subpage/blog/article_unavailable.html` 提示页；将其改为 `true` 即可重新开放
 - 关于页面可通过 `?view=about` 直达，无需添加分享按钮
 - 所有 HTML 页面使用根目录的 `favicon.svg` 作为浏览器图标
-- 分享卡片封面：根目录 `share_cover.png`（500×500），通过 `index.html` 里的 `og:image` / `twitter:image` / `link rel="image_src"` 暴露给微信等平台抓取。**必须是绝对地址**，相对路径抓不到；换图后微信有缓存，旧链接可能仍显示旧图
+- 分享卡片封面：当前 `og:image` 用的是 CDN 头像地址 `https://1837491863.cdn.123clouddisk.com/1837491863/46000074`（按站点主人的要求先试这个）。**注意该 CDN 开了 Referer 鉴权**，实测不带 Referer 或空 Referer 均返回 403，只有带 `Referer: https://annie106.github.io/annie106/` 才返回 200；微信抓取时不带本站 Referer，所以很可能抓不到。若卡片仍是灰图标，把 `index.html` 里 `og:image` / `twitter:image` / `link rel="image_src"` 三处换回仓库内的 `https://annie106.github.io/annie106/share_cover.jpg`（500×500 头像裁切图，已随仓库提供）。换图后微信有缓存，旧链接可能仍显示旧图
 - 反馈表单支持文章问题、Bug 反馈、功能建议、排版样式和其他类型
 - 新增博客使用指南文章，提供完整的项目配置、修改和部署教程
 - 页面状态记忆：离开文章、切换标签页或关闭页面后返回时，自动恢复之前的视图、滚动位置和筛选状态
