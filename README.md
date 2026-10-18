@@ -47,7 +47,7 @@
 - 文章卡片二级菜单支持三种类型：打开站内文章、跳转到文章配置的独立页面（`externalPage`）、或自定义链接（`link`）
 - 文章详情支持内嵌独立 HTML 页面（`embeddedPage`），自动调整高度并适配主题
 - 文章分享：打开文章时地址栏带上 `?article=<id>`，文章页顶部的「分享」按钮和卡片菜单均可复制该链接；别人打开链接直达对应文章，链接失效时自动回到首页
-- 微信内分享：微信内置浏览器（UA 含 `MicroMessenger`）不支持 Web Share API，也没有让网页主动唤起「分享给朋友」面板的接口，因此点击分享按钮会先复制链接、再弹出指向右上角「···」的引导浮层；鸿蒙 NEXT 版微信（ArkWeb 内核，UA 可能不带 `MicroMessenger`）同样按微信内处理；其它浏览器仍走系统分享面板/复制链接
+- 微信内分享：微信内置浏览器（UA 含 `MicroMessenger` / `wxwork`，或注入了 `WeixinJSBridge`）不支持 Web Share API，也没有让网页主动唤起「分享给朋友」面板的接口，因此点击分享按钮会先复制链接、再弹出指向右上角「···」的引导浮层；鸿蒙 NEXT 版微信（ArkWeb 内核，UA 可能不带 `MicroMessenger`）同样按微信内处理。**注意**：鸿蒙/华为手机自带的浏览器也是 ArkWeb 内核，所以判断时会先排除 `HuaweiBrowser`、`UCBrowser`、`Quark`、`MQQBrowser` 等已知普通浏览器标记（见 `js/script.js` 的 `NON_WECHAT_APP_BROWSER`），否则手机上的普通浏览器也会被误判成微信、弹出无意义的引导浮层；其它浏览器仍走系统分享面板/复制链接。桌面版微信（Windows/macOS）的分享入口在左上角，浮层的箭头与文案会自动换成「左上角」
 - 单篇文章可通过 `isPublic: false` 暂停正文访问，点击文章或打开其直达链接会在文章区域嵌入 `project_subpage/blog/article_unavailable.html` 提示页；将其改为 `true` 即可重新开放
 - 关于页面可通过 `?view=about` 直达，无需添加分享按钮
 - 所有 HTML 页面使用根目录的 `favicon.svg` 作为浏览器图标

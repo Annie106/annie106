@@ -4,7 +4,7 @@
             const blogPosts = [{
                 id: 11,
                 pinned: false,
-                title: '归宿里的两帧：和朋友的拍归宿照',
+                title: '归宿里的两帧：和朋友拍的归宿照',
                 date: '2026-10-18',
                 excerpt: '我很少在游戏里拍照，不是不喜欢，是总觉得镜头里缺点什么...直到有人愿意站在里面，陪我一起等光。',
                 tags: ['第五人格', '随笔', '社交'],
@@ -413,11 +413,30 @@
             //
             // 注意用 ArkWeb 而不是 OpenHarmony / HarmonyOS 作为判断依据：
             // 后两个标记在鸿蒙自带的华为浏览器里也有，会把普通浏览器误判成微信。
+            //
+            // 但光靠 ArkWeb 还不够：鸿蒙上的**华为浏览器**也是 ArkWeb 内核，
+            // UA 同样带 ArkWeb、也没有 navigator.share，于是手机上用普通浏览器
+            // 打开也会弹出「点右上角 ···」的引导浮层（华为/鸿蒙手机尤其常见）。
+            // 所以这里再排除一批已知的普通浏览器 / App 内置浏览器标记，
+            // 只有「ArkWeb 内核 + 不是这些浏览器 + 没有系统分享面板」才当微信。
+            //
+            // 其中 /Browser/ 是通用兜底：国内手机浏览器的 UA 基本都带 Browser
+            // 字样（HuaweiBrowser / MiuiBrowser / VivoBrowser / OppoBrowser /
+            // SamsungBrowser / UCBrowser / QQBrowser / baidubrowser…），
+            // 而微信各端的 UA 都不带这个词。
+            const NON_WECHAT_APP_BROWSER = /Browser|Quark|Firefox|FxiOS|CriOS|EdgiOS|OPR\/|Weibo|AlipayClient|DingTalk|aweme|BytedanceWebview|Xiaohongshu|NewsArticle/i;
+
             function isWeChatBrowser() {
                 const ua = navigator.userAgent || '';
                 if (/MicroMessenger|Weixin|wxwork/i.test(ua)) return true;
-                if (/ArkWeb/i.test(ua) && typeof navigator.share !== 'function') return true;
-                return false;
+                // 微信注入的 JS 桥：有它就一定是微信（比 UA 更可靠）
+                if (window.WeixinJSBridge || window.__wxjs_environment) return true;
+                // 非 ArkWeb 内核：不可能是鸿蒙版微信
+                if (!/ArkWeb/i.test(ua)) return false;
+                // 已知的普通浏览器 / 其它 App 内置浏览器：不是微信
+                if (NON_WECHAT_APP_BROWSER.test(ua)) return false;
+                // 鸿蒙微信目前仍拿不到 navigator.share；能拿到就说明是普通浏览器
+                return typeof navigator.share !== 'function';
             }
 
             // 微信内置浏览器既不支持 Web Share API，也没有让网页主动唤起
@@ -433,9 +452,11 @@
                 const ua = navigator.userAgent || '';
                 // Windows 微信带 WindowsWechat，macOS 微信带 MacWechat
                 if (/WindowsWechat|MacWechat/i.test(ua)) return true;
-                // 兜底：UA 是桌面系统、又不是手机/平板，就按桌面端处理
+                // 兜底：UA 是桌面系统、又不是手机/平板，就按桌面端处理。
+                // iPadOS 13+ 的 Safari 会伪装成 Macintosh（带 Mobile），
+                // 所以 "Mobile" 也要算进移动端，否则 iPad 会被当成桌面微信。
                 const isDesktopOS = /Windows NT|Macintosh|X11|Linux x86_64/i.test(ua);
-                const isMobile = /Android|iPhone|iPad|iPod|Mobile|HarmonyOS|OpenHarmony/i.test(ua);
+                const isMobile = /Android|iPhone|iPad|iPod|Mobile|HarmonyOS|OpenHarmony|Tablet/i.test(ua);
                 return isDesktopOS && !isMobile;
             }
 
@@ -866,7 +887,7 @@
                 setMeta('meta[name="twitter:title"]', 'content', title);
                 setMeta('meta[name="twitter:description"]', 'content', desc);
                 // 浏览器标签页标题也一起换掉，复制链接时更清楚
-                document.title = `${title} · Annie`;
+                document.title = `${title}`;
             }
 
             function renderArticle(post) {

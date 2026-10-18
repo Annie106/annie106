@@ -1258,6 +1258,7 @@
                     </div>
                     <p>微信内置浏览器既没有系统分享面板，也不允许网页主动弹出「分享给朋友」。所以微信里点「分享」时，会先<strong>自动复制链接</strong>，再弹出一个提示浮层，告诉用户点右上角的「···」→「分享给朋友」。链接已经复制好了，也可以直接粘贴给好友。</p>
                     <p>鸿蒙 NEXT 版微信用的是 ArkWeb 内核，同样按微信内处理，不需要额外配置。判断逻辑在 <code>js/script.js</code> 的 <code>isWeChatBrowser()</code>。</p>
+                    <p><strong>它怎么区分微信和手机浏览器：</strong>先看 UA 里有没有 <code>MicroMessenger</code> / <code>wxwork</code>，或者页面里有没有微信注入的 <code>WeixinJSBridge</code>——命中一个就确定是微信。没有这些标记、又是 ArkWeb 内核时，还要排除 <code>HuaweiBrowser</code>、<code>UCBrowser</code>、<code>Quark</code>、<code>MQQBrowser</code> 这些普通浏览器（脚本里叫 <code>NON_WECHAT_APP_BROWSER</code>），否则华为/鸿蒙手机自带浏览器也会被当成微信，点分享就会弹出一个指向右上角、但其实不存在的「···」引导。手机浏览器里点分享，正常走系统分享面板；面板不可用则复制链接加一句提示。</p>
                 </div>
 
                 <!-- 6.8 图文页（内嵌页面） -->
