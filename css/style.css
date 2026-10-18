@@ -1615,11 +1615,25 @@
             #view-blog > .section-header .home-section-head {
                 flex: 0 0 auto;
             }
-            /* 标签行拿走剩余宽度，放不下就横向滚动（.home-tag-filter 已处理） */
+            /* 标签行按内容宽度收缩（flex: 0 1 auto）：
+               - 标签放得下时：宽度 = 内容宽度，不会被撑满，
+                 配合下一条 margin-left: auto 靠右贴边；
+               - 标签放不下时：被压缩到剩余空间并横向滚动。
+               之前用 flex: 1 1 auto 会强行撑满，标签被摊开、
+               右侧留白，看起来就是「没对齐」。 */
             #view-home > .section-header .tag-filter,
             #view-blog > .section-header .tag-filter {
-                flex: 1 1 auto;
+                flex: 0 1 auto;
                 min-width: 0;
+                /* 让标签行自己靠到最右侧，而不是靠外层 space-between */
+                margin-left: auto;
+                justify-content: flex-start;
+            }
+            /* 外层改成 flex-start：宽度分配交给 margin-left: auto，
+               避免 space-between 在没有多余空间时行为不稳定 */
+            #view-home > .section-header,
+            #view-blog > .section-header {
+                justify-content: flex-start;
             }
 
             /* === 空间不足时自动收起文字 ===
