@@ -164,33 +164,88 @@
             min-width: 0;
         }
 
-        /* ---- Uiverse 输入框（From Uiverse.io by Yaseen549）---- */
+        /* ---- 输入框（外层负责描边和聚焦光圈，内层只放输入框和清空按钮）---- */
+        .search-field {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1 1 auto;
+            min-width: 0;
+            height: 44px;
+            padding: 0 0.55rem 0 0.85rem;
+            background-color: var(--field-bg);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        }
+        .search-field:focus-within {
+            border-color: var(--control-focus);
+            box-shadow: var(--control-focus-shadow);
+        }
+        .search-field-icon {
+            flex: 0 0 auto;
+            width: 18px;
+            height: 18px;
+            color: var(--text-muted);
+            pointer-events: none;
+            transition: color 0.18s ease;
+        }
+        .search-field:focus-within .search-field-icon {
+            color: var(--text-primary);
+        }
         .input {
             flex: 1 1 auto;
             min-width: 0;
             width: 100%;
-            height: 44px;
-            padding: 10px 14px;
-            background-color: var(--field-bg);
+            height: 100%;
+            padding: 0;
+            background: transparent;
             color: var(--field-text);
-            border: 1px solid var(--border);
-            border-radius: 5px;
+            border: 0;
+            border-radius: 0;
             font-family: inherit;
-            font-size: 0.95rem;
+            /* 16px：iOS 上小于 16px 的输入框聚焦时会把整页放大 */
+            font-size: 16px;
             outline: none;
+            -webkit-appearance: none;
+            appearance: none;
         }
-
-        .input:focus {
-            color: var(--field-text);
-            background-color: var(--field-bg);
-            border-color: var(--control-focus);
-            box-shadow: var(--control-focus-shadow);
-            transition: .1s;
-            transition-property: box-shadow;
-        }
-
         .input::placeholder {
             color: var(--text-muted);
+        }
+        .input::-webkit-search-decoration,
+        .input::-webkit-search-cancel-button {
+            -webkit-appearance: none;
+            appearance: none;
+            display: none;
+        }
+        .search-clear {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: var(--surface-muted);
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+        }
+        .search-clear[hidden] {
+            display: none;
+        }
+        .search-clear:hover {
+            background: var(--button-bg);
+            color: var(--button-text);
+        }
+        .search-clear:active {
+            transform: scale(0.92);
         }
 
         /* ---- 搜索按钮 ---- */
@@ -199,7 +254,7 @@
             height: 44px;
             padding: 0 1.5rem;
             border: 1px solid var(--border);
-            border-radius: 5px;
+            border-radius: 999px;
             background-color: var(--button-bg);
             color: var(--button-text);
             font-family: inherit;
@@ -217,6 +272,105 @@
         .search-button:active {
             transform: scale(0.96);
             background-color: var(--button-hover-bg);
+        }
+
+        /* ---- 结果统计 ---- */
+        .search-summary {
+            width: 100%;
+            max-width: 460px;
+            margin: 0 auto;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            text-align: center;
+            /* 有内容时才占位，空的时候不撑高 */
+            min-height: 0;
+            transition: min-height 0.2s ease;
+        }
+        /* 空的时候整个元素不参与布局：否则 header 的 flex gap
+           会在搜索框和下面的统计之间多留一大段空白 */
+        .search-summary:empty {
+            display: none;
+        }
+        .search-summary:not(:empty) {
+            min-height: 1.4em;
+        }
+        .search-summary strong {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+        .search-summary mark {
+            padding: 0 2px;
+            border-radius: 3px;
+            background: rgba(255, 214, 102, 0.5);
+            color: inherit;
+        }
+
+        /* ---- 卡片内关键词高亮 ---- */
+        .download-card mark {
+            padding: 0 1px;
+            border-radius: 3px;
+            background: rgba(255, 214, 102, 0.45);
+            color: inherit;
+            font-weight: 700;
+        }
+        [data-theme="dark"] .download-card mark,
+        [data-theme="dark"] .search-summary mark {
+            background: rgba(250, 204, 21, 0.26);
+            color: #ffe89a;
+        }
+
+        /* ---- 空状态：给一个「清空搜索」的出口 ---- */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            text-align: center;
+            padding: 2.5rem 1rem;
+            border: 1px dashed var(--border);
+            border-radius: 22px;
+            background: var(--surface);
+            color: var(--text-secondary);
+            margin-top: 1rem;
+            font-size: 1rem;
+            animation: searchFadeUp 0.28s ease both;
+        }
+        .empty-state-title {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .empty-state-hint {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+        .empty-state button {
+            margin-top: 0.25rem;
+            padding: 0.55rem 1.2rem;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: var(--button-bg);
+            color: var(--button-text);
+            font-family: inherit;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.16s ease, opacity 0.16s ease;
+        }
+        .empty-state button:active {
+            transform: scale(0.96);
+        }
+        @keyframes searchFadeUp {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .empty-state {
+                animation: none;
+            }
+            .download-card mark,
+            .search-summary mark {
+                transition: none;
+            }
         }
 
         .badge {
@@ -274,16 +428,6 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 2rem 1rem;
-            border: 1px dashed var(--border);
-            border-radius: 22px;
-            background: var(--surface);
-            color: var(--text-secondary);
-            margin-top: 1rem;
-            font-size: 1rem;
         }
         .category-button.active,
         .category-button:hover {
@@ -525,18 +669,37 @@
             h1 {
                 font-size: 2.2rem;
             }
+            /* 搜索框和按钮留在同一行：按钮收窄，把宽度让给输入框，
+               竖着堆两行会白白多占一屏高度 */
             .search-panel {
-                flex-direction: column;
-                align-items: stretch;
+                flex-direction: row;
+                align-items: center;
                 max-width: 100%;
                 gap: 0.5rem;
+            }
+            .search-field {
+                flex: 1 1 auto;
+                min-width: 0;
             }
             .input {
                 width: 100%;
             }
             .search-button {
-                width: 100%;
+                flex: 0 0 auto;
+                width: auto;
                 padding: 0 1rem;
+                font-size: 0.85rem;
+            }
+            .search-summary {
+                font-size: 0.78rem;
+            }
+            .header {
+                gap: 1.25rem;
+                margin-bottom: 2rem;
+            }
+            .stats {
+                margin: 1.25rem 0 1rem;
+                gap: 1rem;
             }
             .download-grid {
                 grid-template-columns: 1fr;
@@ -563,9 +726,19 @@
             <div class="studio-tag">由 GitHub Pages 提供静态托管 &amp; 安全分发</div>
         </div>
         <div class="search-panel">
-            <input placeholder="搜索工具、版本或功能" class="input" name="text" type="text" id="searchInput" aria-label="搜索工具">
+            <div class="search-field">
+                <svg class="search-field-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"></circle>
+                    <path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                </svg>
+                <input placeholder="搜索工具、版本或功能" class="input" name="text" type="search" id="searchInput"
+                       aria-label="搜索工具" autocomplete="off" autocorrect="off" autocapitalize="off"
+                       spellcheck="false" enterkeyhint="search">
+                <button id="searchClear" class="search-clear" type="button" aria-label="清空搜索" hidden>✕</button>
+            </div>
             <button id="searchButton" class="search-button" type="button">搜索</button>
         </div>
+        <div class="search-summary" id="searchSummary" role="status" aria-live="polite"></div>
         <div class="stats">
             <div class="stat-item">📦 今日更新</div>
             <div class="stat-item">🛡️ 链接隐匿技术</div>
@@ -783,10 +956,42 @@
 
     const categories = ["全部", "Windows 工具", "Android工具", "其它工具"];
     let currentCategory = '全部';
+    // 输入防抖：每敲一个字就整块重绘列表会卡，停顿一下再渲染
+    let searchDebounceTimer = null;
+    const SEARCH_DEBOUNCE = 140;
 
     function getSearchKeyword() {
         const input = document.getElementById('searchInput');
         return input ? input.value.trim().toLowerCase() : '';
+    }
+
+    function escapeRegExp(value) {
+        return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function escapeHtmlText(value) {
+        return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+        })[ch]);
+    }
+
+    // 先转义再包 <mark>，避免用户输入 <script> 之类字符被当成标签
+    function highlight(value, keyword) {
+        const text = String(value == null ? '' : value);
+        if (!keyword) return text;
+        const escaped = text.replace(/[&<>"']/g, ch => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+        })[ch]);
+        // 关键词可能包含空格，按词分别高亮
+        const words = keyword.split(/\s+/).filter(Boolean).map(escapeRegExp);
+        if (!words.length) return escaped;
+        const pattern = new RegExp(`(${words.join('|')})`, 'gi');
+        return escaped.replace(pattern, '<mark>$1</mark>');
+    }
+
+    // 一条记录的检索文本：名称、版本、简介、功能都算
+    function getItemText(item) {
+        return `${item.name} ${item.version} ${item.shortDesc} ${item.fullDesc} ${(item.features || []).join(' ')}`.toLowerCase();
     }
 
     const downloadIconSvg = `
@@ -807,29 +1012,36 @@
         if (!container) return;
 
         const keyword = searchKeyword.trim().toLowerCase();
+        // 多关键词按「与」处理：每个词都要命中，允许分散在不同字段
+        const words = keyword.split(/\s+/).filter(Boolean);
         let html = '';
+        let total = 0;
+
         for (let category of categories) {
             if (category !== '全部' && (activeCategory === '全部' || activeCategory === category)) {
                 const items = downloadsData.filter(item => {
                     if (item.category !== category) return false;
-                    if (!keyword) return true;
-                    const fullText = `${item.name} ${item.version} ${item.shortDesc} ${item.fullDesc} ${item.features.join(' ')}`.toLowerCase();
-                    return fullText.includes(keyword);
+                    if (!words.length) return true;
+                    const fullText = getItemText(item);
+                    return words.every(word => fullText.includes(word));
                 });
                 if (!items.length) continue;
+                total += items.length;
 
                 html += `<div class="download-section">
                     <div class="section-title">${category}</div>
                     <div class="download-grid">
                         ${items.map(item => {
-                            const featuresHtml = item.features.map(feat => `<i>✨ ${feat}</i>`).join('');
+                            const featuresHtml = item.features
+                                .map(feat => `<i>✨ ${highlight(feat, keyword)}</i>`)
+                                .join('');
                             return `
                                 <div class="download-card" data-id="${item.id}">
                                     <div class="card-header">
                                         <div class="app-icon">${item.icon}</div>
                                         <div class="app-title">
-                                            ${item.name}
-                                            <span class="version-badge">v${item.version}</span>
+                                            ${highlight(item.name, keyword)}
+                                            <span class="version-badge">v${highlight(item.version, keyword)}</span>
                                         </div>
                                         <div class="meta-info">
                                             <span>📅 ${item.date}</span>
@@ -838,9 +1050,9 @@
                                         </div>
                                     </div>
                                     <div class="description">
-                                        <p style="font-weight: 600; margin-bottom: 6px;">📌 ${item.shortDesc}</p>
-                                        <p style="font-size: 0.88rem; margin-bottom: 8px;">${item.fullDesc}</p>
-                                        ${item.extraNote ? `<p class="extra-note">${item.extraNote}</p>` : ''}
+                                        <p style="font-weight: 600; margin-bottom: 6px;">📌 ${highlight(item.shortDesc, keyword)}</p>
+                                        <p style="font-size: 0.88rem; margin-bottom: 8px;">${highlight(item.fullDesc, keyword)}</p>
+                                        ${item.extraNote ? `<p class="extra-note">${highlight(item.extraNote, keyword)}</p>` : ''}
                                         <div class="detail-feature">
                                             ${featuresHtml}
                                         </div>
@@ -862,10 +1074,29 @@
         }
 
         if (!html) {
-            html = `<div class="empty-state">未找到匹配内容，请尝试更换关键词或切换分类。</div>`;
+            html = `<div class="empty-state">
+                <div class="empty-state-title">没有找到与「${escapeHtmlText(keyword)}」相关的内容</div>
+                <div class="empty-state-hint">试试更短的关键词，或者切换到「全部」分类看看。</div>
+                <button type="button" id="emptyResetSearch">清空搜索</button>
+            </div>`;
         }
         container.innerHTML = html;
+        renderSearchSummary(total, keyword);
     }
+
+    // 结果条：告诉用户「搜了什么、命中多少」；没有关键词时留空，不占高度
+    function renderSearchSummary(total, keyword) {
+        const summary = document.getElementById('searchSummary');
+        if (!summary) return;
+        if (!keyword) {
+            summary.innerHTML = '';
+            return;
+        }
+        summary.innerHTML = total
+            ? `找到 <strong>${total}</strong> 个与「<mark>${escapeHtmlText(keyword)}</mark>」相关的工具`
+            : `没有找到与「<mark>${escapeHtmlText(keyword)}</mark>」相关的工具`;
+    }
+
 
     function renderCategoryNav() {
         const nav = document.getElementById('categoryNav');
@@ -890,15 +1121,82 @@
     function bindSearch() {
         const input = document.getElementById('searchInput');
         const button = document.getElementById('searchButton');
+        const clear = document.getElementById('searchClear');
         if (!input || !button) return;
 
-        input.addEventListener('input', () => {
-            renderCards(currentCategory, getSearchKeyword());
+        // 输入框有内容时才显示清空按钮
+        const syncClear = () => {
+            if (clear) clear.hidden = !input.value;
+        };
+
+        // 清空输入框 + 清空按钮 + 回到当前分类的完整列表。
+        // 输入框的值和列表状态必须一起复位，否则会出现
+        // 「列表已经清空、输入框里还留着旧词」的错位。
+        const clearAll = (focus) => {
+            input.value = '';
+            syncClear();
+            resetSearch();
+            if (focus) input.focus();
+        };
+
+        // 防抖：中文输入法每敲一个拼音都会触发 input，
+        // 直接重绘会让整块列表闪个不停
+        let composing = false;
+        input.addEventListener('compositionstart', () => { composing = true; });
+        input.addEventListener('compositionend', () => {
+            composing = false;
+            syncClear();
+            scheduleRender();
         });
+        input.addEventListener('input', () => {
+            syncClear();
+            if (!composing) scheduleRender();
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (e.isComposing || composing) return;
+                e.preventDefault();
+                clearTimeout(searchDebounceTimer);
+                renderCards(currentCategory, getSearchKeyword());
+            } else if (e.key === 'Escape' && input.value) {
+                e.preventDefault();
+                e.stopPropagation();
+                clearAll(true);
+            }
+        });
+
         button.addEventListener('click', () => {
+            clearTimeout(searchDebounceTimer);
             renderCards(currentCategory, getSearchKeyword());
             input.focus();
         });
+
+        if (clear) {
+            clear.addEventListener('click', () => clearAll(true));
+        }
+
+        // 空状态里的「清空搜索」用事件委托，因为空状态是渲染出来的
+        const container = document.getElementById('downloadsContainer');
+        if (container) {
+            container.addEventListener('click', (e) => {
+                if (!e.target.closest('#emptyResetSearch')) return;
+                clearAll(true);
+            });
+        }
+    }
+
+    function scheduleRender() {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+            renderCards(currentCategory, getSearchKeyword());
+        }, SEARCH_DEBOUNCE);
+    }
+
+    // 清空关键词后回到当前分类的完整列表
+    function resetSearch() {
+        clearTimeout(searchDebounceTimer);
+        renderCards(currentCategory, '');
     }
 
     function bindDownloadEvents() {

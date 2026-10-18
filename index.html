@@ -169,30 +169,19 @@
             <div class="section-header">
                 <div class="home-section-head">
                     <span class="section-label">最新文章</span>
-                    <!-- 搜索：点击放大镜展开搜索框，输入停顿后再检索文章。 -->
-                    <div class="home-search" id="homeSearch">
-                        <button class="home-search-toggle" id="homeSearchToggle" type="button"
-                                aria-label="搜索文章" aria-expanded="false" aria-controls="homeSearchInput">
-                            <i class="ri-search-line" aria-hidden="true"></i>
-                        </button>
-                        <div class="home-search-field">
-                            <i class="ri-search-line home-search-field-icon" aria-hidden="true"></i>
-                            <input class="home-search-input" id="homeSearchInput" type="search"
-                                   placeholder="搜索文章" autocomplete="off" autocorrect="off"
-                                   autocapitalize="off" spellcheck="false" enterkeyhint="search"
-                                   aria-label="搜索首页文章" tabindex="-1">
-                            <button class="home-search-clear" id="homeSearchClear" type="button"
-                                    aria-label="清空搜索" tabindex="-1" hidden>
-                                <i class="ri-close-line" aria-hidden="true"></i>
-                            </button>
-                        </div>
-                    </div>
+                    <!-- 搜索入口：打开全站搜索面板（桌面是浮层，手机是全屏面板）。 -->
+                    <button class="search-trigger" type="button" data-search-open
+                            aria-label="搜索全站内容" aria-haspopup="dialog" aria-expanded="false"
+                            aria-keyshortcuts="Control+K Meta+K">
+                        <i class="ri-search-line" aria-hidden="true"></i>
+                        <span class="search-trigger-text">搜索</span>
+                        <kbd class="search-trigger-kbd" aria-hidden="true">Ctrl K</kbd>
+                    </button>
                 </div>
                 <div class="tag-filter home-tag-filter" id="tagFilterHome">
                     <span class="tag-pill active" data-tag="all">全部</span>
                 </div>
             </div>
-            <div class="home-search-status" id="homeSearchStatus" role="status" aria-live="polite" hidden></div>
             <div class="posts-list" id="postsListHome">
                 <div class="home-loading" role="status" aria-live="polite">
                     <span class="home-loading-spinner" aria-hidden="true"></span>
@@ -207,7 +196,16 @@
         <!-- ==================== 文章列表视图 ==================== -->
         <div id="view-blog" class="view" style="display:none;">
             <div class="section-header">
-                <span class="section-label">全部文章</span>
+                <div class="home-section-head">
+                    <span class="section-label">全部文章</span>
+                    <button class="search-trigger" type="button" data-search-open
+                            aria-label="搜索全站内容" aria-haspopup="dialog" aria-expanded="false"
+                            aria-keyshortcuts="Control+K Meta+K">
+                        <i class="ri-search-line" aria-hidden="true"></i>
+                        <span class="search-trigger-text">搜索</span>
+                        <kbd class="search-trigger-kbd" aria-hidden="true">Ctrl K</kbd>
+                    </button>
+                </div>
                 <div class="tag-filter" id="tagFilterBlog">
                     <span class="tag-pill active" data-tag="all">全部</span>
                 </div>
@@ -293,8 +291,120 @@
 
         <!-- ==================== 页脚 ==================== -->
         <footer class="site-footer">
-            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.19.221</p>
+            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.20.006</p>
         </footer>
+    </div>
+
+    <!-- ==================== 全站搜索面板 ====================
+         桌面端是从顶部展开的居中面板，手机端是占满可视区的全屏面板。
+         面板高度跟随 visualViewport（而不是 100vh），键盘弹出时输入框
+         和结果都不会被挡住。 -->
+    <div class="search-overlay" id="searchOverlay" hidden>
+        <div class="search-backdrop" id="searchBackdrop" aria-hidden="true"></div>
+        <section class="search-panel" id="searchPanel" role="dialog" aria-modal="true"
+                 aria-labelledby="searchPanelTitle" aria-describedby="searchPanelHint">
+            <div class="search-panel-inner">
+                <div class="search-panel-head">
+                    <!-- 手机上这块就是「返回上一页」：点它和按系统返回键效果一样，
+                         都会先收起搜索面板，而不是直接离开站点。 -->
+                    <button class="search-back" id="searchBack" type="button" aria-label="返回上一页">
+                        <i class="ri-arrow-left-s-line" aria-hidden="true"></i>
+                    </button>
+                    <span class="search-panel-title" id="searchPanelTitle">搜索</span>
+                    <span class="search-panel-hint" id="searchPanelHint">标题、摘要、标签、正文</span>
+                    <button class="search-close" id="searchClose" type="button" aria-label="关闭搜索">
+                        <i class="ri-close-line" aria-hidden="true"></i>
+                    </button>
+                </div>
+
+                <div class="search-bar" id="searchBar">
+                    <i class="ri-search-line search-bar-icon" aria-hidden="true"></i>
+                    <input class="search-bar-input" id="searchInput" type="search"
+                           placeholder="搜索文章、标签或正文…" autocomplete="off" autocorrect="off"
+                           autocapitalize="off" spellcheck="false" enterkeyhint="search"
+                           role="combobox" aria-expanded="false" aria-controls="searchResults"
+                           aria-autocomplete="list" aria-label="搜索全站内容">
+                    <button class="search-bar-clear" id="searchClear" type="button" aria-label="清空搜索" hidden>
+                        <i class="ri-close-line" aria-hidden="true"></i>
+                    </button>
+                    <span class="search-bar-spinner" id="searchSpinner" aria-hidden="true" hidden></span>
+                </div>
+
+                <div class="search-meta" id="searchMeta" role="status" aria-live="polite"></div>
+
+                <div class="search-body" id="searchBody">
+                    <div class="search-suggest" id="searchSuggest">
+                        <!-- 顺序：最近搜索（有才显示）→ 按标签 → 最近更新 → 快速前往 -->
+                        <div class="search-block" id="searchHistoryBlock" hidden>
+                            <div class="search-block-head">
+                                <span class="search-block-label">最近搜索</span>
+                                <button class="search-block-action" id="searchHistoryClear" type="button">清空</button>
+                            </div>
+                            <div class="search-chips" id="searchHistoryChips"></div>
+                        </div>
+
+                        <!-- 标签网格：按主题找文章，放在最前面方便直接点 -->
+                        <div class="search-block search-block-cloud">
+                            <span class="search-block-label">按标签</span>
+                            <div class="search-cloud" id="searchTagCloud"></div>
+                        </div>
+
+                        <!-- 最近更新：把最新几篇文章直接摊开，搜索框下面不至于空着 -->
+                        <div class="search-block search-block-recent">
+                            <div class="search-block-head">
+                                <span class="search-block-label">最近更新</span>
+                                <button class="search-block-action" id="searchRecentMore" type="button">全部文章</button>
+                            </div>
+                            <div class="search-recent" id="searchRecentList"></div>
+                        </div>
+
+                        <div class="search-block">
+                            <span class="search-block-label">快速前往</span>
+                            <div class="search-quick">
+                                <button class="search-quick-item" type="button" data-search-view="home">
+                                    <i class="ri-home-5-line" aria-hidden="true"></i>首页
+                                </button>
+                                <button class="search-quick-item" type="button" data-search-view="blog">
+                                    <i class="ri-file-list-3-line" aria-hidden="true"></i>全部文章
+                                </button>
+                                <button class="search-quick-item" type="button" data-search-view="movie">
+                                    <i class="ri-movie-line" aria-hidden="true"></i>电影
+                                </button>
+                                <button class="search-quick-item" type="button" data-search-view="about">
+                                    <i class="ri-information-line" aria-hidden="true"></i>关于
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 搜索小贴士：手机上把「能搜什么」讲清楚，
+                             顺便填满键盘上方的空间 -->
+                        <div class="search-tips">
+                            <div class="search-tip">
+                                <i class="ri-text" aria-hidden="true"></i>
+                                <span>正文也能搜，比如某个句子里的词</span>
+                            </div>
+                            <div class="search-tip">
+                                <i class="ri-price-tag-3-line" aria-hidden="true"></i>
+                                <span>输入标签名可以按主题找文章</span>
+                            </div>
+                            <div class="search-tip">
+                                <i class="ri-space" aria-hidden="true"></i>
+                                <span>空格分隔多个关键词，会同时匹配</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="search-results" id="searchResults" role="listbox" aria-label="搜索结果"></div>
+                </div>
+
+                <div class="search-foot" id="searchFoot">
+                    <span class="search-foot-item"><kbd>↑</kbd><kbd>↓</kbd>选择</span>
+                    <span class="search-foot-item"><kbd>Enter</kbd>打开</span>
+                    <span class="search-foot-item"><kbd>Esc</kbd>关闭</span>
+                    <span class="search-foot-brand" aria-hidden="true">RH 工作室</span>
+                </div>
+            </div>
+        </section>
     </div>
 
     <div class="feedback-success-toast" id="feedbackSuccessToast" role="status" aria-live="polite" hidden>

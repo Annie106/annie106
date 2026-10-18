@@ -61,7 +61,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 0 24px;
+            /* 左右留白。用变量存一份，搜索面板锁滚动时要用它做
+               「原有内边距 + 滚动条宽度」的补差计算 */
+            --body-pad-x: 24px;
+            padding: 0 var(--body-pad-x);
         }
 
         /* ==================== 主容器 ==================== */
@@ -382,6 +385,13 @@
             flex-wrap: wrap;
             gap: 10px;
         }
+        /* 标题 + 搜索入口是同一组，不能被标签行挤散 */
+        .home-section-head {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+        }
         .section-label {
             font-size: 0.8rem;
             text-transform: uppercase;
@@ -418,8 +428,23 @@
         }
         .home-tag-filter {
             gap: 16px;
+            /* 标签再多也不能把整行撑出屏幕：超出部分改为横向滚动，
+               而不是溢出去（手机上原来会直接顶出视口右侧）。 */
+            min-width: 0;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            overscroll-behavior-x: contain;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 1px;
+        }
+        .home-tag-filter::-webkit-scrollbar {
+            display: none;
         }
         .home-tag-filter .tag-pill {
+            flex: 0 0 auto;
             padding: 4px 0;
             border: 0;
             border-radius: 0;
@@ -444,102 +469,276 @@
             transition: opacity var(--transition-smooth);
         }
 
-        /* ==================== 首页文章搜索 ==================== */
-        /* Keep the title and its compact search control together. */
-        .home-section-head {
-            display: flex;
+        /* ==================== 全站搜索 ==================== */
+        /* 设计要点：
+           1. 入口是标题右侧的一枚胶囊按钮（桌面显示 Ctrl K，手机只留图标），
+              搜索本身在一层浮层里完成，不再挤压标题和标签行。
+           2. 桌面：顶部居中的面板，从 8px 上方落下 + 轻微缩放淡入。
+              手机：占满可视区的全屏面板，高度跟着 visualViewport 走，
+              键盘弹出时面板整体缩短，输入框与结果都留在键盘上方。
+           3. 结果是「列表行」而不是网格卡片，扫描效率更高；
+              关键词高亮 + 命中片段 + 命中原因标签。 */
+
+        .search-trigger {
+            display: inline-flex;
             align-items: center;
-            gap: 1px;
-            min-width: 0;
+            gap: 6px;
+            height: 24px;
+            padding: 0 9px 0 7px;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            background: transparent;
+            color: var(--color-text-tertiary);
+            font-family: inherit;
+            font-size: 0.72rem;
+            font-weight: 500;
+            line-height: 1;
+            letter-spacing: 0.01em;
+            cursor: pointer;
+            white-space: nowrap;
+            transition:
+                color var(--transition-fast),
+                background var(--transition-fast),
+                border-color var(--transition-fast),
+                transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
         }
-        .home-search {
+        .search-trigger i {
+            font-size: 0.86rem;
+            line-height: 1;
+            pointer-events: none;
+            transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .search-trigger-kbd {
+            display: inline-flex;
+            align-items: center;
+            height: 16px;
+            padding: 0 4px;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            background: var(--color-surface);
+            color: var(--color-text-tertiary);
+            font-family: inherit;
+            font-size: 0.6rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        html:not(.is-touch-input) .search-trigger:hover {
+            color: var(--color-text-primary);
+            background: rgba(17, 17, 17, 0.05);
+            border-color: rgba(17, 17, 17, 0.06);
+        }
+        html:not(.is-touch-input) .search-trigger:hover i {
+            transform: scale(1.12) rotate(-8deg);
+        }
+        html.is-touch-input .search-trigger:active {
+            color: var(--color-text-primary);
+            background: rgba(17, 17, 17, 0.07);
+            transform: scale(0.96);
+        }
+        .search-trigger:focus-visible {
+            outline: 2px solid var(--color-text-primary);
+            outline-offset: 2px;
+        }
+
+        /* ---------- 浮层骨架 ---------- */
+        .search-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1150;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            /* 桌面端面板从顶部往下落，留出与导航条的安全距离 */
+            padding: max(10vh, 64px) 20px 24px;
+            /* 变量由 JS 写入：键盘弹出时把可视高度换成 visualViewport 的高度 */
+            height: var(--search-viewport-height, 100dvh);
+            overscroll-behavior: contain;
+        }
+        .search-overlay[hidden] {
+            display: none;
+        }
+        .search-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 17, 21, 0.34);
+            opacity: 0;
+            transition: opacity 0.24s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .search-overlay.is-open .search-backdrop {
+            opacity: 1;
+        }
+
+        /* 打开搜索时锁住背景滚动。用 html 上的类，而不是 body{overflow:hidden}，
+           后者在 iOS 上会让页面跳到顶部。
+           锁滚动会让滚动条消失、内容区变宽，所以要把省出来的宽度补回去，
+           否则背景会横向抖一下（这就是「点搜索时闪一下」的根源）。
+           注意：这里必须写成 calc(原有内边距 + 补差)，
+           不能直接 padding-right: 补差——那会把 body 原本的 24px / 16px
+           内边距整个覆盖掉，内容反而往右跳。
+           --search-scrollbar-gap 由 JS 写入。 */
+        html.search-open,
+        html.search-open body {
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+        html.search-open body {
+            padding-right: calc(var(--body-pad-x, 24px) + var(--search-scrollbar-gap, 0px));
+        }
+
+        .search-panel {
             position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            width: min(680px, 100%);
+            max-height: 100%;
+            border: 1px solid var(--color-border);
+            border-radius: 20px;
+            background: var(--color-bg);
+            box-shadow:
+                0 1px 2px rgba(15, 23, 42, 0.06),
+                0 24px 60px -12px rgba(15, 23, 42, 0.22),
+                0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(-8px) scale(0.985);
+            transition:
+                opacity 0.2s ease,
+                transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .search-overlay.is-open .search-panel {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .search-panel-inner {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            /* 撑满面板高度：手机上面板是全屏的，内部不撑满的话
+               内容会缩在顶部、下面留一大片空白 */
+            flex: 1 1 auto;
+            /* 面板自身的上下留白交给内部各行控制 */
+            padding: 12px 14px 10px;
+        }
+
+        /* ---------- 面板头部 ---------- */
+        .search-panel-head {
             display: flex;
             align-items: center;
-            flex: 0 0 auto;
-            min-width: 0;
-            height: 30px;
+            gap: 8px;
+            padding: 0 2px 10px;
         }
-        .home-search-toggle {
+        /* 返回按钮只在手机上出现：桌面端有可见的关闭按钮和 Esc，
+           手机上没有「上一页」的视觉出口，系统返回手势又不够直观。
+           点它走和系统返回完全一样的路径（history.back），
+           所以两者行为一致：先收起搜索面板，再谈离开页面。 */
+        .search-back {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            width: 28px;
+            height: 28px;
+            margin-left: -4px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: var(--color-text-secondary);
+            font-size: 1.25rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: color var(--transition-fast), background var(--transition-fast);
+        }
+        .search-back i {
+            line-height: 1;
+            pointer-events: none;
+        }
+        html:not(.is-touch-input) .search-back:hover,
+        html.is-touch-input .search-back:active {
+            background: rgba(17, 17, 17, 0.06);
+            color: var(--color-text-primary);
+        }
+        .search-panel-title {
+            color: var(--color-text-primary);
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+        }
+        .search-panel-hint {
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow: hidden;
+            color: var(--color-text-tertiary);
+            font-size: 0.7rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .search-close {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 24px;
-            height: 24px;
+            flex: 0 0 auto;
+            /* 手机上中间的说明文字是隐藏的，靠 auto 把关闭按钮顶到最右 */
+            margin-left: auto;
+            width: 26px;
+            height: 26px;
             padding: 0;
             border: 0;
             border-radius: 50%;
             background: transparent;
             color: var(--color-text-tertiary);
-            font-size: 0.8rem;
+            font-size: 1rem;
             line-height: 1;
             cursor: pointer;
-            overflow: hidden;
-            /* Keep the icon transition smooth as the field opens. */
-            transition:
-                width 0.24s cubic-bezier(0.22, 1, 0.36, 1),
-                transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-                opacity 0.16s ease,
-                color var(--transition-fast),
-                background var(--transition-fast);
+            transition: color var(--transition-fast), background var(--transition-fast);
         }
-        .home-search-toggle i {
+        .search-close i {
             line-height: 1;
             pointer-events: none;
         }
-        html:not(.is-touch-input) .home-search-toggle:hover {
-            color: var(--color-text-primary);
-            background: rgba(17, 17, 17, 0.05);
-        }
-        html.is-touch-input .home-search-toggle:active {
-            color: var(--color-text-primary);
+        html:not(.is-touch-input) .search-close:hover,
+        html.is-touch-input .search-close:active {
             background: rgba(17, 17, 17, 0.06);
+            color: var(--color-text-primary);
         }
-        /* The search field expands inline beside the title. */
-        .home-search.open .home-search-toggle {
-            width: 0;
-            transform: scale(0.7);
-            opacity: 0;
-            pointer-events: none;
-        }
-        .home-search-field {
+
+        /* ---------- 输入行 ---------- */
+        .search-bar {
             display: flex;
             align-items: center;
-            gap: 6px;
-            width: 0;
-            height: 28px;
-            padding: 0;
-            border-radius: 999px;
+            gap: 9px;
+            flex: 0 0 auto;
+            height: 46px;
+            padding: 0 10px 0 14px;
+            border: 1px solid var(--color-border);
+            border-radius: 14px;
             background: var(--color-surface);
-            /* 用 inset 阴影画描边，不占布局宽度，
-               这样收起时能真正干净地收到 0 宽 */
-            box-shadow: inset 0 0 0 1px var(--color-border);
-            opacity: 0;
-            overflow: hidden;
             transition:
-                width 0.24s cubic-bezier(0.22, 1, 0.36, 1),
-                padding 0.24s cubic-bezier(0.22, 1, 0.36, 1),
-                opacity 0.18s ease,
+                border-color 0.2s ease,
                 box-shadow 0.2s ease,
                 background 0.2s ease;
         }
-        .home-search.open .home-search-field {
-            width: 156px;
-            padding: 0 4px 0 10px;
-            opacity: 1;
-        }
-        .home-search-field:focus-within {
+        .search-bar:focus-within {
+            border-color: var(--color-text-primary);
             background: var(--color-bg);
-            box-shadow: inset 0 0 0 1px var(--color-text-primary);
+            box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.07);
         }
-        .home-search-field-icon {
+        .search-bar-icon {
             flex: 0 0 auto;
-            font-size: 0.9rem;
-            line-height: 1;
             color: var(--color-text-tertiary);
+            font-size: 1.05rem;
+            line-height: 1;
             pointer-events: none;
+            transition: color 0.2s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
         }
-        .home-search-input {
+        .search-bar:focus-within .search-bar-icon {
+            color: var(--color-text-primary);
+            transform: scale(1.06);
+        }
+        .search-bar-input {
             flex: 1 1 auto;
             min-width: 0;
             width: 100%;
@@ -550,107 +749,475 @@
             background: transparent;
             color: var(--color-text-primary);
             font-family: inherit;
-            font-size: 0.82rem;
-            line-height: 1;
-            /* 关掉 Safari 给 type=search 自带的圆角与清除按钮，
-               统一用下面 .home-search-clear 的样式 */
+            /* 16px：iOS 上小于 16px 的输入框聚焦时会被强制放大整页 */
+            font-size: 16px;
+            line-height: 1.2;
             -webkit-appearance: none;
             appearance: none;
         }
-        .home-search-input::-webkit-search-decoration,
-        .home-search-input::-webkit-search-cancel-button,
-        .home-search-input::-webkit-search-results-button,
-        .home-search-input::-webkit-search-results-decoration {
+        .search-bar-input::-webkit-search-decoration,
+        .search-bar-input::-webkit-search-cancel-button,
+        .search-bar-input::-webkit-search-results-button,
+        .search-bar-input::-webkit-search-results-decoration {
             -webkit-appearance: none;
             appearance: none;
             display: none;
         }
-        .home-search-input::placeholder {
+        .search-bar-input::placeholder {
             color: var(--color-text-tertiary);
         }
-        .home-search-clear {
+        .search-bar-clear {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             flex: 0 0 auto;
-            width: 22px;
-            height: 22px;
+            width: 24px;
+            height: 24px;
             padding: 0;
             border: 0;
             border-radius: 50%;
-            background: transparent;
-            color: var(--color-text-tertiary);
-            font-size: 0.95rem;
+            background: rgba(17, 17, 17, 0.06);
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
             line-height: 1;
             cursor: pointer;
-            transition: color var(--transition-fast), background var(--transition-fast);
+            transition: color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
         }
-        .home-search-clear[hidden] {
+        .search-bar-clear[hidden] {
             display: none;
         }
-        .home-search-clear i {
+        .search-bar-clear i {
             line-height: 1;
             pointer-events: none;
         }
-        html:not(.is-touch-input) .home-search-clear:hover,
-        html.is-touch-input .home-search-clear:active {
-            color: var(--color-text-primary);
-            background: rgba(17, 17, 17, 0.06);
+        html:not(.is-touch-input) .search-bar-clear:hover,
+        html.is-touch-input .search-bar-clear:active {
+            background: var(--color-text-primary);
+            color: var(--color-bg);
         }
-
-        /* 搜索结果条：检索中是一枚转圈 + 文案，结束后换成命中数量 */
-        .home-search-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: -6px 0 14px;
-            color: var(--color-text-tertiary);
-            font-size: 0.78rem;
-            line-height: 1.5;
-            /* 出现时轻微上浮淡入，和骨架屏衔接得更自然 */
-            animation: homeSearchStatusIn 0.24s ease both;
+        html.is-touch-input .search-bar-clear:active {
+            transform: scale(0.92);
         }
-        .home-search-status[hidden] {
+        .search-bar-spinner {
+            flex: 0 0 auto;
+            width: 15px;
+            height: 15px;
+            border: 2px solid var(--color-border);
+            border-top-color: var(--color-text-primary);
+            border-radius: 50%;
+            animation: searchSpin 0.7s linear infinite;
+        }
+        .search-bar-spinner[hidden] {
             display: none;
         }
-        .home-search-status .home-loading-spinner {
-            width: 14px;
-            height: 14px;
-            flex: 0 0 14px;
-            border-width: 2px;
+        @keyframes searchSpin {
+            to { transform: rotate(360deg); }
         }
-        .home-search-status strong {
+
+        /* ---------- 状态行 ---------- */
+        .search-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 0 0 auto;
+            min-height: 0;
+            padding: 0 4px;
+            color: var(--color-text-tertiary);
+            font-size: 0.72rem;
+            line-height: 1.5;
+            overflow: hidden;
+            transition:
+                min-height 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+                padding 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.16s ease;
+        }
+        .search-meta.is-empty {
+            min-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            opacity: 0;
+        }
+        .search-meta:not(.is-empty) {
+            min-height: 26px;
+            padding-top: 8px;
+            padding-bottom: 4px;
+            opacity: 1;
+        }
+        .search-meta strong {
             color: var(--color-text-primary);
             font-weight: 700;
         }
-        .home-search-status i {
-            font-size: 0.95rem;
+        .search-meta i {
+            font-size: 0.9rem;
             line-height: 1;
         }
-        @keyframes homeSearchStatusIn {
+        /* 状态行里的 loader 图标转起来，和输入框的转圈呼应 */
+        .search-meta .ri-loader-4-line {
+            animation: searchSpin 0.8s linear infinite;
+        }
+
+        /* ---------- 滚动区 ---------- */
+        .search-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            /* 用纵向 flex 让内部的推荐区能撑满高度，
+               内容不满一屏时不会在底部留一大块空白 */
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: var(--color-border) transparent;
+        }
+        .search-body::-webkit-scrollbar {
+            width: 8px;
+        }
+        .search-body::-webkit-scrollbar-thumb {
+            border: 2px solid transparent;
+            border-radius: 999px;
+            background-clip: padding-box;
+            background-color: var(--color-border);
+        }
+
+        /* ---------- 空白态（推荐 / 历史 / 标签 / 快捷入口） ---------- */
+        .search-suggest {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            padding: 8px 4px 6px;
+            /* 撑满滚动区：内容少时也占满，
+               配合下面的 margin-top:auto 把「搜索小贴士」压到底部收尾 */
+            flex: 1 1 auto;
+        }
+        .search-suggest[hidden] {
+            display: none;
+        }
+        .search-block {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            animation: searchFadeUp 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        /* 依次错开浮入。用 nth-child 而不是 nth-of-type：
+           「最近搜索」隐藏时它仍占着序号，但 display:none 不参与布局，
+           后面几块的延迟照旧递增，视觉上依然是自上而下依次出现。
+           再多一块也不用补规则——最多错开到 0.12s 就够了。 */
+        .search-block:nth-child(2) { animation-delay: 0.03s; }
+        .search-block:nth-child(3) { animation-delay: 0.06s; }
+        .search-block:nth-child(4) { animation-delay: 0.09s; }
+        .search-block:nth-child(5) { animation-delay: 0.12s; }
+        .search-block[hidden] {
+            display: none;
+        }
+        @keyframes searchFadeUp {
             from {
                 opacity: 0;
-                transform: translateY(-4px);
+                transform: translateY(6px);
             }
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
+        .search-block-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .search-block-label {
+            color: var(--color-text-tertiary);
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .search-block-action {
+            padding: 2px 6px;
+            border: 0;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--color-text-tertiary);
+            font-family: inherit;
+            font-size: 0.68rem;
+            cursor: pointer;
+            transition: color var(--transition-fast), background var(--transition-fast);
+        }
+        html:not(.is-touch-input) .search-block-action:hover,
+        .search-block-action:focus-visible {
+            background: rgba(17, 17, 17, 0.06);
+            color: var(--color-text-primary);
+            outline: none;
+        }
+        .search-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+        .search-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            max-width: 100%;
+            padding: 5px 11px;
+            border: 1px solid var(--color-border);
+            border-radius: 999px;
+            background: transparent;
+            color: var(--color-text-secondary);
+            font-family: inherit;
+            font-size: 0.76rem;
+            line-height: 1.35;
+            cursor: pointer;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            transition:
+                color var(--transition-fast),
+                background var(--transition-fast),
+                border-color var(--transition-fast),
+                transform 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .search-chip i {
+            color: var(--color-text-tertiary);
+            font-size: 0.85rem;
+            line-height: 1;
+        }
+        html:not(.is-touch-input) .search-chip:hover {
+            border-color: var(--color-text-primary);
+            background: var(--color-text-primary);
+            color: var(--color-bg);
+        }
+        html:not(.is-touch-input) .search-chip:hover i {
+            color: inherit;
+        }
+        html.is-touch-input .search-chip:active {
+            border-color: var(--color-text-primary);
+            background: var(--color-text-primary);
+            color: var(--color-bg);
+            transform: scale(0.97);
+        }
+        .search-chip:focus-visible {
+            outline: 2px solid var(--color-text-primary);
+            outline-offset: 2px;
+        }
+        .search-quick {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 7px;
+        }
+        .search-quick-item {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            height: 36px;
+            padding: 0 8px;
+            border: 1px solid var(--color-border);
+            border-radius: 10px;
+            background: var(--color-surface);
+            color: var(--color-text-secondary);
+            font-family: inherit;
+            font-size: 0.76rem;
+            line-height: 1;
+            white-space: nowrap;
+            cursor: pointer;
+            transition:
+                color var(--transition-fast),
+                background var(--transition-fast),
+                border-color var(--transition-fast),
+                transform 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .search-quick-item i {
+            font-size: 0.95rem;
+            line-height: 1;
+        }
+        html:not(.is-touch-input) .search-quick-item:hover {
+            border-color: rgba(17, 17, 17, 0.16);
+            background: var(--color-bg);
+            color: var(--color-text-primary);
+        }
+        html.is-touch-input .search-quick-item:active {
+            transform: scale(0.97);
+            color: var(--color-text-primary);
+        }
+        .search-quick-item:focus-visible {
+            outline: 2px solid var(--color-text-primary);
+            outline-offset: 2px;
+        }
 
-        /* 骨架屏：检索期间顶替文章卡片，尺寸和真实卡片对齐，
-           所以结果替换进来时列表不会跳动 */
-        .search-skeleton-card {
+        /* ---------- 结果列表 ---------- */
+        .search-results {
             display: flex;
             flex-direction: column;
-            gap: 9px;
-            padding: 13px 16px 11px;
-            border: 1px solid rgba(17, 17, 17, 0.06);
-            border-radius: 16px;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 248, 248, 0.96));
+            gap: 2px;
+            padding: 2px 0 4px;
+        }
+        .search-results[hidden] {
+            display: none;
+        }
+        .search-result {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 11px;
+            width: 100%;
+            padding: 11px 12px;
+            border: 0;
+            border-radius: 12px;
+            background: transparent;
+            color: inherit;
+            font-family: inherit;
+            text-align: left;
+            text-decoration: none;
+            cursor: pointer;
+            /* 每条结果错开 24ms 依次浮入，列表看起来是"长"出来的 */
+            animation: searchResultIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+            animation-delay: var(--result-delay, 0ms);
+            transition: background var(--transition-fast);
+        }
+        @keyframes searchResultIn {
+            from {
+                opacity: 0;
+                transform: translateY(7px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .search-result + .search-result::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 12px;
+            right: 12px;
+            height: 1px;
+            background: var(--color-border-light);
+            pointer-events: none;
+        }
+        .search-result:hover,
+        .search-result.is-active {
+            background: var(--color-surface);
+        }
+        .search-result.is-active {
+            box-shadow: inset 0 0 0 1px var(--color-border);
+        }
+        .search-result:focus-visible {
+            outline: 2px solid var(--color-text-primary);
+            outline-offset: -2px;
+        }
+        .search-result-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            width: 30px;
+            height: 30px;
+            margin-top: 1px;
+            border-radius: 9px;
+            background: rgba(17, 17, 17, 0.05);
+            color: var(--color-text-secondary);
+            font-size: 0.95rem;
+            line-height: 1;
+            transition: background var(--transition-fast), color var(--transition-fast);
+        }
+        .search-result.is-active .search-result-icon,
+        .search-result:hover .search-result-icon {
+            background: var(--color-text-primary);
+            color: var(--color-bg);
+        }
+        .search-result-main {
+            flex: 1 1 auto;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .search-result-title {
+            color: var(--color-text-primary);
+            font-size: 0.94rem;
+            font-weight: 600;
+            line-height: 1.4;
+            letter-spacing: -0.01em;
+            /* 标题最多两行，避免长标题把列表撑得参差不齐 */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .search-result-excerpt {
+            color: var(--color-text-secondary);
+            font-size: 0.79rem;
+            line-height: 1.55;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .search-result-tags {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 5px;
+            margin-top: 2px;
+        }
+        .search-result-tag {
+            padding: 1px 7px;
+            border-radius: 999px;
+            background: rgba(17, 17, 17, 0.05);
+            color: var(--color-text-tertiary);
+            font-size: 0.64rem;
+            font-weight: 600;
+            line-height: 1.6;
+            letter-spacing: 0.02em;
+        }
+        .search-result-tag.is-hit {
+            background: rgba(255, 214, 102, 0.38);
+            color: #4a3a06;
+        }
+        .search-result-go {
+            flex: 0 0 auto;
+            align-self: center;
+            color: var(--color-text-tertiary);
+            font-size: 1rem;
+            line-height: 1;
+            opacity: 0;
+            transform: translateX(-4px);
+            transition: opacity var(--transition-fast), transform var(--transition-fast);
+        }
+        .search-result.is-active .search-result-go,
+        .search-result:hover .search-result-go {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* ---------- 骨架屏 ---------- */
+        .search-skeleton {
+            display: flex;
+            align-items: flex-start;
+            gap: 11px;
+            padding: 11px 12px;
+            animation: searchFadeUp 0.24s ease both;
+            animation-delay: var(--result-delay, 0ms);
+        }
+        .search-skeleton .sk-avatar {
+            flex: 0 0 auto;
+            width: 30px;
+            height: 30px;
+            border-radius: 9px;
+        }
+        .search-skeleton .sk-lines {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            padding-top: 3px;
         }
         .sk-line,
-        .sk-tag,
+        .sk-avatar,
         .sk-pill {
             display: block;
             border-radius: 999px;
@@ -664,38 +1231,245 @@
             animation: searchShimmer 1.25s ease-in-out infinite;
         }
         .sk-line {
-            height: 10px;
+            height: 9px;
             width: 100%;
         }
         .sk-line.sk-title {
-            height: 14px;
-            width: 68%;
+            height: 12px;
+            width: 62%;
         }
         .sk-line.sk-short {
-            width: 52%;
+            width: 44%;
         }
-        .sk-tag {
-            width: 46px;
-            height: 16px;
-        }
-        .sk-pill {
-            width: 58px;
-            height: 12px;
-        }
-        .sk-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .sk-row.sk-stat {
-            margin-top: 2px;
+        .sk-avatar {
+            border-radius: 9px;
         }
         @keyframes searchShimmer {
             from { background-position: 100% 50%; }
             to { background-position: 0 50%; }
         }
 
-        /* 关键词高亮 */
+        /* ---------- 空结果 ---------- */
+        .search-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 34px 16px 30px;
+            text-align: center;
+            animation: searchFadeUp 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .search-empty-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--color-surface);
+            color: var(--color-text-tertiary);
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+        .search-empty-title {
+            color: var(--color-text-primary);
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+        .search-empty-desc {
+            max-width: 34em;
+            color: var(--color-text-tertiary);
+            font-size: 0.76rem;
+            line-height: 1.6;
+        }
+        .search-empty-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 7px;
+            margin-top: 4px;
+        }
+
+        /* ---------- 最近更新 ---------- */
+        /* 搜索框下面的「有内容可看」区：把最新几篇摊开，
+           空白不再是一整片。手机上尤其需要，键盘弹起时也不会只剩空气。 */
+        .search-recent {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+        .search-recent-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            width: 100%;
+            padding: 8px 8px;
+            border: 0;
+            border-radius: 9px;
+            background: transparent;
+            color: inherit;
+            font-family: inherit;
+            text-align: left;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background var(--transition-fast);
+        }
+        .search-recent-item + .search-recent-item {
+            position: relative;
+        }
+        .search-recent-item + .search-recent-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 8px;
+            right: 8px;
+            height: 1px;
+            background: var(--color-border-light);
+            pointer-events: none;
+        }
+        .search-recent-item:hover,
+        .search-recent-item:focus-visible {
+            background: var(--color-surface);
+            outline: none;
+        }
+        .search-recent-item:active {
+            background: var(--color-surface);
+        }
+        .search-recent-dot {
+            flex: 0 0 auto;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--color-text-tertiary);
+            opacity: 0.5;
+        }
+        .search-recent-main {
+            flex: 1 1 auto;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+        .search-recent-title {
+            overflow: hidden;
+            color: var(--color-text-primary);
+            font-size: 0.82rem;
+            font-weight: 500;
+            line-height: 1.45;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .search-recent-date {
+            color: var(--color-text-tertiary);
+            font-size: 0.66rem;
+            line-height: 1.4;
+        }
+        .search-recent-arrow {
+            flex: 0 0 auto;
+            color: var(--color-text-tertiary);
+            font-size: 0.9rem;
+            line-height: 1;
+            opacity: 0;
+            transform: translateX(-3px);
+            transition: opacity var(--transition-fast), transform var(--transition-fast);
+        }
+        .search-recent-item:hover .search-recent-arrow,
+        .search-recent-item:focus-visible .search-recent-arrow {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* ---------- 按主题（标签网格） ---------- */
+        /* 做成两列小卡片而不是一行文字：既把面板下半部分填满，
+           每个标签也有足够的点击面积（手机上尤其重要）。 */
+        /* 三列：同样多的标签能省下整整一行的高度，
+           手机上尤其明显。 */
+        .search-cloud {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+        }
+        .search-cloud-tag {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 5px;
+            width: 100%;
+            padding: 7px 9px;
+            border: 1px solid var(--color-border-light);
+            border-radius: 9px;
+            background: var(--color-surface);
+            color: var(--color-text-secondary);
+            font-family: inherit;
+            font-size: 0.75rem;
+            line-height: 1.3;
+            text-align: left;
+            cursor: pointer;
+            transition:
+                color var(--transition-fast),
+                background var(--transition-fast),
+                border-color var(--transition-fast),
+                transform 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .search-cloud-tag-name {
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        /* 右侧的数量：让「这个主题有多少篇」一眼可见 */
+        .search-cloud-count {
+            flex: 0 0 auto;
+            color: var(--color-text-tertiary);
+            font-size: 0.64rem;
+            font-variant-numeric: tabular-nums;
+        }
+        .search-cloud-tag:hover,
+        .search-cloud-tag:focus-visible {
+            border-color: rgba(17, 17, 17, 0.16);
+            background: var(--color-bg);
+            color: var(--color-text-primary);
+            outline: none;
+        }
+        .search-cloud-tag:hover .search-cloud-count,
+        .search-cloud-tag:focus-visible .search-cloud-count {
+            color: var(--color-text-secondary);
+        }
+        .search-cloud-tag:active {
+            transform: scale(0.98);
+        }
+
+        /* ---------- 搜索小贴士 ---------- */
+        .search-tips {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            /* 自动吸到底部：内容不满一屏时由它收尾，
+               空白被压在它上方而不是散在中间 */
+            margin-top: auto;
+            padding: 12px 12px 10px;
+            border: 1px solid var(--color-border-light);
+            border-radius: 12px;
+            background: var(--color-surface);
+        }
+        .search-tip {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            color: var(--color-text-tertiary);
+            font-size: 0.72rem;
+            line-height: 1.55;
+        }
+        .search-tip i {
+            flex: 0 0 auto;
+            margin-top: 1px;
+            color: var(--color-text-tertiary);
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        /* ---------- 关键词高亮 ---------- */
         .search-hl {
             padding: 0 1px;
             border-radius: 3px;
@@ -703,33 +1477,324 @@
             color: inherit;
             font-weight: 700;
         }
+        .search-hl.is-title {
+            background: rgba(255, 214, 102, 0.55);
+        }
         .tag.tag-hit {
             background: rgba(255, 214, 102, 0.4);
             color: #4a3a06;
-        }
-        .home-search-empty {
-            grid-column: 1 / -1;
-            padding: 34px 0;
-            color: var(--color-text-tertiary);
-            font-size: 0.86rem;
-            text-align: center;
         }
         .home-more[hidden] {
             display: none;
         }
 
+        /* ---------- 底部按键提示 ---------- */
+        .search-foot {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex: 0 0 auto;
+            margin-top: 8px;
+            padding: 8px 4px 0;
+            border-top: 1px solid var(--color-border-light);
+            color: var(--color-text-tertiary);
+            font-size: 0.68rem;
+            line-height: 1;
+        }
+        .search-foot-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        /* 右下角的落款：把底部那条线补完整，不至于左边一堆提示、右边空着 */
+        .search-foot-brand {
+            margin-left: auto;
+            color: var(--color-text-tertiary);
+            font-size: 0.64rem;
+            letter-spacing: 0.08em;
+            opacity: 0.75;
+        }
+        .search-foot kbd {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 4px;
+            border: 1px solid var(--color-border);
+            border-radius: 5px;
+            background: var(--color-surface);
+            color: var(--color-text-secondary);
+            font-family: inherit;
+            font-size: 0.64rem;
+            font-weight: 600;
+            line-height: 1;
+        }
+
         @media (prefers-reduced-motion: reduce) {
-            .home-search-toggle,
-            .home-search-field,
-            .home-search-status {
+            .search-trigger,
+            .search-trigger i,
+            .search-panel,
+            .search-backdrop,
+            .search-block,
+            .search-result,
+            .search-skeleton,
+            .search-empty,
+            .search-meta {
                 transition: none;
                 animation: none;
             }
+            .search-bar-spinner {
+                animation-duration: 1.6s;
+            }
+            .search-meta .ri-loader-4-line {
+                animation: none;
+            }
             .sk-line,
-            .sk-tag,
+            .sk-avatar,
             .sk-pill {
                 animation: none;
                 background: rgba(17, 17, 17, 0.07);
+            }
+        }
+
+        /* ---------- 平板 / 桌面窄屏 ---------- */
+        @media (max-width: 760px) {
+            .search-overlay {
+                padding: max(7vh, 52px) 16px 20px;
+            }
+        }
+
+        /* ---------- 手机：全屏面板 + 键盘避让 ---------- */
+        @media (max-width: 600px) {
+            /* 手机上保留「搜索」文字，只把字号压小：
+               光一个放大镜不够明确，加两个字反而更好认。
+               Ctrl K 那个键帽在触屏上没有意义，隐藏掉。 */
+            .search-trigger {
+                gap: 4px;
+                height: 26px;
+                padding: 0 8px 0 5px;
+                border-radius: 999px;
+                flex: 0 0 auto;
+            }
+            .search-trigger-kbd {
+                display: none;
+            }
+            .search-trigger-text {
+                display: inline-block;
+                font-size: 0.66rem;
+                letter-spacing: 0;
+                white-space: nowrap;
+                transition: max-width 0.18s ease, opacity 0.18s ease, margin 0.18s ease;
+                max-width: 3em;
+                opacity: 1;
+            }
+            .search-trigger i {
+                flex: 0 0 auto;
+                font-size: 0.9rem;
+            }
+            .section-label {
+                flex: 0 0 auto;
+                white-space: nowrap;
+            }
+            .tag-filter {
+                flex-wrap: nowrap;
+                min-width: 0;
+            }
+            /* 这一行必须始终并排：标题 + 搜索在左，标签在右。
+               如果不禁止换行，浏览器会把整个标签行挤到下一行
+               （截图里那种「标题一行、标签一行」的情况），
+               而不是让搜索文字先收起。这里宁可让标签横向滚动，
+               也不让布局折成两行。 */
+            #view-home > .section-header,
+            #view-blog > .section-header {
+                flex-wrap: nowrap;
+                gap: 8px;
+            }
+            #view-home > .section-header .home-section-head,
+            #view-blog > .section-header .home-section-head {
+                flex: 0 0 auto;
+            }
+            /* 标签行拿走剩余宽度，放不下就横向滚动（.home-tag-filter 已处理） */
+            #view-home > .section-header .tag-filter,
+            #view-blog > .section-header .tag-filter {
+                flex: 1 1 auto;
+                min-width: 0;
+            }
+
+            /* === 空间不足时自动收起文字 ===
+               判断依据是真实测量（JS 给 .section-label 加 is-tight 类），
+               而不是写死某个屏宽：不管是屏幕太窄，还是以后多了标签
+               把横向空间占满，只要放不下就退回纯图标。 */
+            #view-home .section-header.is-tight .search-trigger,
+            #view-blog .section-header.is-tight .search-trigger {
+                width: 26px;
+                padding: 0;
+                justify-content: center;
+                border-radius: 50%;
+            }
+            #view-home .section-header.is-tight .search-trigger-text,
+            #view-blog .section-header.is-tight .search-trigger-text {
+                max-width: 0;
+                opacity: 0;
+                margin-left: -4px;
+            }
+            /* 超窄屏兜底：真机宽度太小时同样只留图标 */
+            @media (max-width: 330px) {
+                .search-trigger {
+                    width: 26px;
+                    padding: 0;
+                    justify-content: center;
+                    border-radius: 50%;
+                }
+                .search-trigger-text {
+                    max-width: 0;
+                    opacity: 0;
+                    margin-left: -4px;
+                }
+            }
+            /* 全屏面板：从底部上滑，高度 = visualViewport 高度（由 JS 写入），
+               所以键盘弹起时面板不会顶到键盘下面。
+               --search-viewport-offset 是 iOS 把可视区整体上移的量，
+               面板跟着上移，底部才不会露在键盘下方。 */
+            .search-overlay {
+                align-items: stretch;
+                padding: 0;
+                height: var(--search-viewport-height, 100dvh);
+                transform: translateY(var(--search-viewport-offset, 0px));
+            }
+            .search-panel {
+                width: 100%;
+                max-height: none;
+                height: 100%;
+                border: 0;
+                border-radius: 0;
+                box-shadow: none;
+                transform: translateY(14px);
+            }
+            .search-overlay.is-open .search-panel {
+                transform: translateY(0);
+            }
+            .search-panel-inner {
+                padding:
+                    calc(env(safe-area-inset-top, 0px) + 10px)
+                    14px
+                    calc(env(safe-area-inset-bottom, 0px) + 8px);
+            }
+            .search-panel-head {
+                padding-bottom: 8px;
+            }
+            /* 手机上把返回按钮放出来：这是「回到上一页」的视觉出口 */
+            .search-back {
+                display: inline-flex;
+                width: 30px;
+                height: 30px;
+                font-size: 1.3rem;
+            }
+            .search-panel-hint {
+                display: none;
+            }
+            .search-close {
+                width: 30px;
+                height: 30px;
+                font-size: 1.1rem;
+            }
+            .search-bar {
+                height: 44px;
+                border-radius: 12px;
+                padding: 0 8px 0 12px;
+            }
+            /* 16px 是硬性要求：再小 iOS 聚焦时会把整页放大 */
+            .search-bar-input {
+                font-size: 16px;
+            }
+            .search-bar-clear {
+                width: 26px;
+                height: 26px;
+            }
+            .search-meta {
+                font-size: 0.7rem;
+            }
+            /* 手机上内容区更紧凑一些，尽量让「最近更新」露出来 */
+            .search-suggest {
+                gap: 14px;
+                padding: 6px 0 10px;
+            }
+            /* 手机上键盘提示没意义，但底部留一条落款，
+               让面板收尾有个落点，不会突然断在空白处 */
+            .search-foot {
+                display: flex;
+                justify-content: flex-end;
+                margin-top: 6px;
+                padding: 8px 4px 2px;
+            }
+            .search-foot-item {
+                display: none;
+            }
+            .search-foot-brand {
+                margin-left: 0;
+            }
+            .search-recent-item {
+                padding: 9px 6px;
+            }
+            .search-recent-title {
+                font-size: 0.84rem;
+            }
+            .search-tips {
+                padding: 11px 11px 9px;
+            }
+            .search-tip {
+                font-size: 0.73rem;
+            }
+            .search-cloud-tag {
+                font-size: 0.76rem;
+                padding: 8px 8px;
+            }
+            .search-cloud-tag-name {
+                font-size: 0.76rem;
+            }
+            .search-quick {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .search-quick-item {
+                height: 38px;
+                font-size: 0.78rem;
+            }
+            .search-result {
+                gap: 10px;
+                padding: 12px 8px;
+                border-radius: 10px;
+            }
+            .search-result-title {
+                font-size: 0.92rem;
+            }
+            .search-result-excerpt {
+                font-size: 0.78rem;
+            }
+            .search-result-go {
+                display: none;
+            }
+            /* 触屏没有 hover，用按下的缩放给出反馈 */
+            html.is-touch-input .search-result:active {
+                background: var(--color-surface);
+                transform: scale(0.995);
+            }
+        }
+
+        /* 横屏手机：面板贴顶，留出更多结果空间 */
+        @media (max-width: 900px) and (max-height: 480px) {
+            .search-overlay {
+                padding: 8px 12px;
+            }
+            .search-panel {
+                height: 100%;
+                border-radius: 14px;
+            }
+            .search-panel-inner {
+                padding: 8px 12px;
+            }
+            .search-suggest {
+                gap: 12px;
             }
         }
 
@@ -2037,7 +3102,7 @@
 
         @media (max-width: 600px) {
             body {
-                padding: 0 16px;
+                --body-pad-x: 16px;
             }
             .site-header {
                 margin-top: 12px;
@@ -2152,74 +3217,6 @@
                 top: 12px;
                 right: 12px;
                 width: calc(100% - 24px);
-            }
-        }
-        /* ==================== 首页搜索：移动端 ==================== */
-        @media (max-width: 600px) {
-            #view-home > .section-header {
-                flex-wrap: nowrap;
-                align-items: center;
-                gap: 6px;
-                height: 30px;
-            }
-            #view-home .home-section-head {
-                flex: 1 1 0;
-                min-width: 0;
-                height: 30px;
-                flex-wrap: nowrap;
-                gap: 2px;
-                transition: flex 0.24s cubic-bezier(0.22, 1, 0.36, 1);
-            }
-            #view-home .home-search {
-                transition: flex 0.24s cubic-bezier(0.22, 1, 0.36, 1);
-            }
-            #view-home .section-label {
-                flex: 0 0 auto;
-                white-space: nowrap;
-            }
-            #view-home .home-tag-filter {
-                flex: 0 0 auto;
-                flex-wrap: nowrap;
-                gap: 8px;
-            }
-            #view-home .home-tag-filter .tag-pill {
-                font-size: 0.7rem;
-            }
-            #view-home .section-header.is-searching {
-                flex-wrap: nowrap;
-                gap: 8px;
-            }
-            #view-home .section-header.is-searching .section-label {
-                flex: 0 0 auto;
-                white-space: nowrap;
-            }
-            #view-home .section-header.is-searching .home-search {
-                flex: 1 1 auto;
-                min-width: 0;
-                height: 30px;
-            }
-            #view-home .section-header.is-searching .home-search-field {
-                flex: 1 1 0;
-                width: 0;
-                max-width: none;
-                min-width: 0;
-                height: 20px;
-                padding: 0 3px 0 6px;
-            }
-            #view-home .section-header.is-searching .home-search.open .home-search-field {
-                width: 100%;
-            }
-            .home-search-input {
-                font-size: 0.78rem;
-                line-height: 1.2;
-            }
-            .home-search-clear {
-                width: 18px;
-                height: 18px;
-                font-size: 0.9rem;
-            }
-            .home-search-status {
-                margin-top: -2px;
             }
         }
 
@@ -2395,31 +3392,150 @@
             box-shadow: inset 0 -1px #ffffff;
         }
 
-        /* 首页搜索（深色） */
-        [data-theme="dark"] .home-search-field {
+        /* ==================== 全站搜索（深色） ==================== */
+        [data-theme="dark"] .search-trigger-kbd {
             background: rgba(255, 255, 255, 0.06);
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.12);
         }
-        [data-theme="dark"] .home-search-field:focus-within {
-            background: rgba(255, 255, 255, 0.09);
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
-        }
-        html:not(.is-touch-input) [data-theme="dark"] .home-search-toggle:hover,
-        html.is-touch-input [data-theme="dark"] .home-search-toggle:active {
+        html:not(.is-touch-input) [data-theme="dark"] .search-trigger:hover {
             background: rgba(255, 255, 255, 0.08);
-            color: #e7e9ee;
-        }
-        html:not(.is-touch-input) [data-theme="dark"] .home-search-clear:hover,
-        html.is-touch-input [data-theme="dark"] .home-search-clear:active {
-            background: rgba(255, 255, 255, 0.08);
-            color: #e7e9ee;
-        }
-        [data-theme="dark"] .search-skeleton-card {
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.03));
             border-color: rgba(255, 255, 255, 0.1);
+            color: #e7e9ee;
+        }
+        html.is-touch-input [data-theme="dark"] .search-trigger:active {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e7e9ee;
+        }
+
+        /* 遮罩在深色下要更浓一些，否则面板边界会糊成一片 */
+        [data-theme="dark"] .search-backdrop {
+            background: rgba(0, 0, 0, 0.58);
+        }
+        [data-theme="dark"] .search-panel {
+            border-color: rgba(255, 255, 255, 0.12);
+            background: #161920;
+            box-shadow:
+                0 0 0 1px rgba(0, 0, 0, 0.4),
+                0 28px 64px -12px rgba(0, 0, 0, 0.72),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+        [data-theme="dark"] .search-bar {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        [data-theme="dark"] .search-bar:focus-within {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.34);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.07);
+        }
+        [data-theme="dark"] .search-bar-clear {
+            background: rgba(255, 255, 255, 0.1);
+            color: #b6bcc6;
+        }
+        html:not(.is-touch-input) [data-theme="dark"] .search-bar-clear:hover,
+        html.is-touch-input [data-theme="dark"] .search-bar-clear:active {
+            background: #e7e9ee;
+            color: #111111;
+        }
+        [data-theme="dark"] .search-bar-spinner {
+            border-color: rgba(255, 255, 255, 0.16);
+            border-top-color: #e7e9ee;
+        }
+        html:not(.is-touch-input) [data-theme="dark"] .search-close:hover,
+        html.is-touch-input [data-theme="dark"] .search-close:active {
+            background: rgba(255, 255, 255, 0.08);
+            color: #e7e9ee;
+        }
+        html:not(.is-touch-input) [data-theme="dark"] .search-back:hover,
+        html.is-touch-input [data-theme="dark"] .search-back:active {
+            background: rgba(255, 255, 255, 0.08);
+            color: #e7e9ee;
+        }
+        html:not(.is-touch-input) [data-theme="dark"] .search-block-action:hover,
+        [data-theme="dark"] .search-block-action:focus-visible {
+            background: rgba(255, 255, 255, 0.08);
+            color: #e7e9ee;
+        }
+        [data-theme="dark"] .search-chip {
+            border-color: rgba(255, 255, 255, 0.12);
+            color: #b6bcc6;
+        }
+        html:not(.is-touch-input) [data-theme="dark"] .search-chip:hover,
+        html.is-touch-input [data-theme="dark"] .search-chip:active {
+            border-color: #e7e9ee;
+            background: #e7e9ee;
+            color: #111111;
+        }
+        [data-theme="dark"] .search-quick-item {
+            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
+            color: #b6bcc6;
+        }
+        html:not(.is-touch-input) [data-theme="dark"] .search-quick-item:hover {
+            border-color: rgba(255, 255, 255, 0.22);
+            background: rgba(255, 255, 255, 0.08);
+            color: #e7e9ee;
+        }
+        [data-theme="dark"] .search-result:hover,
+        [data-theme="dark"] .search-result.is-active {
+            background: rgba(255, 255, 255, 0.055);
+        }
+        [data-theme="dark"] .search-result.is-active {
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+        }
+        [data-theme="dark"] .search-result + .search-result::before {
+            background: rgba(255, 255, 255, 0.07);
+        }
+        [data-theme="dark"] .search-result-icon {
+            background: rgba(255, 255, 255, 0.07);
+            color: #b6bcc6;
+        }
+        [data-theme="dark"] .search-result.is-active .search-result-icon,
+        [data-theme="dark"] .search-result:hover .search-result-icon {
+            background: #e7e9ee;
+            color: #111111;
+        }
+        [data-theme="dark"] .search-result-tag {
+            background: rgba(255, 255, 255, 0.08);
+            color: #a2a9b4;
+        }
+        [data-theme="dark"] .search-result-tag.is-hit {
+            background: rgba(250, 204, 21, 0.22);
+            color: #ffdf80;
+        }
+        [data-theme="dark"] .search-empty-icon {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        [data-theme="dark"] .search-foot {
+            border-top-color: rgba(255, 255, 255, 0.08);
+        }
+        [data-theme="dark"] .search-foot kbd {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.12);
+            color: #b6bcc6;
+        }
+        [data-theme="dark"] .search-recent-item:hover,
+        [data-theme="dark"] .search-recent-item:focus-visible,
+        [data-theme="dark"] .search-recent-item:active {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        [data-theme="dark"] .search-recent-item + .search-recent-item::before {
+            background: rgba(255, 255, 255, 0.07);
+        }
+        [data-theme="dark"] .search-tips {
+            border-color: rgba(255, 255, 255, 0.09);
+            background: rgba(255, 255, 255, 0.03);
+        }
+        [data-theme="dark"] .search-cloud-tag[data-weight="3"],
+        [data-theme="dark"] .search-cloud-tag[data-weight="2"] {
+            color: #b6bcc6;
+        }
+        [data-theme="dark"] .search-cloud-tag:hover,
+        [data-theme="dark"] .search-cloud-tag:focus-visible {
+            color: #e7e9ee;
         }
         [data-theme="dark"] .sk-line,
-        [data-theme="dark"] .sk-tag,
+        [data-theme="dark"] .sk-avatar,
         [data-theme="dark"] .sk-pill {
             background: linear-gradient(
                 90deg,
@@ -2432,6 +3548,9 @@
         [data-theme="dark"] .search-hl {
             background: rgba(250, 204, 21, 0.24);
             color: #ffdf80;
+        }
+        [data-theme="dark"] .search-hl.is-title {
+            background: rgba(250, 204, 21, 0.32);
         }
         [data-theme="dark"] .tag.tag-hit {
             background: rgba(250, 204, 21, 0.22);
