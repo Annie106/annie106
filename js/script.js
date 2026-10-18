@@ -209,6 +209,14 @@
             const postsListBlog = $('#postsListBlog');
             const tagFilterHome = $('#tagFilterHome');
             const tagFilterBlog = $('#tagFilterBlog');
+            const homeSearch = $('#homeSearch');
+            const homeSearchToggle = $('#homeSearchToggle');
+            const homeSearchInput = $('#homeSearchInput');
+            const homeSearchClear = $('#homeSearchClear');
+            const homeSearchStatus = $('#homeSearchStatus');
+            const homeMore = $('.home-more');
+            const homeSectionHeader = homeSearch ? homeSearch.closest('.section-header') : null;
+            const homeSearchMobile = window.matchMedia('(max-width: 600px)');
             const articleTitle = $('#articleTitle');
             const articleMeta = $('#articleMeta');
             const articleContent = $('#articleContent');
@@ -235,6 +243,22 @@
             let embeddedFrameHeight = 0;
             let articleReturnView = 'home';
             let articleReturnScroll = 0;
+            // 搜索状态：是否处于展开态。当前关键词始终以输入框的值为准，
+            // 不另存一份，避免两边不一致。
+            let homeSearchOpen = false;
+            let homeSearchKeyboardVisible = false;
+            let homeSearchViewportHeight = 0;
+            let homeSearchComposing = false;
+            // 每次输入都清掉上一个定时器，只有停下来才真正渲染（防抖）
+            let homeSearchTimer = null;
+            let homeSearchStatusTimer = null;
+            let homeSearchCloseTimer = null;
+            // 搜索请求标识：异步回调回来时用它判断这次结果是不是已经过期
+            let activeHomeSearchRequest = null;
+            const HOME_SEARCH_DEBOUNCE = 320;
+            // 检索动画至少显示这么久：搜索是本地瞬间完成的，
+            // 不加下限会闪一下反而更廉价，也容易让人以为没反应
+            const HOME_SEARCH_MIN_SPINNER = 380;
             let articleHistoryEntryActive = false;
             let returningFromArticleButton = false;
             const viewScrollPositions = { home: 0, blog: 0, movie: null, about: 0 };
@@ -669,6 +693,143 @@
                 })[character]);
             }
 
+            // ==================== 首页文章搜索 ====================
+            // 检索标题与摘要（副标题），标题命中优先；正文与标签不参与检索。
+            const SEARCH_FIELD_LABELS = {
+                title: '标题',
+                excerpt: '副标题',
+            };
+            const SEARCH_FIELD_WEIGHT = {
+                title: 100,
+                excerpt: 40,
+            };
+
+            // 去掉首尾空白并把连续空白压成一个空格，
+            // 这样输入法里的全角空格、换行也不会把关键词切碎
+            function normalizeQuery(value) {
+                return String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+            }
+
+            function normalizeText(value) {
+                return String(value == null ? '' : value)
+                    .replace(/<[^>]*>/g, ' ')
+                    .replace(/&nbsp;/gi, ' ')
+                    .replace(/\s+/g, ' ')
+                    .toLowerCase();
+            }
+
+            // 拆关键词：空格分词 + 转小写。中文没有词边界，
+            // 所以整串也会作为一个词保留，输入「第五人格 归宿」时两个词都要命中。
+            function getKeywords(query) {
+                return normalizeQuery(query)
+                    .toLowerCase()
+                    .split(' ')
+                    .filter(Boolean);
+            }
+
+            // 只返回可搜索字段，避免正文或标签意外参与匹配。
+            function getSearchableText(post) {
+                return {
+                    title: normalizeText(post.title),
+                    excerpt: normalizeText(post.excerpt),
+                };
+            }
+
+            function countHits(text, keywords) {
+                let hits = 0;
+                keywords.forEach(keyword => {
+                    let from = 0;
+                    while (true) {
+                        const at = text.indexOf(keyword, from);
+                        if (at === -1) break;
+                        hits += 1;
+                        from = at + keyword.length;
+                    }
+                });
+                return hits;
+            }
+
+            // 哪些搜索字段命中了关键词，用于结果卡片上的匹配标记。
+            function getMatchedFields(post, query) {
+                const keywords = getKeywords(query);
+                if (keywords.length === 0) return [];
+                const text = getSearchableText(post);
+                return ['title', 'excerpt']
+                    .filter(field => keywords.some(keyword => text[field].includes(keyword)));
+            }
+
+            // 搜索并按匹配度排序。返回 [{ post, score, fields }]。
+            function searchPosts(query) {
+                const keywords = getKeywords(query);
+                if (keywords.length === 0) return [];
+                const results = [];
+                blogPosts.forEach(post => {
+                    const text = getSearchableText(post);
+                    const wholeText = [text.title, text.excerpt].join(' ');
+                    // 多关键词按「与」处理，允许分别命中标题和副标题。
+                    if (!keywords.every(keyword => wholeText.includes(keyword))) return;
+
+                    const fields = [];
+                    Object.keys(SEARCH_FIELD_WEIGHT).forEach(field => {
+                        if (keywords.some(keyword => text[field].includes(keyword))) fields.push(field);
+                    });
+                    const titleMatches = keywords.filter(keyword => text.title.includes(keyword)).length;
+                    const titleHits = countHits(text.title, keywords);
+                    const excerptHits = countHits(text.excerpt, keywords);
+                    results.push({
+                        post,
+                        titleMatches,
+                        titleHits,
+                        excerptHits,
+                        fields: fields.sort((a, b) => SEARCH_FIELD_WEIGHT[b] - SEARCH_FIELD_WEIGHT[a]),
+                    });
+                });
+
+                results.sort((a, b) => {
+                    if (b.titleMatches !== a.titleMatches) return b.titleMatches - a.titleMatches;
+                    if (b.titleHits !== a.titleHits) return b.titleHits - a.titleHits;
+                    if (b.excerptHits !== a.excerptHits) return b.excerptHits - a.excerptHits;
+                    // 分数相同时置顶文章优先，再按 id 新的在前
+                    const pinnedDiff = Number(Boolean(b.post.pinned)) - Number(Boolean(a.post.pinned));
+                    return pinnedDiff !== 0 ? pinnedDiff : b.post.id - a.post.id;
+                });
+                return results;
+            }
+
+            // 把命中的关键词包成 <mark>。先转义再替换，
+            // 这样用户输入 <script> 之类的字符不会变成真的标签。
+            function highlightKeyword(value, query) {
+                const text = String(value == null ? '' : value);
+                const keywords = getKeywords(query);
+                if (keywords.length === 0) return escapeHtml(text);
+                const escaped = keywords
+                    .map(keyword => keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                    .sort((a, b) => b.length - a.length);
+                const pattern = new RegExp(`(${escaped.join('|')})`, 'gi');
+                return escapeHtml(text).replace(pattern, '<mark class="search-hl">$1</mark>');
+            }
+
+            // 搜索期间顶替真实卡片的骨架屏，数量跟随当前网格列数，
+            // 手机上只放两张，避免整屏都是灰条
+            function renderSearchSkeletons(container, count) {
+                if (!container) return;
+                const isNarrow = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
+                const total = isNarrow ? 2 : 4;
+                const card = `
+                    <div class="search-skeleton-card" aria-hidden="true">
+                        <div class="sk-row"><span class="sk-tag"></span></div>
+                        <span class="sk-line sk-title"></span>
+                        <span class="sk-line"></span>
+                        <span class="sk-line sk-short"></span>
+                        <div class="sk-row sk-stat">
+                            <span class="sk-pill"></span>
+                            <span class="sk-pill"></span>
+                            <span class="sk-pill"></span>
+                        </div>
+                    </div>`;
+                container.innerHTML = card.repeat(Math.min(count || total, 6));
+            }
+
             function renderTagPills(containerId) {
                 const container = document.getElementById(containerId);
                 if (!container) return;
@@ -697,19 +858,33 @@
                 return posts.sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)));
             }
 
-            function renderPostsList(containerId, animate = false) {
+            function renderPostsList(containerId, animate = false, options = {}) {
                 const container = document.getElementById(containerId);
                 if (!container) return;
-                const posts = getFilteredPosts();
+                // 带 query 时走搜索结果（按匹配度排序），否则按标签筛选
+                const query = normalizeQuery(options.query);
+                const posts = query
+                    ? searchPosts(query).map(hit => hit.post)
+                    : getFilteredPosts();
                 if (posts.length === 0) {
-                    container.innerHTML =
-                        '<p style="color:#999;text-align:center;padding:30px 0;">暂无文章</p>';
+                    container.innerHTML = query
+                        ? `<p class="home-search-empty">没有找到与「${escapeHtml(query)}」相关的文章<br>换一个关键词试试吧</p>`
+                        : '<p style="color:#999;text-align:center;padding:30px 0;">暂无文章</p>';
                     return;
                 }
                 container.innerHTML = posts.map(p => {
                     const firstTag = p.tags[0] || '文章';
                     const commentCount = 12 + (p.id % 9);
                     const likeCount = 7 + (p.id % 6);
+                    // 搜索模式：命中的字段在标题下方用小标签标出来，
+                    // 标题和副标题里的命中关键词高亮。
+                    const hitFields = query ? getMatchedFields(p, query) : [];
+                    const titleHtml = query ? highlightKeyword(p.title, query) : p.title;
+                    const excerptHtml = query ? highlightKeyword(p.excerpt, query) : p.excerpt;
+                    const hitChips = hitFields
+                        .slice(0, 2)
+                        .map(field => `<span class="tag tag-hit">${SEARCH_FIELD_LABELS[field] || '匹配'}</span>`)
+                        .join('');
                 // ================ 二级菜单默认选项 ================
                     // url 里可以用占位符：{id} 换成文章 id，{title} 换成文章标题。
                     // 「问题反馈」带上这两个参数，反馈页就知道是针对哪篇文章提的意见。
@@ -743,6 +918,7 @@
                                 <div class="tags-left">
                                     ${p.pinned ? '<span class="tag tag-pinned" title="置顶"><i class="ri-pushpin-2-line"></i></span>' : ''}
                                     <span class="tag">${firstTag}</span>
+                                    ${hitChips}
                                 </div>
                                 <button class="options" type="button" aria-label="更多选项" aria-haspopup="menu" aria-expanded="false">
                                     <svg xml:space="preserve" viewBox="0 0 41.915 41.916" xmlns="http://www.w3.org/2000/svg" id="Capa_1" version="1.1" fill="#000000" aria-hidden="true"><g stroke-width="0" id="SVGRepo_bgCarrier"></g><g stroke-linejoin="round" stroke-linecap="round" id="SVGRepo_tracerCarrier"></g><g id="SVGRepo_iconCarrier"><g><g><path d="M11.214,20.956c0,3.091-2.509,5.589-5.607,5.589C2.51,26.544,0,24.046,0,20.956c0-3.082,2.511-5.585,5.607-5.585 C8.705,15.371,11.214,17.874,11.214,20.956z"></path><path d="M26.564,20.956c0,3.091-2.509,5.589-5.606,5.589c-3.097,0-5.607-2.498-5.607-5.589c0-3.082,2.511-5.585,5.607-5.585 C24.056,15.371,26.564,17.874,26.564,20.956z"></path><path d="M41.915,20.956c0,3.091-2.509,5.589-5.607,5.589c-3.097,0-5.606-2.498-5.606-5.589c0-3.082,2.511-5.585,5.606-5.585 C39.406,15.371,41.915,17.874,41.915,20.956z"></path></g></g></g></svg>
@@ -751,8 +927,8 @@
                                     ${menuLinks}
                                 </div>
                             </div>
-                            <h3 class="task-title">${p.title}</h3>
-                            <p>${p.excerpt}</p>
+                            <h3 class="task-title">${titleHtml}</h3>
+                            <p>${excerptHtml}</p>
                             <div class="stats">
                                 <div class="stats-main">
                                     <div><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><g stroke-width="0" id="SVGRepo_bgCarrier"></g><g stroke-linejoin="round" stroke-linecap="round" id="SVGRepo_tracerCarrier"></g><g id="SVGRepo_iconCarrier"><path stroke-linecap="round" stroke-width="2" d="M12 8V12L15 15"></path><circle stroke-width="2" r="9" cy="12" cx="12"></circle></g></svg>${p.date}</div>
@@ -1030,6 +1206,257 @@
                 }
             }
 
+            // ==================== 首页搜索交互 ====================
+            // 三种状态：收起（只有放大镜）、展开待输入、展开且有结果。
+            // 结构上放大镜和输入框是同一行里的两个盒子，展开时一个收窄、
+            // 一个变宽，所以不需要额外的浮层，手机上也不会盖住标题。
+
+            function setHomeSearchStatus(html) {
+                if (!homeSearchStatus) return;
+                if (!html) {
+                    homeSearchStatus.hidden = true;
+                    homeSearchStatus.innerHTML = '';
+                    return;
+                }
+                homeSearchStatus.hidden = false;
+                homeSearchStatus.innerHTML = html;
+            }
+
+            // 输入框、清空按钮在收起时不可聚焦，避免 Tab 走进看不见的控件
+            function syncHomeSearchControls() {
+                const active = homeSearchOpen;
+                if (homeSearchInput) homeSearchInput.tabIndex = active ? 0 : -1;
+                if (homeSearchClear) homeSearchClear.tabIndex = active ? 0 : -1;
+                if (homeSearchToggle) homeSearchToggle.setAttribute('aria-expanded', active ? 'true' : 'false');
+            }
+
+            function openHomeSearch(options = {}) {
+                if (!homeSearch || homeSearchOpen) return;
+                window.clearTimeout(homeSearchCloseTimer);
+                homeSearchCloseTimer = null;
+                homeSearchOpen = true;
+                homeSearchKeyboardVisible = false;
+                homeSearchViewportHeight = window.visualViewport?.height || window.innerHeight;
+                homeSearch.classList.add('open');
+                homeSectionHeader?.classList.add('is-searching');
+                syncHomeSearchControls();
+                if (options.focus !== false) {
+                    // 等展开动画把宽度让出来再聚焦，否则 iOS 会在 0 宽的元素上
+                    // 直接弹键盘、把页面顶上去。preventScroll 避免聚焦时页面跳动
+                    window.setTimeout(() => {
+                        if (homeSearchOpen) homeSearchInput?.focus({ preventScroll: true });
+                    }, 120);
+                }
+            }
+
+            function finishHomeSearchClose() {
+                window.clearTimeout(homeSearchCloseTimer);
+                homeSearchCloseTimer = null;
+                if (homeSearchOpen) return;
+                homeSectionHeader?.classList.remove('is-searching');
+                renderPostsList('postsListHome');
+                if (homeMore) homeMore.hidden = false;
+            }
+
+            // 清空并收起搜索，回到正常的文章列表
+            function closeHomeSearch(options = {}) {
+                if (!homeSearch) return;
+                const wasOpen = homeSearchOpen;
+                window.clearTimeout(homeSearchTimer);
+                window.clearTimeout(homeSearchStatusTimer);
+                homeSearchOpen = false;
+                activeHomeSearchRequest = null;
+                homeSearchKeyboardVisible = false;
+                homeSearch.classList.remove('open');
+                if (homeSearchInput) homeSearchInput.value = '';
+                if (homeSearchClear) homeSearchClear.hidden = true;
+                tagFilterHome?.classList.remove('is-muted');
+                setHomeSearchStatus('');
+                syncHomeSearchControls();
+                if (wasOpen && homeSearchMobile.matches && homeSectionHeader?.classList.contains('is-searching')) {
+                    homeSearchCloseTimer = window.setTimeout(finishHomeSearchClose, 280);
+                } else {
+                    finishHomeSearchClose();
+                }
+                if (options.blur !== false && document.activeElement === homeSearchInput) {
+                    homeSearchInput.blur();
+                }
+            }
+
+            homeSearch?.querySelector('.home-search-field')?.addEventListener('transitionend', function(e) {
+                if (e.target === this && e.propertyName === 'width' && !homeSearchOpen) {
+                    finishHomeSearchClose();
+                }
+            });
+
+            // 展开搜索时先把结果收起来，给用户一个「现在开始搜」的明确起点
+            function resetHomeSearchResults() {
+                window.clearTimeout(homeSearchTimer);
+                window.clearTimeout(homeSearchStatusTimer);
+                activeHomeSearchRequest = null;
+                if (homeSearchClear) homeSearchClear.hidden = true;
+                setHomeSearchStatus('');
+                tagFilterHome?.classList.remove('is-muted');
+                renderPostsList('postsListHome');
+                if (homeMore) homeMore.hidden = false;
+            }
+
+            // 带加载过渡的搜索：先给检索中的状态（转圈 + 骨架屏），
+            // 满足最短展示时长后再把真实结果换进来。
+            function runHomeSearch(rawQuery) {
+                const query = normalizeQuery(rawQuery);
+                window.clearTimeout(homeSearchTimer);
+                window.clearTimeout(homeSearchStatusTimer);
+
+                if (!query) {
+                    activeHomeSearchRequest = null;
+                    if (homeSearchClear) homeSearchClear.hidden = true;
+                    tagFilterHome?.classList.remove('is-muted');
+                    setHomeSearchStatus('');
+                    renderPostsList('postsListHome');
+                    if (homeMore) homeMore.hidden = false;
+                    return;
+                }
+
+                // 记住这次请求，异步回调回来时如果关键词已经变了就丢掉结果
+                const requestId = `${Date.now()}-${Math.random()}`;
+                activeHomeSearchRequest = requestId;
+                if (homeSearchClear) homeSearchClear.hidden = false;
+                tagFilterHome?.classList.add('is-muted');
+                if (homeMore) homeMore.hidden = true;
+                // 先展示「检索中」：转圈文案 + 骨架屏，这是加载过渡里看得见的部分
+                setHomeSearchStatus(
+                    '<span class="home-loading-spinner" aria-hidden="true"></span><span>正在搜索文章…</span>'
+                );
+                renderSearchSkeletons(postsListHome);
+
+                const finish = () => {
+                    // 期间又输入了新的关键词，或者已经退出搜索：这次结果作废
+                    if (activeHomeSearchRequest !== requestId || !homeSearchOpen) return;
+                    const hits = searchPosts(query);
+                    renderPostsList('postsListHome', true, { query });
+                    // 结果条换成命中统计，和卡片一起出现，形成「加载完成」的落点
+                    setHomeSearchStatus(
+                        hits.length > 0
+                            ? `<i class="ri-search-line" aria-hidden="true"></i><span>找到 <strong>${hits.length}</strong> 篇与「${escapeHtml(query)}」相关的文章</span>`
+                            : `<i class="ri-emotion-sad-line" aria-hidden="true"></i><span>没有找到与「${escapeHtml(query)}」相关的文章</span>`
+                    );
+                };
+                homeSearchStatusTimer = window.setTimeout(finish, HOME_SEARCH_MIN_SPINNER);
+            }
+
+            function scheduleHomeSearch(rawQuery) {
+                const query = normalizeQuery(rawQuery);
+                window.clearTimeout(homeSearchTimer);
+                window.clearTimeout(homeSearchStatusTimer);
+                activeHomeSearchRequest = null;
+
+                if (!query) {
+                    runHomeSearch('');
+                    return;
+                }
+
+                if (homeSearchClear) homeSearchClear.hidden = false;
+                setHomeSearchStatus('');
+                homeSearchTimer = window.setTimeout(() => {
+                    runHomeSearch(rawQuery);
+                }, HOME_SEARCH_DEBOUNCE);
+            }
+
+            if (homeSearchToggle) {
+                homeSearchToggle.addEventListener('click', function() {
+                    if (homeSearchOpen) closeHomeSearch();
+                    else {
+                        resetHomeSearchResults();
+                        openHomeSearch();
+                    }
+                });
+            }
+
+            if (homeSearchClear) {
+                homeSearchClear.addEventListener('click', function() {
+                    if (homeSearchInput) homeSearchInput.value = '';
+                    resetHomeSearchResults();
+                    homeSearchInput?.focus({ preventScroll: true });
+                });
+            }
+
+            if (homeSearchInput) {
+                homeSearchInput.addEventListener('compositionstart', function() {
+                    homeSearchComposing = true;
+                    window.clearTimeout(homeSearchTimer);
+                    window.clearTimeout(homeSearchStatusTimer);
+                    activeHomeSearchRequest = null;
+                    setHomeSearchStatus('');
+                });
+                homeSearchInput.addEventListener('compositionend', function() {
+                    homeSearchComposing = false;
+                    scheduleHomeSearch(this.value);
+                });
+                homeSearchInput.addEventListener('input', function() {
+                    if (!homeSearchComposing) scheduleHomeSearch(this.value);
+                });
+                homeSearchInput.addEventListener('focus', function() {
+                    if (!homeSearchMobile.matches) return;
+                    homeSearchViewportHeight = window.visualViewport?.height || window.innerHeight;
+                    homeSearchKeyboardVisible = false;
+                });
+                homeSearchInput.addEventListener('blur', function() {
+                    if (homeSearchOpen && homeSearchMobile.matches && !normalizeQuery(this.value)) {
+                        closeHomeSearch();
+                    }
+                });
+                // 回车立即完成当前查询，不必再等输入停顿。
+                homeSearchInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        if (homeSearchComposing || e.isComposing) return;
+                        e.preventDefault();
+                        runHomeSearch(this.value);
+                    } else if (e.key === 'Escape') {
+                        e.stopPropagation();
+                        if (this.value) {
+                            this.value = '';
+                            resetHomeSearchResults();
+                        } else {
+                            closeHomeSearch();
+                        }
+                    }
+                });
+            }
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', function() {
+                    if (!homeSearchOpen || !homeSearchMobile.matches ||
+                        document.activeElement !== homeSearchInput) return;
+
+                    const height = window.visualViewport.height;
+                    if (height < homeSearchViewportHeight - 100) {
+                        homeSearchKeyboardVisible = true;
+                    } else if (homeSearchKeyboardVisible && height > homeSearchViewportHeight + 100) {
+                        homeSearchKeyboardVisible = false;
+                        if (!normalizeQuery(homeSearchInput?.value || '')) closeHomeSearch();
+                    }
+                    homeSearchViewportHeight = height;
+                });
+            }
+
+            // 点了别处就收起：移动端把键盘让出来，桌面端回到干净列表。
+            // 点搜索结果里的卡片不算「别处」，否则点文章时输入框会先收一下。
+            document.addEventListener('pointerdown', function(e) {
+                if (!homeSearchOpen) return;
+                if (e.target.closest('#homeSearch')) return;
+                if (e.target.closest('#postsListHome .post-card')) return;
+                closeHomeSearch();
+            });
+
+            // 搜索框展开后切到别的视图（文章 / 电影 / 关于）就收起，
+            // 免得再回首页时还留着一个半开的搜索框
+            function dismissHomeSearchOnViewChange(viewName) {
+                if (!homeSearchOpen) return;
+                if (viewName === 'home') return;
+                closeHomeSearch();
+            }
+
             function openArticle(id) {
                 const post = blogPosts.find(p => p.id === id);
                 if (!post) return;
@@ -1068,6 +1495,8 @@
 
             function switchView(viewName) {
                 const previousView = currentView;
+                // 离开首页时收起搜索框，回来时是干净的列表
+                dismissHomeSearchOnViewChange(viewName);
                 if (previousView !== 'article') {
                     viewScrollPositions[previousView] = window.scrollY;
                 }

@@ -167,18 +167,39 @@
 
             <!-- 最新文章 -->
             <div class="section-header">
-                <span class="section-label">最新文章</span>
+                <div class="home-section-head">
+                    <span class="section-label">最新文章</span>
+                    <!-- 搜索：点击放大镜展开搜索框，输入停顿后再检索文章。 -->
+                    <div class="home-search" id="homeSearch">
+                        <button class="home-search-toggle" id="homeSearchToggle" type="button"
+                                aria-label="搜索文章" aria-expanded="false" aria-controls="homeSearchInput">
+                            <i class="ri-search-line" aria-hidden="true"></i>
+                        </button>
+                        <div class="home-search-field">
+                            <i class="ri-search-line home-search-field-icon" aria-hidden="true"></i>
+                            <input class="home-search-input" id="homeSearchInput" type="search"
+                                   placeholder="搜索文章" autocomplete="off" autocorrect="off"
+                                   autocapitalize="off" spellcheck="false" enterkeyhint="search"
+                                   aria-label="搜索首页文章" tabindex="-1">
+                            <button class="home-search-clear" id="homeSearchClear" type="button"
+                                    aria-label="清空搜索" tabindex="-1" hidden>
+                                <i class="ri-close-line" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <div class="tag-filter home-tag-filter" id="tagFilterHome">
                     <span class="tag-pill active" data-tag="all">全部</span>
                 </div>
             </div>
+            <div class="home-search-status" id="homeSearchStatus" role="status" aria-live="polite" hidden></div>
             <div class="posts-list" id="postsListHome">
                 <div class="home-loading" role="status" aria-live="polite">
                     <span class="home-loading-spinner" aria-hidden="true"></span>
                     <span>正在加载首页内容…</span>
                 </div>
             </div>
-            <div style="text-align:center;margin-top:20px;">
+            <div class="home-more" style="text-align:center;margin-top:20px;">
                 <a href="#" class="tag-pill" data-nav="blog" style="text-decoration:none;cursor:pointer;">查看全部文章 →</a>
             </div>
         </div>
@@ -272,7 +293,7 @@
 
         <!-- ==================== 页脚 ==================== -->
         <footer class="site-footer">
-            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.19.215</p>
+            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.19.221</p>
         </footer>
     </div>
 

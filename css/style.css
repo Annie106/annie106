@@ -437,6 +437,301 @@
             border-color: transparent;
             box-shadow: inset 0 -1px var(--color-text-primary);
         }
+        /* 搜索进行中，标签筛选暂时不参与，淡出并停止响应点击 */
+        .home-tag-filter.is-muted {
+            opacity: 0.4;
+            pointer-events: none;
+            transition: opacity var(--transition-smooth);
+        }
+
+        /* ==================== 首页文章搜索 ==================== */
+        /* Keep the title and its compact search control together. */
+        .home-section-head {
+            display: flex;
+            align-items: center;
+            gap: 1px;
+            min-width: 0;
+        }
+        .home-search {
+            position: relative;
+            display: flex;
+            align-items: center;
+            flex: 0 0 auto;
+            min-width: 0;
+            height: 30px;
+        }
+        .home-search-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: var(--color-text-tertiary);
+            font-size: 0.8rem;
+            line-height: 1;
+            cursor: pointer;
+            overflow: hidden;
+            /* Keep the icon transition smooth as the field opens. */
+            transition:
+                width 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.16s ease,
+                color var(--transition-fast),
+                background var(--transition-fast);
+        }
+        .home-search-toggle i {
+            line-height: 1;
+            pointer-events: none;
+        }
+        html:not(.is-touch-input) .home-search-toggle:hover {
+            color: var(--color-text-primary);
+            background: rgba(17, 17, 17, 0.05);
+        }
+        html.is-touch-input .home-search-toggle:active {
+            color: var(--color-text-primary);
+            background: rgba(17, 17, 17, 0.06);
+        }
+        /* The search field expands inline beside the title. */
+        .home-search.open .home-search-toggle {
+            width: 0;
+            transform: scale(0.7);
+            opacity: 0;
+            pointer-events: none;
+        }
+        .home-search-field {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 0;
+            height: 28px;
+            padding: 0;
+            border-radius: 999px;
+            background: var(--color-surface);
+            /* 用 inset 阴影画描边，不占布局宽度，
+               这样收起时能真正干净地收到 0 宽 */
+            box-shadow: inset 0 0 0 1px var(--color-border);
+            opacity: 0;
+            overflow: hidden;
+            transition:
+                width 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+                padding 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.18s ease,
+                box-shadow 0.2s ease,
+                background 0.2s ease;
+        }
+        .home-search.open .home-search-field {
+            width: 156px;
+            padding: 0 4px 0 10px;
+            opacity: 1;
+        }
+        .home-search-field:focus-within {
+            background: var(--color-bg);
+            box-shadow: inset 0 0 0 1px var(--color-text-primary);
+        }
+        .home-search-field-icon {
+            flex: 0 0 auto;
+            font-size: 0.9rem;
+            line-height: 1;
+            color: var(--color-text-tertiary);
+            pointer-events: none;
+        }
+        .home-search-input {
+            flex: 1 1 auto;
+            min-width: 0;
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: var(--color-text-primary);
+            font-family: inherit;
+            font-size: 0.82rem;
+            line-height: 1;
+            /* 关掉 Safari 给 type=search 自带的圆角与清除按钮，
+               统一用下面 .home-search-clear 的样式 */
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .home-search-input::-webkit-search-decoration,
+        .home-search-input::-webkit-search-cancel-button,
+        .home-search-input::-webkit-search-results-button,
+        .home-search-input::-webkit-search-results-decoration {
+            -webkit-appearance: none;
+            appearance: none;
+            display: none;
+        }
+        .home-search-input::placeholder {
+            color: var(--color-text-tertiary);
+        }
+        .home-search-clear {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: var(--color-text-tertiary);
+            font-size: 0.95rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: color var(--transition-fast), background var(--transition-fast);
+        }
+        .home-search-clear[hidden] {
+            display: none;
+        }
+        .home-search-clear i {
+            line-height: 1;
+            pointer-events: none;
+        }
+        html:not(.is-touch-input) .home-search-clear:hover,
+        html.is-touch-input .home-search-clear:active {
+            color: var(--color-text-primary);
+            background: rgba(17, 17, 17, 0.06);
+        }
+
+        /* 搜索结果条：检索中是一枚转圈 + 文案，结束后换成命中数量 */
+        .home-search-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: -6px 0 14px;
+            color: var(--color-text-tertiary);
+            font-size: 0.78rem;
+            line-height: 1.5;
+            /* 出现时轻微上浮淡入，和骨架屏衔接得更自然 */
+            animation: homeSearchStatusIn 0.24s ease both;
+        }
+        .home-search-status[hidden] {
+            display: none;
+        }
+        .home-search-status .home-loading-spinner {
+            width: 14px;
+            height: 14px;
+            flex: 0 0 14px;
+            border-width: 2px;
+        }
+        .home-search-status strong {
+            color: var(--color-text-primary);
+            font-weight: 700;
+        }
+        .home-search-status i {
+            font-size: 0.95rem;
+            line-height: 1;
+        }
+        @keyframes homeSearchStatusIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 骨架屏：检索期间顶替文章卡片，尺寸和真实卡片对齐，
+           所以结果替换进来时列表不会跳动 */
+        .search-skeleton-card {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            padding: 13px 16px 11px;
+            border: 1px solid rgba(17, 17, 17, 0.06);
+            border-radius: 16px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 248, 248, 0.96));
+        }
+        .sk-line,
+        .sk-tag,
+        .sk-pill {
+            display: block;
+            border-radius: 999px;
+            background: linear-gradient(
+                90deg,
+                rgba(17, 17, 17, 0.05) 25%,
+                rgba(17, 17, 17, 0.11) 37%,
+                rgba(17, 17, 17, 0.05) 63%
+            );
+            background-size: 400% 100%;
+            animation: searchShimmer 1.25s ease-in-out infinite;
+        }
+        .sk-line {
+            height: 10px;
+            width: 100%;
+        }
+        .sk-line.sk-title {
+            height: 14px;
+            width: 68%;
+        }
+        .sk-line.sk-short {
+            width: 52%;
+        }
+        .sk-tag {
+            width: 46px;
+            height: 16px;
+        }
+        .sk-pill {
+            width: 58px;
+            height: 12px;
+        }
+        .sk-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sk-row.sk-stat {
+            margin-top: 2px;
+        }
+        @keyframes searchShimmer {
+            from { background-position: 100% 50%; }
+            to { background-position: 0 50%; }
+        }
+
+        /* 关键词高亮 */
+        .search-hl {
+            padding: 0 1px;
+            border-radius: 3px;
+            background: rgba(255, 214, 102, 0.42);
+            color: inherit;
+            font-weight: 700;
+        }
+        .tag.tag-hit {
+            background: rgba(255, 214, 102, 0.4);
+            color: #4a3a06;
+        }
+        .home-search-empty {
+            grid-column: 1 / -1;
+            padding: 34px 0;
+            color: var(--color-text-tertiary);
+            font-size: 0.86rem;
+            text-align: center;
+        }
+        .home-more[hidden] {
+            display: none;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .home-search-toggle,
+            .home-search-field,
+            .home-search-status {
+                transition: none;
+                animation: none;
+            }
+            .sk-line,
+            .sk-tag,
+            .sk-pill {
+                animation: none;
+                background: rgba(17, 17, 17, 0.07);
+            }
+        }
 
         .posts-list {
             display: grid;
@@ -1859,6 +2154,75 @@
                 width: calc(100% - 24px);
             }
         }
+        /* ==================== 首页搜索：移动端 ==================== */
+        @media (max-width: 600px) {
+            #view-home > .section-header {
+                flex-wrap: nowrap;
+                align-items: center;
+                gap: 6px;
+                height: 30px;
+            }
+            #view-home .home-section-head {
+                flex: 1 1 0;
+                min-width: 0;
+                height: 30px;
+                flex-wrap: nowrap;
+                gap: 2px;
+                transition: flex 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+            }
+            #view-home .home-search {
+                transition: flex 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+            }
+            #view-home .section-label {
+                flex: 0 0 auto;
+                white-space: nowrap;
+            }
+            #view-home .home-tag-filter {
+                flex: 0 0 auto;
+                flex-wrap: nowrap;
+                gap: 8px;
+            }
+            #view-home .home-tag-filter .tag-pill {
+                font-size: 0.7rem;
+            }
+            #view-home .section-header.is-searching {
+                flex-wrap: nowrap;
+                gap: 8px;
+            }
+            #view-home .section-header.is-searching .section-label {
+                flex: 0 0 auto;
+                white-space: nowrap;
+            }
+            #view-home .section-header.is-searching .home-search {
+                flex: 1 1 auto;
+                min-width: 0;
+                height: 30px;
+            }
+            #view-home .section-header.is-searching .home-search-field {
+                flex: 1 1 0;
+                width: 0;
+                max-width: none;
+                min-width: 0;
+                height: 20px;
+                padding: 0 3px 0 6px;
+            }
+            #view-home .section-header.is-searching .home-search.open .home-search-field {
+                width: 100%;
+            }
+            .home-search-input {
+                font-size: 0.78rem;
+                line-height: 1.2;
+            }
+            .home-search-clear {
+                width: 18px;
+                height: 18px;
+                font-size: 0.9rem;
+            }
+            .home-search-status {
+                margin-top: -2px;
+            }
+        }
+
         /* ==================== 主题切换按钮 ==================== */
         .theme-toggle {
             display: inline-flex;
@@ -2029,6 +2393,49 @@
             color: #ffffff;
             border-color: transparent;
             box-shadow: inset 0 -1px #ffffff;
+        }
+
+        /* 首页搜索（深色） */
+        [data-theme="dark"] .home-search-field {
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+        }
+        [data-theme="dark"] .home-search-field:focus-within {
+            background: rgba(255, 255, 255, 0.09);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+        }
+        html:not(.is-touch-input) [data-theme="dark"] .home-search-toggle:hover,
+        html.is-touch-input [data-theme="dark"] .home-search-toggle:active {
+            background: rgba(255, 255, 255, 0.08);
+            color: #e7e9ee;
+        }
+        html:not(.is-touch-input) [data-theme="dark"] .home-search-clear:hover,
+        html.is-touch-input [data-theme="dark"] .home-search-clear:active {
+            background: rgba(255, 255, 255, 0.08);
+            color: #e7e9ee;
+        }
+        [data-theme="dark"] .search-skeleton-card {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.03));
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        [data-theme="dark"] .sk-line,
+        [data-theme="dark"] .sk-tag,
+        [data-theme="dark"] .sk-pill {
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.06) 25%,
+                rgba(255, 255, 255, 0.14) 37%,
+                rgba(255, 255, 255, 0.06) 63%
+            );
+            background-size: 400% 100%;
+        }
+        [data-theme="dark"] .search-hl {
+            background: rgba(250, 204, 21, 0.24);
+            color: #ffdf80;
+        }
+        [data-theme="dark"] .tag.tag-hit {
+            background: rgba(250, 204, 21, 0.22);
+            color: #ffdf80;
         }
 
         /* 文章卡片 */
