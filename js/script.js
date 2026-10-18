@@ -1038,13 +1038,71 @@
                 headers.forEach(header => {
                     if (!isNarrow) {
                         header.classList.remove('is-tight');
+                        clearHeaderInlineFit(header);
                         return;
                     }
                     // 视图隐藏时 clientWidth 是 0，量不出结果，跳过
                     if (!header.clientWidth) return;
                     const tight = isSearchTriggerRowTight(header);
                     header.classList.toggle('is-tight', tight);
+                    // CSS 已经用 flex + margin-left:auto 做了对齐，
+                    // 但部分内核（如鸿蒙微信的 ArkWeb）对 flex 自动外边距、
+                    // flex-basis 的处理不一致，会出现「标签没贴右」。
+                    // 这里再用实测宽度写一次内联样式兜底，跑在 CSS 之后，
+                    // 优先级更高，能覆盖掉内核差异。
+                    applyHeaderInlineFit(header);
                 });
+            }
+
+            // 实测后把标签行宽度钉死，并把它推到最右。
+            // 放得下：宽度 = 内容宽度；放不下：宽度 = 剩余空间（内部横向滚动）。
+            //
+            // 关键：不依赖 CSS 的 margin-left: auto。
+            // 部分内核（鸿蒙微信的 ArkWeb 等）对 flex 自动外边距支持不一致，
+            // 会出现「标签没贴右」。这里直接用计算出的像素值写死 margin-left，
+            // 内联样式优先级最高，任何内核都会照做。
+            function applyHeaderInlineFit(header) {
+                const head = header.querySelector('.home-section-head');
+                const tagFilter = header.querySelector('.tag-filter');
+                if (!head || !tagFilter) return;
+
+                // 先清掉上一次的内联宽度，否则会被上次的定宽裁剪，
+                // 量出来的内容宽度是错的（越量越窄）
+                tagFilter.style.width = '';
+                tagFilter.style.marginLeft = '';
+
+                const headerStyle = window.getComputedStyle(header);
+                const gap = parseFloat(headerStyle.columnGap || headerStyle.gap) || 0;
+                const avail = header.clientWidth;
+                const headWidth = head.getBoundingClientRect().width;
+                const contentWidth = getTagFilterNaturalWidth(tagFilter);
+                // 标签行最多能用的宽度
+                const remaining = Math.max(0, avail - headWidth - gap);
+                const targetWidth = Math.min(contentWidth, remaining);
+                // 放得下就推到最右；放不下就紧贴标题（宽度占满剩余）
+                const marginLeft = Math.max(0, Math.round(avail - headWidth - gap - targetWidth));
+
+                tagFilter.style.flex = '0 0 auto';
+                tagFilter.style.width = `${Math.round(targetWidth)}px`;
+                tagFilter.style.minWidth = '0';
+                tagFilter.style.maxWidth = 'none';
+                tagFilter.style.marginLeft = `${marginLeft}px`;
+                tagFilter.style.marginRight = '0';
+                tagFilter.style.overflowX = 'auto';
+                tagFilter.style.overflowY = 'hidden';
+            }
+
+            function clearHeaderInlineFit(header) {
+                const tagFilter = header.querySelector('.tag-filter');
+                if (!tagFilter) return;
+                tagFilter.style.flex = '';
+                tagFilter.style.width = '';
+                tagFilter.style.minWidth = '';
+                tagFilter.style.maxWidth = '';
+                tagFilter.style.marginLeft = '';
+                tagFilter.style.marginRight = '';
+                tagFilter.style.overflowX = '';
+                tagFilter.style.overflowY = '';
             }
 
             function scheduleSearchTriggerFit() {
