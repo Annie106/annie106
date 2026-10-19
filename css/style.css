@@ -1601,39 +1601,65 @@
                 flex-wrap: nowrap;
                 min-width: 0;
             }
-            /* 这一行必须始终并排：标题 + 搜索在左，标签在右。
-               如果不禁止换行，浏览器会把整个标签行挤到下一行
-               （截图里那种「标题一行、标签一行」的情况），
+            /* 首页：这一行必须始终并排（标题 + 搜索在左，标签在右）。
+               如果不禁止换行，浏览器会把整个标签行挤到下一行，
                而不是让搜索文字先收起。这里宁可让标签横向滚动，
-               也不让布局折成两行。 */
-            #view-home > .section-header,
-            #view-blog > .section-header {
+               也不让首页布局折成两行。
+               注意 #view-blog（全部文章页）故意不在这里——
+               它在手机上允许换行，见本段后面的规则。 */
+            #view-home > .section-header {
                 flex-wrap: nowrap;
                 gap: 8px;
+                justify-content: flex-start;
             }
-            #view-home > .section-header .home-section-head,
-            #view-blog > .section-header .home-section-head {
+            #view-home > .section-header .home-section-head {
                 flex: 0 0 auto;
             }
             /* 标签行按内容宽度收缩（flex: 0 1 auto）：
                - 标签放得下时：宽度 = 内容宽度，不会被撑满，
-                 配合下一条 margin-left: auto 靠右贴边；
+                 配合 margin-left: auto 靠右贴边；
                - 标签放不下时：被压缩到剩余空间并横向滚动。
                之前用 flex: 1 1 auto 会强行撑满，标签被摊开、
                右侧留白，看起来就是「没对齐」。 */
-            #view-home > .section-header .tag-filter,
-            #view-blog > .section-header .tag-filter {
+            #view-home > .section-header .tag-filter {
                 flex: 0 1 auto;
                 min-width: 0;
                 /* 让标签行自己靠到最右侧，而不是靠外层 space-between */
                 margin-left: auto;
                 justify-content: flex-start;
             }
-            /* 外层改成 flex-start：宽度分配交给 margin-left: auto，
-               避免 space-between 在没有多余空间时行为不稳定 */
-            #view-home > .section-header,
-            #view-blog > .section-header {
-                justify-content: flex-start;
+
+
+            /* ===== 全部文章页（#view-blog）：手机上允许换行 =====
+               它的标签是从所有文章里收集的，数量可能很多（十个八个很正常），
+               不像首页只固定几个。硬挤一行会让每个标签都被压扁、
+               只能横向滚动，反而更难找。所以这里放开换行：
+                 · 第一行：「全部文章」+ 搜索入口
+                 · 第二行：标签，横向铺开、需要时自动折行
+               首页不受影响——上面那些 nowrap 只作用于 #view-home。
+               桌面端也不受影响：这一整段包在手机媒体查询里，
+               宽屏下文章页仍是「标题在左、标签在右」的单行。 */
+            @media (max-width: 600px) {
+                #view-blog > .section-header {
+                    flex-wrap: wrap;
+                    gap: 10px;
+                    align-items: center;
+                    justify-content: flex-start;
+                }
+                #view-blog > .section-header .home-section-head {
+                    flex: 0 0 auto;
+                }
+                /* 标签占满整行（换行后自成一行），内部可以继续换行，
+                   不再需要横向滚动 */
+                #view-blog > .section-header .tag-filter {
+                    flex: 1 1 100%;
+                    min-width: 0;
+                    margin-left: 0;
+                    flex-wrap: wrap;
+                    justify-content: flex-start;
+                    overflow-x: visible;
+                    overflow-y: visible;
+                }
             }
 
             /* === 空间不足时自动收起文字 ===
@@ -1792,6 +1818,41 @@
             html.is-touch-input .search-result:active {
                 background: var(--color-surface);
                 transform: scale(0.995);
+            }
+        }
+
+        /* ===== 全部文章页（#view-blog）桌面端 =====
+           标签是从所有文章里收集的，可能多到一行放不下（十几个很常见）。
+           两种形态，由 JS 实测后切换（is-tag-wrap 类）：
+             · 放得下：标签紧跟标题、整体靠右（和首页一致）
+             · 放不下：标签独占第二行，从左边开始，与「全部文章」对齐
+           这样既不会切掉标签、也不会有横向滚动条，换行后也不会
+           孤零零地缩在右边和标题对不齐。
+           注意：这条必须写在手机媒体查询外面——写在里面的话
+           min-width 和 max-width 永远不可能同时成立，规则会失效。 */
+        @media (min-width: 601px) {
+            #view-blog > .section-header {
+                flex-wrap: wrap;
+                justify-content: flex-start;
+                gap: 10px;
+            }
+            #view-blog > .section-header .home-section-head {
+                flex: 0 0 auto;
+            }
+            /* 默认：放得下，靠右 */
+            #view-blog > .section-header .tag-filter {
+                flex: 0 1 auto;
+                min-width: 0;
+                margin-left: auto;
+                justify-content: flex-end;
+                flex-wrap: wrap;
+                overflow: visible;
+            }
+            /* 放不下：独占一行，左对齐 */
+            #view-blog > .section-header.is-tag-wrap .tag-filter {
+                flex: 1 1 100%;
+                margin-left: 0;
+                justify-content: flex-start;
             }
         }
 

@@ -286,13 +286,26 @@
                 0 18px 48px -22px rgba(0, 0, 0, 0.85);
         }
 
+        /* 照片本体。
+           注意：这里**不能**默认 opacity: 0。
+           内嵌在 iframe 里时，lazy 图可能一直不触发 load 事件，
+           图片就会永远停在透明状态——看着像「没加载出来」，
+           但点开放大又能显示（lightbox 是重新建一个 img 加载的）。
+           所以默认可见，淡入只在「已加载且还没播过动画」时做一次。 */
         .manor-shot img {
             display: block;
             width: 100%;
             height: auto;
+            opacity: 1;
+            transform: scale(1);
+            transition: opacity 0.7s ease, transform 1.1s cubic-bezier(0.2, 0.6, 0.2, 1);
+        }
+
+        /* 真正开始淡入前，JS 会先加 is-loading（透明 + 微缩放），
+           加载完成后再换成 is-loaded，播一次淡入。 */
+        .manor-shot img.is-loading {
             opacity: 0;
             transform: scale(1.015);
-            transition: opacity 0.7s ease, transform 1.1s cubic-bezier(0.2, 0.6, 0.2, 1);
         }
 
         .manor-shot img.is-loaded {
@@ -741,7 +754,7 @@
             <button class="manor-shot" type="button" aria-label="点击放大：两个角色靠近的合影" aria-expanded="false">
                 <img src="../../images/manor_photos/manor_02.jpg"
                      alt="第五人格归宿中两个角色靠得很近的侧脸合影，背景是绣球花与烛光"
-                     width="1728" height="1079" loading="lazy" decoding="async">
+                     width="1728" height="1079" loading="eager" decoding="async">
                 <span class="manor-zoom"><i class="ri-zoom-in-line" aria-hidden="true"></i>点击放大</span>
             </button>
             <figcaption>
@@ -815,23 +828,64 @@
             'use strict';
 
             // ---------- 照片淡入 ----------
-            // 本地图通常瞬间就加载完，所以要先看 complete，
-            // 否则 load 事件早就过去了，图片会一直停在 opacity: 0
+            // 目标：图片能显示出来是第一位，淡入只是锦上添花。
+            //
+            // 之前的做法把 opacity: 0 写在 CSS 默认值里，靠 load 事件加
+            // is-loaded 才显示。内嵌在 iframe 里时，带 loading="lazy" 的图
+            // 可能一直不触发 load（元素不在 iframe 的可视区、或内核调度问题），
+            // 结果就是「页面上看不到图，点开放大却能显示」——因为 lightbox
+            // 是新建一个 img 重新加载的，走的是另一条路径。
+            //
+            // 现在的做法：
+            //   1. CSS 默认可见（兜底，任何情况下都不会永久隐身）；
+            //   2. 只有「确认还没加载完」才加 is-loading 播淡入；
+            //   3. 无论 load / error / 超时，最终一定落到可见状态。
             document.querySelectorAll('.manor-shot img').forEach(function (img) {
                 var shot = img.closest('.manor-shot');
+                var settled = false;
+
                 function done() {
+                    if (settled) return;
+                    settled = true;
+                    img.classList.remove('is-loading');
                     img.classList.add('is-loaded');
                     if (shot) shot.classList.add('is-ready');
                     reportHeight();
                 }
+
+                // 已经加载完（缓存命中 / complete）直接显示，不播动画
                 if (img.complete && img.naturalWidth > 0) {
                     done();
-                } else {
-                    img.addEventListener('load', done, { once: true });
-                    img.addEventListener('error', function () {
-                        if (shot) shot.classList.add('is-ready');
-                    }, { once: true });
+                    return;
                 }
+                // 加载失败也让它可见：至少能看出是「图裂了」，
+                // 而不是一片空白让人以为没加载
+                if (img.complete && img.naturalWidth === 0) {
+                    if (shot) shot.classList.add('is-ready');
+                    return;
+                }
+
+                // 还没加载完，才开始淡入
+                img.classList.add('is-loading');
+                img.addEventListener('load', done, { once: true });
+                img.addEventListener('error', function () {
+                    settled = true;
+                    img.classList.remove('is-loading');
+                    if (shot) shot.classList.add('is-ready');
+                    reportHeight();
+                }, { once: true });
+
+                // 兜底：内嵌 iframe 里 lazy 图可能迟迟不触发 load，
+                // 2.5 秒后无论如何都先显示出来（图片若已就绪，
+                // 显示时它就在那儿了；若真没就绪，浏览器后续会自己填上）
+                window.setTimeout(function () {
+                    if (settled) return;
+                    settled = true;
+                    img.classList.remove('is-loading');
+                    img.classList.add('is-loaded');
+                    if (shot) shot.classList.add('is-ready');
+                    reportHeight();
+                }, 2500);
             });
 
             // ---------- 主题同步 ----------

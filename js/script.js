@@ -1034,7 +1034,22 @@
             function applySearchTriggerFit() {
                 // 只有手机布局才自动收文字；桌面本来就有键盘提示，宽度也够
                 const isNarrow = window.matchMedia('(max-width: 600px)').matches;
-                const headers = document.querySelectorAll('#view-home > .section-header, #view-blog > .section-header');
+
+                // 全部文章页在手机上允许换行（标题一行、标签一行），
+                // 换行后第一行只剩「全部文章 + 搜索」，空间充足，
+                // 不需要再收起搜索文字。把它从自适应逻辑里排除掉，
+                // 同时清掉可能残留的 is-tight / 内联样式。
+                const blogHeader = document.querySelector('#view-blog > .section-header');
+                if (blogHeader) {
+                    blogHeader.classList.remove('is-tight');
+                    clearHeaderInlineFit(blogHeader);
+                    // 桌面端：标签放不下时独占一行、左对齐标题，
+                    // 放得下时紧跟标题靠右。用实测决定用哪种形态。
+                    updateBlogTagWrap(blogHeader);
+                }
+
+                // 首页：始终不换行，空间不够时收起搜索文字
+                const headers = document.querySelectorAll('#view-home > .section-header');
                 headers.forEach(header => {
                     if (!isNarrow) {
                         header.classList.remove('is-tight');
@@ -1054,12 +1069,41 @@
                 });
             }
 
+            // 全部文章页（桌面端）的标签形态切换。
+            // 标签是从所有文章收集的，数量不定：放得下就让它们紧跟标题靠右；
+            // 放不下就整体落到第二行、从左边开始，和「全部文章」对齐——
+            // 否则换行后那一坨标签会孤零零地缩在右边，看着和标题脱节。
+            // 判断方式：把标题组和标签的自然宽度加起来，跟整行可用宽度比。
+            function updateBlogTagWrap(header) {
+                if (!header) return;
+                // 只有桌面端才有两种形态；手机端 CSS 里已经固定成换行布局
+                if (!window.matchMedia('(min-width: 601px)').matches) {
+                    header.classList.remove('is-tag-wrap');
+                    return;
+                }
+                const head = header.querySelector('.home-section-head');
+                const tagFilter = header.querySelector('.tag-filter');
+                if (!head || !tagFilter) return;
+                if (!header.clientWidth) return;
+
+                // 先复位，才能量到「标签按内容展开」时的自然宽度
+                header.classList.remove('is-tag-wrap');
+
+                const headerStyle = window.getComputedStyle(header);
+                const gap = parseFloat(headerStyle.columnGap || headerStyle.gap) || 0;
+                const headWidth = head.getBoundingClientRect().width;
+                const tagsWidth = getTagFilterNaturalWidth(tagFilter);
+                const needed = headWidth + gap + tagsWidth;
+
+                // 留 2px 余量，避开 sub-pixel 取整造成的误判
+                header.classList.toggle('is-tag-wrap', needed > header.clientWidth + 2);
+            }
+
             // 实测后把标签行宽度钉死，并把它推到最右。
             // 放得下：宽度 = 内容宽度；放不下：宽度 = 剩余空间（内部横向滚动）。
             //
             // 关键：不依赖 CSS 的 margin-left: auto。
-            // 部分内核（鸿蒙微信的 ArkWeb 等）对 flex 自动外边距支持不一致，
-            // 会出现「标签没贴右」。这里直接用计算出的像素值写死 margin-left，
+            // 部分内核（鸿蒙微信的 ArkWeb 等）对 flex 自动外边距支持不一致，            // 会出现「标签没贴右」。这里直接用计算出的像素值写死 margin-left，
             // 内联样式优先级最高，任何内核都会照做。
             function applyHeaderInlineFit(header) {
                 const head = header.querySelector('.home-section-head');
@@ -1985,12 +2029,18 @@
 
             // 打开某个搜索结果：先收起面板，再走正常的文章打开流程。
             // 这里不 back()：openArticle 会先 replaceState 把「搜索中」这条记录
-            // 换成返回快照，再 pushState 文章记录——于是从文章返回时
-            // 正好回到搜索前的页面，历史链是干净的。
+            // 换成返回快照，再 pushState 文章记录。
             function activateSearchResult(index) {
                 const hit = searchHits[index];
                 if (!hit) return;
-                rememberSearch(searchInput ? searchInput.value : '');
+                const query = normalizeQuery(searchInput ? searchInput.value : '');
+                rememberSearch(query);
+                // 收起面板再去开文章。这里不需要记「搜索现场」：
+                // 用户从文章返回时，期望的是回到「打开搜索之前的那一页」，
+                // 而不是重新弹出搜索面板。所以只要把历史链收拾干净——
+                // openArticle 会用 replaceState 把「搜索中」那条记录
+                // 覆盖成返回快照，再 pushState 文章记录，于是返回时
+                // 自然落在打开搜索前的页面。
                 closeSearch({ remember: false, restoreFocus: false, skipHistory: true });
                 // 那条「搜索中」的记录马上会被 openArticle 的 replaceState
                 // 覆盖成返回快照，标记要一起清掉，否则之后关闭搜索会多退一页
@@ -2025,13 +2075,17 @@
                 });
             }
 
-            // 「返回上一页」：和系统返回键走同一条路——先收起搜索面板
-            // 回到原页面，再按一次才真正离开。
-            // 不能直接 history.back()：那样面板会留在原地（我们自己发起的
-            // 后退会被 popstate 忽略），所以统一交给 closeSearch 处理，
-            // 由它负责退掉历史记录 + 关面板。
+            // 面板左上角的「‹」：和系统返回键保持完全一致的两级行为——
+            // 有关键词先清空回到空白搜索页，没关键词才收起面板。
             if (searchBack) {
                 searchBack.addEventListener('click', function() {
+                    if (normalizeQuery(searchInput ? searchInput.value : '')) {
+                        if (searchInput) searchInput.value = '';
+                        clearSearchTimers();
+                        showSearchIdle();
+                        if (searchInput) searchInput.focus({ preventScroll: true });
+                        return;
+                    }
                     closeSearch();
                 });
             }
@@ -2367,6 +2421,16 @@
                 switchView('home');
             });
 
+            // 文章列表页标题旁的「首页」按钮：回到首页并滚到顶部。
+            // 用事件委托，以后别的视图想加同样的入口不用重复绑事件。
+            document.addEventListener('click', function(e) {
+                const btn = e.target.closest('[data-goto-home]');
+                if (!btn) return;
+                e.preventDefault();
+                switchView('home');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
             mobileMenuBtn.addEventListener('click', function() {
                 navLinks.classList.toggle('open');
             });
@@ -2443,9 +2507,24 @@
                     return;
                 }
 
-                // 用户按了返回键 / 侧滑返回：如果搜索面板还开着，
-                // 这一下就只用来收起面板，页面本身不动。
+                // 用户按了返回键 / 侧滑返回。
+                // 搜索面板开着时，返回键分两级处理：
+                //   1) 输入框里有内容 → 只清空关键词，回到空白搜索页
+                //      （最近搜索 / 按标签 / 最近更新 那套推荐），面板不关；
+                //   2) 输入框已经空了 → 收起面板，回到原页面。
+                // 这样和 Esc 的行为一致，也符合「返回上一层」的直觉：
+                // 有关键词时上一层是空搜索页，没关键词时上一层才是页面。
                 if (searchOpen) {
+                    const typed = normalizeQuery(searchInput ? searchInput.value : '');
+                    if (typed) {
+                        // 清空输入和结果，但保留面板与历史记录：
+                        // 用户再按一次返回才会真的关掉面板
+                        if (searchInput) searchInput.value = '';
+                        clearSearchTimers();
+                        showSearchIdle();
+                        if (searchInput) searchInput.focus({ preventScroll: true });
+                        return;
+                    }
                     closeSearch({ fromHistory: true });
                     return;
                 }
@@ -2467,6 +2546,9 @@
                     }
                     returningFromArticleButton = false;
                     articleHistoryEntryActive = false;
+                    // 从「搜索结果打开的文章」返回时会走到这里
+                    //（openArticle 把搜索那条记录 replaceState 成了快照）。
+                    // 直接还原打开搜索前的那一页即可，不重新弹搜索面板。
                     restoreViewState(viewSnapshot);
                     return;
                 }
@@ -2492,6 +2574,7 @@
                 const returnScroll = articleReturnScroll;
                 returningFromArticleButton = false;
                 articleHistoryEntryActive = false;
+
                 switchView(returnView);
                 window.requestAnimationFrame(() => {
                     window.scrollTo({ top: returnScroll, behavior: 'instant' });
