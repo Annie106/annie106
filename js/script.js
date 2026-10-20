@@ -411,8 +411,9 @@
                 }, 3200);
             }
 
-            // 把链接写入剪贴板。优先 Clipboard API，失败则退回 execCommand，
-            // 两者都不行时用 prompt 让用户手动复制。
+            // 把链接写入剪贴板。优先 Clipboard API，失败则退回 execCommand。
+            // 两者都不行时返回 false，由调用方用页面提示告诉用户手动复制，
+            // 不弹浏览器原生 prompt（会打断阅读，样式也跟站点不一致）。
             function copyLink(url) {
                 if (navigator.clipboard && window.isSecureContext) {
                     return navigator.clipboard.writeText(url).then(
@@ -435,15 +436,17 @@
                 let ok = false;
                 try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
                 document.body.removeChild(textarea);
-                if (!ok) window.prompt('复制下面的链接分享给别人：', url);
                 return ok;
             }
 
             // 复制文章链接（总是走复制，不弹系统分享面板）
             function copyArticleLink(post) {
                 const url = buildArticleUrl(post.id);
-                Promise.resolve(copyLink(url)).then(function () {
-                    showToast('链接已复制，打开连接可查看此文章');
+                Promise.resolve(copyLink(url)).then(function (ok) {
+                    // 失败时不再弹原生 prompt，统一用顶部轻提示告诉用户手动复制
+                    showToast(ok
+                        ? '链接已复制，打开连接可查看此文章'
+                        : '复制失败，可长按地址栏手动复制');
                 });
             }
 
@@ -2664,8 +2667,8 @@
             init();
 
             console.log('✅ Annie 的个人博客已就绪！');
-            console.log('📝 修改文章内容：编辑 blogPosts 数组');
-            console.log('👤 修改个人信息：编辑 siteConfig 对象');
-            console.log('🖼️ 修改头像：替换 .avatar 的 src 属性');
-            console.log('🔗 修改社交链接：编辑 .social-links 中的 href');
+            // console.log('📝 修改文章内容：编辑 blogPosts 数组');
+            // console.log('👤 修改个人信息：编辑 siteConfig 对象');
+            // console.log('🖼️ 修改头像：替换 .avatar 的 src 属性');
+            // console.log('🔗 修改社交链接：编辑 .social-links 中的 href');
         })();

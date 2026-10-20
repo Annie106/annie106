@@ -2873,6 +2873,23 @@
             color: #68c791;
         }
 
+        /* 失败提示（复制失败等）：图标和描边转成警示色，文案仍是正文色 */
+        .site-toast.is-error {
+            border-color: #f0b8b4;
+        }
+
+        .site-toast.is-error > i {
+            color: #b22b2b;
+        }
+
+        [data-theme="dark"] .site-toast.is-error {
+            border-color: #6b3230;
+        }
+
+        [data-theme="dark"] .site-toast.is-error > i {
+            color: #f08a84;
+        }
+
         @media (prefers-reduced-motion: reduce) {
             .feedback-success-toast,
             .site-toast {
