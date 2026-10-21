@@ -1385,6 +1385,9 @@
                     ? '当前文章不对外开放'
                     : '文章内嵌页面';
                 articleContent.innerHTML = isUnavailableArticle ? '' : (post.content || '');
+                if (window.AnnieImageLoading) {
+                    window.AnnieImageLoading.initialize(articleContent);
+                }
                 // 换了文章就重新开始量高度，否则会沿用上一篇记下的旧值
                 embeddedFrameHeight = 0;
                 if (embeddedPageObserver) {
@@ -1415,6 +1418,9 @@
                             const embeddedDocument = embeddedPageFrame.contentDocument;
                             if (!embeddedDocument || !embeddedDocument.body) {
                                 throw new Error('加载失败');
+                            }
+                            if (window.AnnieImageLoading) {
+                                window.AnnieImageLoading.initialize(embeddedDocument);
                             }
                             embeddedBody = embeddedDocument.body;
                             embeddedRoot = embeddedDocument.documentElement;

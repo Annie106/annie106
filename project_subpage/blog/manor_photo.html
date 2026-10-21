@@ -286,45 +286,56 @@
                 0 18px 48px -22px rgba(0, 0, 0, 0.85);
         }
 
-        /* 照片本体。
-           注意：这里**不能**默认 opacity: 0。
-           内嵌在 iframe 里时，lazy 图可能一直不触发 load 事件，
-           图片就会永远停在透明状态——看着像「没加载出来」，
-           但点开放大又能显示（lightbox 是重新建一个 img 加载的）。
-           所以默认可见，淡入只在「已加载且还没播过动画」时做一次。 */
+        /* 照片默认可见，避免 lazy load 未触发时整张图永久透明。 */
         .manor-shot img {
             display: block;
             width: 100%;
             height: auto;
             opacity: 1;
             transform: scale(1);
-            transition: opacity 0.7s ease, transform 1.1s cubic-bezier(0.2, 0.6, 0.2, 1);
+            filter: blur(0);
         }
 
-        /* 真正开始淡入前，JS 会先加 is-loading（透明 + 微缩放），
-           加载完成后再换成 is-loaded，播一次淡入。 */
-        .manor-shot img.is-loading {
-            opacity: 0;
-            transform: scale(1.015);
-        }
-
-        .manor-shot img.is-loaded {
-            opacity: 1;
-            transform: scale(1);
-        }
-
-        /* 加载完成前先给一块有质感的底色，避免白闪 */
         .manor-shot::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(115deg, var(--color-surface), var(--color-border-light));
+            background-color: var(--manor-tone, var(--color-surface));
+            background-image: var(--manor-lqip, none);
+            background-size: cover;
+            background-position: center;
+            filter: blur(20px);
+            transform: scale(1.12);
             opacity: 1;
             transition: opacity 0.5s ease;
         }
 
         .manor-shot.is-ready::before {
             opacity: 0;
+        }
+
+        @keyframes manor-photo-reveal {
+            from {
+                transform: scale(1.04);
+                filter: blur(6px);
+            }
+
+            to {
+                transform: scale(1);
+                filter: blur(0);
+            }
+        }
+
+        .manor-shot img.is-revealing {
+            animation: manor-photo-reveal 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .manor-shot::before,
+            .manor-shot img.is-revealing {
+                transition: none;
+                animation: none;
+            }
         }
 
         .manor-shot::after {
@@ -709,10 +720,10 @@
          ★ 换照片只需要改下面两个 <img> ★
            1. 图片放在根目录的 images/manor_photos/ 下，
               本页在 project_subpage/blog/，所以要往上退两级：../../images/manor_photos/
-           2. src        = PicGo Cloud 慢速链接（不消耗额度，默认就加载它）
-              data-fast-src = 123 云盘直链（高速，消耗额度，每天最多切一次）
-           3. 慢速图 1 秒内没加载完，脚本会自动改用高速直链；
-              这个「自动切换」整页每天只有一次，第二天自动恢复
+           2. data-slow-src = PicGo Cloud 慢速链接（不消耗额度）
+              data-fast-src = 高速直链（两张图分别使用各自的链接）
+           3. 如果 10 秒内访问过高速直链，本次只加载慢速链接；
+              高速链接加载失败时自动回退到慢速链接
            4. 改链接时顺手改 alt（无障碍阅读会读 alt）
            5. 建议长边 1600px 左右、JPEG 质量 85，文件别超过 500KB
          ============================================================ -->
@@ -738,8 +749,10 @@
 
         <figure class="manor-figure manor-figure--wide">
             <button class="manor-shot" type="button" aria-label="点击放大：花房里的合影" aria-expanded="false">
-                <img src="https://picgocloud.com/m/92097842-911a-4c15-9710-4c6c1ace7caa.jpg"
-                     data-fast-src="https://1837491863.cdn.123clouddisk.com/1837491863/48924266"
+                <img data-slow-src="https://picgocloud.com/m/92097842-911a-4c15-9710-4c6c1ace7caa.jpg"
+                     data-fast-src="https://links.8uid.com/d/2f5741gjisoa"
+                     data-tone="#8c806b"
+                     data-lqip="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAPABgDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWm5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg4OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDy2GDlgWPIPDg8e+aV41Tyz5fAwSCevsfSoPOIuc+Ywki6lfWuhsDZXaJPtdSQAR2B6dB1rm23OlvTQT7L9qaa2sIkaKUCUK5A8nj5ufw98jnGTRVhrx7W9n8oqBuChNucZorNyn9lDSg9Wz//2Q=="
                      alt="第五人格归宿花房，两个角色站在绣球花与白色玩偶之间，一人抬手像是要碰花"
                      width="1728" height="1079" class="lazy-image" loading="lazy" decoding="async">
                 <span class="manor-zoom"><i class="ri-zoom-in-line" aria-hidden="true"></i>点击放大</span>
@@ -757,8 +770,10 @@
 
         <figure class="manor-figure manor-figure--inset">
             <button class="manor-shot" type="button" aria-label="点击放大：两个角色靠近的合影" aria-expanded="false">
-                <img src="https://picgocloud.com/m/2b546b9e-3526-4ca0-8172-baf982d7faf9.jpg"
-                     data-fast-src="https://1837491863.cdn.123clouddisk.com/1837491863/48924265"
+                <img data-slow-src="https://picgocloud.com/m/2b546b9e-3526-4ca0-8172-baf982d7faf9.jpg"
+                     data-fast-src="https://links.8uid.com/d/jc5lb5q2mr8c"
+                     data-tone="#8b7461"
+                     data-lqip="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAPABgDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWm5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg4OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ4eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDz+3sba8uI4Y50PmD59pGc4zx+PH4Vow6GlxbSq0mJreIuVVDtBDbcE/hnP1zg1g6DqqaZqFvcTxF4UblFPJ71unxZHHfySGwS5iuiqst0SSuT2IPTt+Ark5ZX3O5Shy67mNpNzbw68V+yq8Tq0bozZx3yCfTH+c0U69xaa7dvp5aBGDAr97Cntk+1FOSb2ZjZX1R//9k="
                      alt="第五人格归宿中两个角色靠得很近的侧脸合影，背景是绣球花与烛光"
                      width="1728" height="1079" class="lazy-image" loading="lazy" decoding="async">
                 <span class="manor-zoom"><i class="ri-zoom-in-line" aria-hidden="true"></i>点击放大</span>
@@ -829,52 +844,35 @@
         <p class="manor-lightbox-hint">点击图片或按 Esc 退出</p>
     </div>
 
+    <script src="../../js/image-loading.js"></script>
     <script>
         (function () {
             'use strict';
 
-            // ---------- 慢速超过 1 秒，自动切 123 高速（每天一次） ----------
+            // ---------- 高速直链 10 秒冷却 ----------
             // 每张图有两个地址：
-            //   src           = PicGo Cloud 慢速链接，不消耗额度，默认就加载它
-            //   data-fast-src = 123 云盘直链，速度快，但每次加载都消耗额度
+            //   data-slow-src = PicGo Cloud 慢速链接，不消耗额度
+            //   data-fast-src = 高速直链
             //
             // 规则：
-            //   1. 页面永远先按慢速链接加载，不预设、不预扣额度；
-            //   2. 某张慢速图 1 秒内还没加载完（load 未触发），
-            //      就把这张图换成 123 高速直链继续加载；
-            //   3. 这个切换整页每天只有一次：当天第一次触发后，
-            //      同一天里其它慢图再慢也老老实实用慢速，不再消耗额度。
-            // 日期用本地时间算，跨零点自然重置。
-            //
-            // 注意「先记日期、再切图」：高速如果失败，图会退回慢速显示，
-            // 但当天不再重试——宁可慢一点，也不要因为反复失败把额度刷光。
-            var FAST_SLOW_TIMEOUT = 1000;              // 慢速容忍时间（毫秒）
-            var FAST_SWITCH_KEY = 'annie-fast-switch-day'; // 整页：今天用掉切换额度的日期
-
-            function localDateKey(date) {
-                var d = date || new Date();
-                var month = d.getMonth() + 1;
-                var day = d.getDate();
-                return d.getFullYear() + '-' +
-                    (month < 10 ? '0' : '') + month + '-' +
-                    (day < 10 ? '0' : '') + day;
-            }
-
-            var today = localDateKey();
+            //   1. 页面打开时只判断一次：10 秒内访问过高速链接就全页使用慢速链接；
+            //   2. 否则本次页面加载使用高速链接，并记录访问时间；
+            //   3. 高速失败才回退慢速；任一链接成功后不再切换。
+            var FAST_COOLDOWN_MS = 10000;
+            var FAST_ACCESS_KEY = 'annie-manor-fast-last-access';
 
             // ---------- 存储降级 ----------
-            // 「今天用没用过」必须有地方记，否则没法保证每天只切一次。
+            // 必须跨刷新记住高速链接的访问时间，避免短时间内重复请求。
             // 但存储不一定可用：Edge / Safari 的防跟踪会直接拦掉 localStorage，
             // 无痕模式、iframe 被限制第三方存储时也一样。
             //
             // 按 localStorage -> sessionStorage -> cookie -> window.name -> 内存 逐级降级。
-            // window.name 在同一个标签页里刷新、跳转都还在，比内存靠谱；
-            // 内存是最后一档，关掉页面就忘，只能保证本次浏览不重复扣额度。
+            // window.name 在同一个标签页里刷新、跳转都还在，比内存靠谱。
             var fastMemoryStore = {};
 
             function probeStorage(get, set, remove) {
                 try {
-                    var probeKey = FAST_SWITCH_KEY + '-probe';
+                    var probeKey = FAST_ACCESS_KEY + '-probe';
                     set(probeKey, '1');
                     var ok = get(probeKey) === '1';
                     remove(probeKey);
@@ -886,7 +884,7 @@
 
             // window.name 是字符串，且可能被别的脚本占用。
             // 只有「空着」或「已经是我们写的」才接管，别把别人的值冲掉。
-            var FAST_NAME_PREFIX = 'annieFastDay:';
+            var FAST_NAME_PREFIX = 'annieFastAccess:';
 
             function readNameStore() {
                 try {
@@ -911,7 +909,7 @@
 
             var fastStore = (function () {
                 // 1. localStorage
-                if (window.localStorage && probeStorage(
+                if (probeStorage(
                     function (k) { return window.localStorage.getItem(k); },
                     function (k, v) { window.localStorage.setItem(k, v); },
                     function (k) { window.localStorage.removeItem(k); }
@@ -924,7 +922,7 @@
                 }
 
                 // 2. sessionStorage（防跟踪通常拦的是 local，session 有时能用）
-                if (window.sessionStorage && probeStorage(
+                if (probeStorage(
                     function (k) { return window.sessionStorage.getItem(k); },
                     function (k, v) { window.sessionStorage.setItem(k, v); },
                     function (k) { window.sessionStorage.removeItem(k); }
@@ -936,12 +934,12 @@
                     };
                 }
 
-                // 3. cookie（同源、当天有效即可，写一个 7 天过期的键）
+                // 3. cookie（写一个 7 天过期的键；只比较最近 10 秒）
                 var cookieOk = (function () {
                     try {
-                        document.cookie = FAST_SWITCH_KEY + '-probe=1; path=/; SameSite=Lax';
-                        var ok = document.cookie.indexOf(FAST_SWITCH_KEY + '-probe=1') !== -1;
-                        document.cookie = FAST_SWITCH_KEY + '-probe=; path=/; max-age=0';
+                        document.cookie = FAST_ACCESS_KEY + '-probe=1; path=/; SameSite=Lax';
+                        var ok = document.cookie.indexOf(FAST_ACCESS_KEY + '-probe=1') !== -1;
+                        document.cookie = FAST_ACCESS_KEY + '-probe=; path=/; max-age=0';
                         return ok;
                     } catch (e) {
                         return false;
@@ -967,7 +965,7 @@
                 }
 
                 // 4. window.name：同标签页内刷新 / 跳转后还在
-                // 探测前先把原值存下来再还原，否则会把已记录的日期冲掉，
+                // 探测前先把原值存下来再还原，否则会把已记录的时间冲掉，
                 // 导致刷新一次就多扣一次额度
                 var nameOk = (function () {
                     try {
@@ -999,199 +997,124 @@
                 };
             })();
 
-            var fastSwitchDay = fastStore.get(FAST_SWITCH_KEY) || '';
-
-            // 参与切换的图：有 data-fast-src 且填了值的那几张
+            // 参与选择的图：有慢速和高速地址的图片
             var fastImages = Array.prototype.slice
                 .call(document.querySelectorAll('img.lazy-image[data-fast-src]'))
                 .filter(function (img) {
-                    return (img.getAttribute('data-fast-src') || '').trim() !== '';
+                    return (img.getAttribute('data-fast-src') || '').trim() !== '' &&
+                        (img.getAttribute('data-slow-src') || '').trim() !== '';
                 });
+            var slowPreviewImages = new WeakMap();
 
-            // 记下原始慢速地址，回退时靠它
-            fastImages.forEach(function (img) {
-                if (!img.hasAttribute('data-slow-src')) {
-                    img.setAttribute('data-slow-src', img.getAttribute('src') || '');
-                }
-            });
-
-            function switchUsedToday() {
-                return fastSwitchDay === today;
-            }
-
-            // 把某张慢图切到 123 直链，并占掉今天这一次额度。
-            // 返回 true 表示这次切换真的发生了（额度已经用掉）
-            function promoteToFast(img) {
-                if (switchUsedToday()) return false;
-                var fastSrc = (img.getAttribute('data-fast-src') || '').trim();
-                if (!fastSrc) return false;
-                if (img.hasAttribute('data-fast-active')) return false;
-
-                // 先记账：切了就算用掉，之后失败也不退还
-                fastSwitchDay = today;
-                fastStore.set(FAST_SWITCH_KEY, today);
-
-                img.setAttribute('data-fast-active', 'true');
-                img.setAttribute('src', fastSrc);
-                return true;
-            }
-
-            // 切换情况只打在控制台，不在页面上打扰读者。
-            // 想排查「今天额度用没用掉」时，F12 打开 Console 就能看到。
             function logFast(message, url) {
                 try {
                     console.info('%c[归宿照片] ' + message, 'color:#8a8a8a;', url || '');
                 } catch (e) {}
             }
 
-            // 启动时先报一句：用了哪一档存储、今天还剩不剩额度。
-            // 排查「怎么没反应」时，看这一行就知道卡在哪
-            if (fastImages.length) {
-                logFast(
-                    switchUsedToday()
-                        ? '今日高速切换额度已用完，图片全部走 PicGo 慢速（存储：' + fastStore.name + '）'
-                        : '慢速图超过 1 秒会自动切换一次高速，今日额度可用（存储：' + fastStore.name + '）'
-                );
-            }
+            var lastFastAccess = Number(fastStore.get(FAST_ACCESS_KEY)) || 0;
+            var fastAccessAge = Date.now() - lastFastAccess;
+            var fastAccessCoolingDown = lastFastAccess > 0 &&
+                fastAccessAge >= 0 &&
+                fastAccessAge < FAST_COOLDOWN_MS;
+            var useFastForVisit = fastImages.length > 0 && !fastAccessCoolingDown;
 
             if (fastImages.length) {
+                if (useFastForVisit) {
+                    fastStore.set(FAST_ACCESS_KEY, String(Date.now()));
+                    logFast('最近 10 秒未访问高速直链，本次优先使用高速链接（存储：' + fastStore.name + '）');
+                } else {
+                    logFast('最近 10 秒内访问过高速直链，本次使用 PicGo 慢速链接（存储：' + fastStore.name + '）');
+                }
+
                 fastImages.forEach(function (img) {
-                    var timer = null;
-                    var settled = false;
+                    var fastSrc = (img.getAttribute('data-fast-src') || '').trim();
+                    var slowSrc = (img.getAttribute('data-slow-src') || '').trim();
+                    var selectedSrc = useFastForVisit ? fastSrc : slowSrc;
+                    var shot = img.closest('.manor-shot');
+                    var tone = img.getAttribute('data-tone');
+                    var lqip = img.getAttribute('data-lqip');
 
-                    function stopTimer() {
-                        if (timer === null) return;
-                        window.clearTimeout(timer);
-                        timer = null;
-                    }
+                    if (shot && tone) shot.style.setProperty('--manor-tone', tone);
+                    if (shot && lqip) shot.style.setProperty('--manor-lqip', 'url("' + lqip + '")');
 
-                    // 已经加载完（缓存命中）：什么都不用做
-                    if (img.complete && img.naturalWidth > 0) {
-                        settled = true;
-                        return;
-                    }
-
-                    // 计时从「这张图真正开始加载」算起，而不是从页面加载算起。
-                    // 图片是 loading="lazy" 的，屏幕外的图可能几秒后才发请求，
-                    // 若从页面打开就开始计时，会把根本没在加载的图也判成「慢」，
-                    // 白白用掉当天的额度。
-                    function startWatching() {
-                        if (settled || timer !== null) return;
-
-                        timer = window.setTimeout(function () {
-                            timer = null;
-                            if (settled) return;
-                            if (!promoteToFast(img)) return;
-                            logFast('慢速图片加载超过 1 秒，已改用 123 云盘高速直链（今日切换额度已用完）', img.getAttribute('src'));
-                            reportHeight();
-                        }, FAST_SLOW_TIMEOUT);
-                    }
-
-                    if ('IntersectionObserver' in window) {
-                        var observer = new IntersectionObserver(function (entries) {
-                            entries.forEach(function (entry) {
-                                if (!entry.isIntersecting) return;
-                                observer.disconnect();
-                                startWatching();
-                            });
-                        }, { rootMargin: '200px 0px' });
-                        observer.observe(img);
-                    } else {
-                        // 老浏览器没有 IntersectionObserver，只能立即开始计时
-                        startWatching();
+                    if (useFastForVisit) {
+                        var slowPreviewImage = new Image();
+                        slowPreviewImage.decoding = 'async';
+                        slowPreviewImage.fetchPriority = 'low';
+                        slowPreviewImage.addEventListener('load', function () {
+                            logFast('慢速大图已在后台预加载完成', slowSrc);
+                        }, { once: true });
+                        slowPreviewImage.addEventListener('error', function () {
+                            logFast('慢速大图后台预加载失败', slowSrc);
+                        }, { once: true });
+                        slowPreviewImages.set(img, slowPreviewImage);
+                        slowPreviewImage.src = slowSrc;
                     }
 
                     img.addEventListener('load', function () {
-                        settled = true;
-                        stopTimer();
-                        if (img.hasAttribute('data-fast-active')) {
-                            logFast('高速直链加载完成', img.getAttribute('src'));
-                        }
+                        var sourceType = img.getAttribute('data-fast-active') === 'true'
+                            ? '高速直链加载成功'
+                            : '慢速直链加载成功';
+                        logFast(sourceType, img.currentSrc || img.src);
                     });
 
-                    // 加载失败：慢速挂了也值得试一次高速；高速挂了则退回慢速。
-                    // 两种情况额度都不退，当天不再重试
                     img.addEventListener('error', function () {
-                        if (img.hasAttribute('data-fast-active')) {
-                            settled = true;
-                            stopTimer();
+                        if (img.getAttribute('data-fast-active') === 'true') {
                             img.removeAttribute('data-fast-active');
-                            var slowSrc = img.getAttribute('data-slow-src');
-                            if (slowSrc) img.setAttribute('src', slowSrc);
-                            logFast('高速直链加载失败，已退回 PicGo 慢速链接（今日切换额度已用完）', slowSrc || '');
+                            img.setAttribute('data-slow-active', 'true');
+                            logFast('高速直链加载失败，回退到 PicGo 慢速链接', fastSrc);
+                            img.src = slowSrc;
                             reportHeight();
                             return;
                         }
 
-                        // 慢速直接失败，不用等 1 秒了，立刻尝试高速
-                        stopTimer();
-                        settled = false;
-                        if (promoteToFast(img)) {
-                            logFast('慢速图片加载失败，已改用 123 云盘高速直链（今日切换额度已用完）', img.getAttribute('src'));
-                        }
+                        img.setAttribute('data-load-failed', 'true');
+                        logFast('慢速直链加载失败，不再自动切换或重试', slowSrc);
                     });
+
+                    if (useFastForVisit) {
+                        img.setAttribute('data-fast-active', 'true');
+                    } else {
+                        img.setAttribute('data-slow-active', 'true');
+                    }
+                    img.src = selectedSrc;
                 });
             }
 
-            // ---------- 照片淡入 ----------
-            // 目标：图片能显示出来是第一位，淡入只是锦上添花。
-            //
-            // 之前的做法把 opacity: 0 写在 CSS 默认值里，靠 load 事件加
-            // is-loaded 才显示。内嵌在 iframe 里时，带 loading="lazy" 的图
-            // 可能一直不触发 load（元素不在 iframe 的可视区、或内核调度问题），
-            // 结果就是「页面上看不到图，点开放大却能显示」——因为 lightbox
-            // 是新建一个 img 重新加载的，走的是另一条路径。
-            //
-            // 现在的做法：
-            //   1. CSS 默认可见（兜底，任何情况下都不会永久隐身）；
-            //   2. 只有「确认还没加载完」才加 is-loading 播淡入；
-            //   3. 无论 load / error / 超时，最终一定落到可见状态。
+            // 原图加载成功后淡出占位层，并播放一次清晰化和轻微缩放动画。
             document.querySelectorAll('.manor-shot img').forEach(function (img) {
                 var shot = img.closest('.manor-shot');
                 var settled = false;
 
-                function done() {
+                function done(animate) {
                     if (settled) return;
                     settled = true;
-                    img.classList.remove('is-loading');
-                    img.classList.add('is-loaded');
+                    if (animate) img.classList.add('is-revealing');
                     if (shot) shot.classList.add('is-ready');
                     reportHeight();
                 }
 
                 // 已经加载完（缓存命中 / complete）直接显示，不播动画
                 if (img.complete && img.naturalWidth > 0) {
-                    done();
+                    done(false);
                     return;
                 }
-                // 加载失败也让它可见：至少能看出是「图裂了」，
-                // 而不是一片空白让人以为没加载
+                // 没有 src 的极端情况下不隐藏占位图
                 if (img.complete && img.naturalWidth === 0) {
-                    if (shot) shot.classList.add('is-ready');
+                    if (img.getAttribute('src') && shot) shot.classList.add('is-ready');
                     return;
                 }
 
-                // 还没加载完，才开始淡入
-                img.classList.add('is-loading');
-                img.addEventListener('load', done, { once: true });
-                img.addEventListener('error', function () {
-                    settled = true;
-                    img.classList.remove('is-loading');
-                    if (shot) shot.classList.add('is-ready');
-                    reportHeight();
+                img.addEventListener('load', function () {
+                    done(true);
                 }, { once: true });
-
-                // 兜底：内嵌 iframe 里 lazy 图可能迟迟不触发 load，
-                // 2.5 秒后无论如何都先显示出来（图片若已就绪，
-                // 显示时它就在那儿了；若真没就绪，浏览器后续会自己填上）
-                window.setTimeout(function () {
-                    if (settled) return;
+                img.addEventListener('error', function () {
+                    if (img.getAttribute('data-load-failed') !== 'true') return;
                     settled = true;
-                    img.classList.remove('is-loading');
-                    img.classList.add('is-loaded');
                     if (shot) shot.classList.add('is-ready');
                     reportHeight();
-                }, 2500);
+                });
             });
 
             // ---------- 主题同步 ----------
@@ -1258,6 +1181,7 @@
             // 用父页面的视口来定位；独立打开时就用本页自己的。
             var lightbox = document.getElementById('manorLightbox');
             var lightboxImage = document.getElementById('manorLightboxImage');
+            var lightboxImageTemplate = lightboxImage;
             var lightboxClose = lightbox.querySelector('.manor-lightbox-close');
             var shots = Array.prototype.slice.call(document.querySelectorAll('.manor-shot'));
             var lastFocused = null;
@@ -1307,8 +1231,20 @@
             function openLightbox(shot) {
                 var img = shot.querySelector('img');
                 if (!img) return;
+                var slowSrc = (img.getAttribute('data-slow-src') || '').trim();
+                if (!slowSrc) {
+                    console.error('[归宿照片] 大图预览缺少 PicGo 慢速链接，已取消打开');
+                    return;
+                }
                 lastFocused = shot;
-                lightboxImage.src = img.currentSrc || img.src;
+                var slowPreviewImage = slowPreviewImages.get(img);
+                if (slowPreviewImage) {
+                    lightboxImage.replaceWith(slowPreviewImage);
+                    lightboxImage = slowPreviewImage;
+                    lightboxImage.id = 'manorLightboxImage';
+                } else {
+                    lightboxImage.src = slowSrc;
+                }
                 lightboxImage.alt = img.alt || '';
                 lightbox.hidden = false;
                 // 先上屏再淡入，否则 hidden -> 显示的过渡会被合并掉
@@ -1331,7 +1267,12 @@
                 var hideAfterFade = function () {
                     if (isOpen) return;
                     lightbox.hidden = true;
-                    lightboxImage.removeAttribute('src');
+                    if (lightboxImage !== lightboxImageTemplate) {
+                        lightboxImage.replaceWith(lightboxImageTemplate);
+                        lightboxImage = lightboxImageTemplate;
+                    } else {
+                        lightboxImage.removeAttribute('src');
+                    }
                 };
                 window.setTimeout(hideAfterFade, 240);
                 if (lastFocused && typeof lastFocused.focus === 'function') {
