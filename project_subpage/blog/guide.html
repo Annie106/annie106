@@ -965,6 +965,7 @@
 │   ├── theme.js             ← 深色模式切换
 │   ├── touch-hover.js       ← 修手机点击后按钮常亮的问题
 │   ├── background-music.js  ← 背景音乐
+│   ├── image-loading.js     ← 图片加载策略
 │   └── copyToClipboard.js   ← 点图标复制联系方式
 │
 ├── project_subpage/         ← 子页面都放这里
@@ -1012,7 +1013,7 @@
                     js 文件夹
                 </h3>
                 <p><code>script.js</code> 是博客的大脑，也是第二重要的文件。<strong>你写的所有文章都在这里面</strong>，标签筛选、页面切换也归它管。</p>
-                <p><code>theme.js</code> 管深浅色切换，还会记住访客的选择。<code>touch-hover.js</code> 修的是「手机上点一下按钮，按钮就一直亮着不恢复」的问题，它给页面加一个标记，样式表据此决定要不要显示鼠标悬停效果。<code>background-music.js</code> 管背景音乐，歌单在文件最开头。<code>copyToClipboard.js</code> 就是「点一下微信图标自动复制」那个功能。</p>
+                <p><code>theme.js</code> 管深浅色切换，还会记住访客的选择。<code>touch-hover.js</code> 修的是「手机上点一下按钮，按钮就一直亮着不恢复」的问题，它给页面加一个标记，样式表据此决定要不要显示鼠标悬停效果。<code>image-loading.js</code> 管图片加载：先用模糊占位顶上，图加载完再淡入变清晰，也负责 <code>data-fast-src</code> / <code>data-slow-src</code> 那套高速/慢速链接的切换。<code>background-music.js</code> 管背景音乐，歌单在文件最开头。<code>copyToClipboard.js</code> 就是「点一下微信图标自动复制」那个功能。</p>
                 <p><code>archive/</code> 文件夹里是留档的旧文件，页面不会加载它们。<code>music-player.js</code> 是旧版播放器（现在用 <code>background-music.js</code>），<code>feedback-tx.html</code> 是旧版腾讯问卷反馈页（现在用 <code>blog/feedback.html</code>）。不用管它们，删了也不影响网页。</p>
 
                 <div class="guide-tip">
@@ -1477,6 +1478,128 @@
 }</code></pre>
                 <p>这是浅色模式的颜色，改这些色值就能换主题色。色值是 <code>#</code> 加六位数字或字母，可以搜个「在线取色器」选好颜色复制过来。</p>
                 <p>深色模式的颜色在下面一点，搜索 <code>[data-theme="dark"]</code> 能找到。<strong>两边要分别改</strong>——只改浅色的话，切到深色模式还是老样子。</p>
+
+                <!-- 6.16 文章页顶部按钮 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-layout-top-line"></i>
+                    6.16 调文章页顶部那行「返回 / 分享」
+                </h3>
+                <p>打开文章后，标题上面有一行：左边「‹ 返回」，右边「分享」。它们的上下留白在 <code>css/style.css</code> 里，搜索 <code>.article-topbar</code>：</p>
+                <pre><code>.article-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 4px;      /* 这一行和导航栏之间的额外空隙 */
+    margin-bottom: 28px;   /* 这一行和文章大标题之间的空隙 */
+}</code></pre>
+                <p>为什么要多这么两行？因为页面顶部有一层固定不动的「渐变虚化」遮罩（手机上 110px 高、电脑上 150px 高），它会把刚进入文章页时贴着顶部的内容一起糊掉。把这一行往下推一点，按钮就不会落在虚化的最浓处。</p>
+                <div class="guide-tip">
+                    <div class="guide-tip-title">
+                        <i class="ri-information-line"></i>
+                        想让按钮再往下，两个数要一起改
+                    </div>
+                    <p>现在「导航底边 → 按钮」和「按钮 → 标题」都是 28px（导航自带 24px 下边距 + 这里的 <code>4px</code>，以及下面的 <code>28px</code>），所以这一行是上下居中的。</p>
+                    <p>如果只把 <code>padding-top</code> 调大、<code>margin-bottom</code> 不动，这一行就会「上面空、下面挤」，看着偏上。想整体下移就两边一起加：比如都改成 <code>8px</code> / <code>32px</code>，上下仍然是 32px 对 32px。</p>
+                    <p>另外注意：虚化层是固定高度的，按钮下移到一定程度后就不会再被糊到，再往下推只是浪费空间。</p>
+                </div>
+
+                <!-- 6.17 搜索结果标签 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-price-tag-3-line"></i>
+                    6.17 搜索结果里显示几个标签
+                </h3>
+                <p>搜索结果每一条下面会列出这篇文章的标签，和文章详情页<strong>完全一致</strong>——文章有几个标签就显示几个，不截断。之前这里只取前两个，所以「第五人格 / 随笔 / 社交」这种三标签的文章在搜索里会少一个，看着像标签对不上。</p>
+                <p>这段逻辑在 <code>js/script.js</code> 里，搜索 <code>const tagChips</code>：</p>
+                <pre><code>const tagChips = (post.tags || []).map(tag =&gt; {
+    const isHit = keywords.some(keyword =&gt; tag.toLowerCase().includes(keyword));
+    return `&lt;span class="search-result-tag${isHit ? ' is-hit' : ''}"&gt;${escapeHtml(tag)}&lt;/span&gt;`;
+}).join('');</code></pre>
+                <ul>
+                    <li><code>post.tags</code> 就是文章数据里的 <code>tags</code> 数组，想全部显示就别加 <code>.slice()</code>。</li>
+                    <li>如果你确实只想显示前几个，把 <code>.map(</code> 前面改成 <code>.slice(0, 2).map(</code> 即可。</li>
+                    <li>命中了搜索关键词的标签会自动带上 <code>is-hit</code> 类，显示成黄色；样式在 <code>css/style.css</code> 里搜 <code>.search-result-tag.is-hit</code>。</li>
+                </ul>
+                <p>标签多了会不会挤坏？不会。<code>.search-result-tags</code> 是 <code>flex-wrap: wrap</code>，放不下会自动换行。</p>
+
+                <!-- 6.18 手机端搜索动画 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-smartphone-line"></i>
+                    6.18 手机端搜索面板的弹出动画
+                </h3>
+                <p>手机上点搜索，面板是<strong>从屏幕底部整块滑上来</strong>的，不是原地淡入。相关样式在 <code>css/style.css</code> 里搜 <code>手机端进场 / 退场动画</code>：</p>
+                <pre><code>/* 进场：从屏幕下方 100% 处滑到位，0.38 秒，先快后慢 */
+.search-panel {
+    transform: translateY(100%);
+    transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.search-overlay.is-open .search-panel {
+    transform: translateY(0);
+}
+
+/* 退场：0.26 秒，加速曲线，收得更干脆 */
+.search-overlay:not(.is-open) .search-panel {
+    transition: transform 0.26s cubic-bezier(0.4, 0, 1, 1);
+}</code></pre>
+                <p>面板内部还有一层「逐层入场」：标题行、搜索框、内容区、落款依次延迟 <code>0.04s / 0.08s / 0.12s / 0.16s</code> 出现，像内容跟着面板一起落下来。这些延迟只写在 <code>.search-overlay.is-open</code> 状态里，所以关闭时内容会立刻跟着面板走，不会被拖在后面。</p>
+                <div class="guide-tip">
+                    <div class="guide-tip-title">
+                        <i class="ri-speed-line"></i>
+                        想更快 / 更慢
+                    </div>
+                    <p>改 <code>0.38s</code>（进场）和 <code>0.26s</code>（退场）就行，但 <strong>JS 里的等待时间要一起改</strong>：</p>
+                    <ul>
+                        <li><code>openSearch()</code> 里手机端等 300ms 才聚焦输入框——太早的话键盘会在滑动途中把可视区改矮，面板高度会跳一下；</li>
+                        <li><code>closeSearch()</code> 里手机端等 300ms 才把面板 <code>display: none</code>——比退场的 260ms 长一点，动画才不会被掐断（掐断的表现是「啪」地消失，而不是滑走）。</li>
+                    </ul>
+                    <p>两个数字都在 <code>js/script.js</code> 里，搜索 <code>searchMobile.matches ? 300</code> 就能找到。</p>
+                </div>
+                <p>如果访客的系统开了「减弱动态效果」，上面这些位移和延迟会自动全部关掉，面板直接出现、内容也强制可见，不会因为初始透明而白屏。这段写在 <code>@media (prefers-reduced-motion: reduce)</code> 里。</p>
+
+                <!-- 6.19 卡片三点按钮 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-more-fill"></i>
+                    6.19 卡片右上角「⋯」按钮的底色
+                </h3>
+                <p>文章卡片右上角那个三点按钮，原本是完全透明的，鼠标移上去才有一点灰。现在改成常驻一层浅灰圆底，看着更像一个能点的按钮。搜索 <code>.options</code>：</p>
+                <pre><code>.options {
+    background: #f1f1f1;       /* 平时：浅灰圆底 */
+}
+html:not(.is-touch-input) .options:hover {
+    background: #e6e6e6;       /* 鼠标悬停：深一档 */
+}
+.options:active,
+.post-card.menu-open .options {
+    background: #dedede;       /* 按下、或菜单已展开 */
+}</code></pre>
+                <p>深色模式在下面一点，搜索 <code>[data-theme="dark"] .options</code>，用的是 <code>rgba(255, 255, 255, 0.08)</code> 这种浅色微光。两边要分别改，否则深色模式下按钮会变成一块突兀的浅灰。</p>
+                <p>想让按钮更淡就调小透明度（例如 <code>0.03</code>），想更明显就调大。</p>
+
+                <!-- 6.20 手机搜索入口 -->
+                <h3 class="guide-subtitle">
+                    <i class="ri-search-line"></i>
+                    6.20 手机上搜索入口的灰底
+                </h3>
+                <p>「最新文章」「全部文章」标题右边的搜索按钮，在电脑上是透明的、鼠标移上去才变灰；手机上没有悬停这回事，所以它在手机上改成<strong>常驻浅灰底 + 一圈极淡描边</strong>，一眼就能看出可以点。</p>
+                <p>这段写在 <code>css/style.css</code> 的 <code>@media (max-width: 600px)</code> 里，搜索 <code>.search-trigger</code>：</p>
+                <pre><code>.search-trigger {
+    height: 26px;
+    padding: 0 9px 0 6px;
+    border-radius: 999px;
+    border-color: rgba(17, 17, 17, 0.06);   /* 描边 */
+    background: rgba(17, 17, 17, 0.05);     /* 常驻灰底 */
+    color: var(--color-text-secondary);
+}</code></pre>
+                <p>深色模式要单独写一段（搜索 <code>[data-theme="dark"] .search-trigger</code>），换成 <code>rgba(255, 255, 255, 0.08)</code>——浅灰底落在深色页面上等于没有。</p>
+                <div class="guide-tip">
+                    <div class="guide-tip-title">
+                        <i class="ri-information-line"></i>
+                        只影响手机
+                    </div>
+                    <p>这些规则都包在 <code>max-width: 600px</code> 里，电脑上还是原来的透明样式 + 悬停变灰，Ctrl K 键帽也照常显示。</p>
+                    <p>屏幕特别窄（≤330px）或标签太多时，按钮会自动缩成一个只有放大镜的圆形，灰底会跟着变成圆形，不会破版。</p>
+                </div>
             </div>
         </section>
 
@@ -1649,6 +1772,10 @@ git push</code></pre>
                             <tr>
                                 <td><code>js/copyToClipboard.js</code></td>
                                 <td>点微信、QQ、邮箱图标没反应。不报错，就是没效果。</td>
+                            </tr>
+                            <tr>
+                                <td><code>js/image-loading.js</code></td>
+                                <td>网页不会坏，但文章图片会直接硬加载：没有模糊占位，加载时页面会跳一下，高速/慢速链接的自动切换也失效。</td>
                             </tr>
                         </tbody>
                     </table>

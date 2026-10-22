@@ -5,13 +5,46 @@
                 id: 11,
                 pinned: false,
                 title: '归宿里的两帧：和朋友拍的归宿照',
-                date: '2026-10-18',
+                date: '2026-10-22',
                 excerpt: '我很少在游戏里拍照，不是不喜欢，是总觉得镜头里缺点什么...直到有人愿意站在里面，陪我一起等光。',
                 tags: ['第五人格', '随笔', '社交'],
                 featured: true,
                 // 独立页面，作为文章正文内嵌展示（照片、排版都在这个文件里）
                 embeddedPage: 'project_subpage/blog/manor_photo.html',
             }, {
+                id: 12,
+                pinned: false,
+                title: '霸道汤圆爱上我',
+                date: '2026-10-22',
+                excerpt: '它没有体温，却有脾气；它不会说话，却清楚我几点睡。一碗汤圆的入侵实录。',
+                tags: ['随笔'],
+                featured: true,
+                content: `
+                        <p>事情是从冬至那天开始的。</p>
+                        <p>我从超市拎回一袋速冻汤圆，烧水、下锅，然后转身去回一条消息。等我想起来的时候，锅里已经浮起一颗格外圆、格外白的东西，正贴着锅沿，一动不动地等着我看它。</p>
+                        <p>“水太沸了。”它说。</p>
+                        <p>我承认我当时的第一反应是关火，第二反应才是——汤圆不会说话。</p>
+                        <h2>一、它比我有规矩</h2>
+                        <p>从那天起，我的生活被一颗汤圆接管了。</p>
+                        <p>它没有手，却知道我几点睡；它没有眼睛，却清楚我又把早饭糊弄成了一杯咖啡。</p>
+                        <p>“七点零三分，”它在我碗里说，“你已经三天没吃热的东西了。”</p>
+                        <p>“你怎么什么都知道？”</p>
+                        <p>“糯米做的，心细。”</p>
+                        <h2>二、它也会吃醋</h2>
+                        <p>冰箱里还剩半袋芝麻馅的。我随口夸了一句“还是芝麻的香”，锅里的水就莫名其妙地咕嘟了整整十分钟。</p>
+                        <p>“你凭什么喜欢它？”它沉在碗底，语气很硬，“它连皮都煮破过一次。”</p>
+                        <p>“那是你自己破的。”</p>
+                        <p>它不说话了。汤面上慢慢浮起一层很淡的、像在赌气的白汽。</p>
+                        <h2>三、后来我习惯了</h2>
+                        <p>再后来，冬至过去了，元宵也过去了。冰箱清空那天，我站在灶台前发了很久的呆，最后把水烧开，往锅里只放了一颗。</p>
+                        <p>水沸的时候，它慢吞吞地从锅底浮上来，照旧贴住锅沿。</p>
+                        <p>“水太沸了。”它说。</p>
+                        <p>“知道了。”我说。</p>
+                        <blockquote>有些陪伴没有体温，但足以让一个冬天不至于太冷。</blockquote>
+                        <p>——本文纯属虚构。如有雷同，可能是你家的汤圆也在开会。</p>
+                    `,
+            }, {
+
                 id: 8,
                 pinned: true,
                 title: '对朋友圈、抖音、QQ空间等互动的说明',
@@ -33,7 +66,7 @@
                 id: 10,
                 pinned: true,
                 title: '使用、修改和部署这个博客的操作指南',
-                date: '2026-10-16',
+                date: '2026-10-22',
                 excerpt: '从零开始构建个人博客的完整教程，包含配置、部署和进阶技巧',
                 tags: ['教程', '指南', '置顶'],
                 featured: true,
@@ -948,7 +981,7 @@
                 const container = document.getElementById(containerId);
                 if (!container) return;
                 const tags = containerId === 'tagFilterHome'
-                    ? ['all', '置顶', '社交', '阅读', '随笔']
+                    ? ['all', '置顶', '社交', '随笔']
                     : getAllTags();
                 container.innerHTML = tags.map(t =>
                     `<span class="tag-pill${t === activeTag ? ' active' : ''}" data-tag="${t}">${t === 'all' ? '全部' : t}</span>`
@@ -1716,8 +1749,13 @@
                 searchResults.innerHTML = hits.map((hit, index) => {
                     const post = hit.post;
                     const fields = hit.fields.slice(0, 3);
-                    const tagChips = (post.tags || []).slice(0, 2).map(tag => {
-                        const isHit = getKeywords(query).some(keyword => tag.toLowerCase().includes(keyword));
+                    // 标签要和文章详情页完全一致：之前这里 slice(0, 2) 只取前两个，
+                    // 「第五人格 / 随笔 / 社交」三标签的文章在搜索结果里会少一个，
+                    // 看着就像标签对不上。这里改成全部展示（数量本身很少，
+                    // 多一个也放得下，超长时由 .search-result-tags 自动换行）。
+                    const keywords = getKeywords(query);
+                    const tagChips = (post.tags || []).map(tag => {
+                        const isHit = keywords.some(keyword => tag.toLowerCase().includes(keyword));
                         return `<span class="search-result-tag${isHit ? ' is-hit' : ''}">${escapeHtml(tag)}</span>`;
                     }).join('');
                     const hitChips = fields
@@ -1947,7 +1985,10 @@
                 }
 
                 // 等面板动画把位置稳定下来再聚焦：在 0 宽/隐藏元素上聚焦
-                // 会让 iOS 直接把键盘弹出来并把页面顶上去
+                // 会让 iOS 直接把键盘弹出来并把页面顶上去。
+                // 手机端面板是 0.38s 的整块上滑，聚焦太早的话键盘会在
+                // 滑动途中把可视区改矮，面板高度跟着跳一下，看着很别扭；
+                // 所以等它基本滑到位（300ms）再弹键盘。
                 window.setTimeout(() => {
                     if (!searchOpen) return;
                     if (searchInput) {
@@ -1958,7 +1999,7 @@
                             searchInput.setSelectionRange(length, length);
                         } catch (e) {}
                     }
-                }, searchMobile.matches ? 180 : 120);
+                }, searchMobile.matches ? 300 : 120);
             }
 
             // options:
@@ -2005,7 +2046,11 @@
                     searchHistoryEntryActive = false;
                 }
 
-                // 等淡出动画走完再真正隐藏
+                // 等退场动画走完再真正隐藏。
+                // 手机端面板退场是 0.26s 的整块下滑（见 style.css 里
+                // .search-overlay:not(.is-open) .search-panel），
+                // 等待时间必须比它长一点，否则动画还没滑完就被 display:none
+                // 掐断，看起来是「啪」地消失而不是滑走。
                 window.setTimeout(() => {
                     if (searchOpen) return;
                     if (searchOverlay) searchOverlay.hidden = true;
@@ -2023,7 +2068,7 @@
                     searchActiveIndex = -1;
                     setSearchMeta('');
                     if (searchSuggest) searchSuggest.hidden = false;
-                }, 220);
+                }, searchMobile.matches ? 300 : 220);
 
                 // 焦点还给打开搜索的那个按钮（如果它还在页面上）
                 const returnFocus = searchReturnFocus;

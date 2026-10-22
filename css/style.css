@@ -1535,6 +1535,10 @@
             .search-trigger,
             .search-trigger i,
             .search-panel,
+            .search-panel-head,
+            .search-bar,
+            .search-body,
+            .search-foot,
             .search-backdrop,
             .search-block,
             .search-result,
@@ -1543,6 +1547,15 @@
             .search-meta {
                 transition: none;
                 animation: none;
+            }
+            /* 关掉动画时，面板内部的逐层入场也必须立刻恢复可见，
+               否则 opacity:0 的初始态会一直留着，内容整片消失 */
+            .search-panel-head,
+            .search-bar,
+            .search-body,
+            .search-foot {
+                opacity: 1;
+                transform: none;
             }
             .search-bar-spinner {
                 animation-duration: 1.6s;
@@ -1569,13 +1582,21 @@
         @media (max-width: 600px) {
             /* 手机上保留「搜索」文字，只把字号压小：
                光一个放大镜不够明确，加两个字反而更好认。
-               Ctrl K 那个键帽在触屏上没有意义，隐藏掉。 */
+               Ctrl K 那个键帽在触屏上没有意义，隐藏掉。
+
+               触屏没有悬停，桌面上那套「透明 → hover 才变灰」的反馈
+               在手机上等于永远看不到底色，按钮看起来像一段飘着的文字。
+               所以这里把灰底做成常驻的：浅浅一层圆角底 + 极淡描边，
+               一眼就能认出这是可以点的入口，而不是标题的一部分。 */
             .search-trigger {
                 gap: 4px;
                 height: 26px;
-                padding: 0 8px 0 5px;
+                padding: 0 9px 0 6px;
                 border-radius: 999px;
                 flex: 0 0 auto;
+                border-color: rgba(17, 17, 17, 0.06);
+                background: rgba(17, 17, 17, 0.05);
+                color: var(--color-text-secondary);
             }
             .search-trigger-kbd {
                 display: none;
@@ -1693,7 +1714,7 @@
                     margin-left: -4px;
                 }
             }
-            /* 全屏面板：从底部上滑，高度 = visualViewport 高度（由 JS 写入），
+            /* 全屏面板：高度 = visualViewport 高度（由 JS 写入），
                所以键盘弹起时面板不会顶到键盘下面。
                --search-viewport-offset 是 iOS 把可视区整体上移的量，
                面板跟着上移，底部才不会露在键盘下方。 */
@@ -1702,7 +1723,20 @@
                 padding: 0;
                 height: var(--search-viewport-height, 100dvh);
                 transform: translateY(var(--search-viewport-offset, 0px));
+                /* 面板从屏幕外滑进来，超出部分必须裁掉，
+                   否则 translateY(100%) 会把文档撑高、露出底部空白 */
+                overflow: hidden;
             }
+
+            /* ===== 手机端进场 / 退场动画 =====
+               原来面板只往上挪 14px，像「淡入一个小方块」，
+               在全屏面板上几乎看不出方向感。这里改成真正的整块上滑：
+                 · 进场：translateY(100%) → 0，0.38s，iOS 那种「先快后慢」的
+                   曲线（cubic-bezier(.32,.72,0,1)），末尾自然收住不弹跳；
+                 · 退场：0.26s，换成加速曲线（cubic-bezier(.4,0,1,1)），
+                   手指离开后画面迅速让位，不拖泥带水。
+               全屏面板本身不再淡入（位移已经把「出现」说清楚了），
+               淡入只留给背后的遮罩，避免两层透明度叠在一起发灰。 */
             .search-panel {
                 width: 100%;
                 max-height: none;
@@ -1710,10 +1744,79 @@
                 border: 0;
                 border-radius: 0;
                 box-shadow: none;
-                transform: translateY(14px);
+                opacity: 1;
+                transform: translateY(100%);
+                transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+                will-change: transform;
             }
             .search-overlay.is-open .search-panel {
                 transform: translateY(0);
+            }
+            /* 关闭时走更快、更干脆的曲线 */
+            .search-overlay:not(.is-open) .search-panel {
+                transition: transform 0.26s cubic-bezier(0.4, 0, 1, 1);
+            }
+
+            /* 面板内部逐层入场：标题行 → 搜索框 → 内容 → 落款，
+               每层晚 40ms，像内容跟着面板一起「落下来」。
+               只加在打开状态里——关闭时这些延迟不存在，
+               所有内容立刻跟着面板一起走，不会被拖在后面。 */
+            .search-panel-head,
+            .search-bar,
+            .search-body,
+            .search-foot {
+                opacity: 0;
+                transform: translateY(10px);
+                transition:
+                    opacity 0.26s ease,
+                    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+            }
+            /* 输入框自己还带着「聚焦时边框 / 阴影 / 底色渐变」，
+               上面的 shorthand 会把它覆盖掉，这里补回来，
+               否则点进输入框时高亮会硬切一下 */
+            .search-bar {
+                transition:
+                    opacity 0.26s ease,
+                    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+                    border-color 0.2s ease,
+                    box-shadow 0.2s ease,
+                    background 0.2s ease;
+            }
+            .search-overlay.is-open .search-panel-head,
+            .search-overlay.is-open .search-bar,
+            .search-overlay.is-open .search-body,
+            .search-overlay.is-open .search-foot {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            .search-overlay.is-open .search-panel-head {
+                transition-delay: 0.04s;
+            }
+            .search-overlay.is-open .search-bar {
+                transition-delay: 0.08s;
+            }
+            .search-overlay.is-open .search-body {
+                transition-delay: 0.12s;
+            }
+            .search-overlay.is-open .search-foot {
+                transition-delay: 0.16s;
+            }
+            /* 减弱动效时：不要位移、不要逐层延迟，直接出现。
+               这段必须写在上面那些 opacity:0 规则之后——同优先级下
+               后写的才生效，否则内容会一直停在透明状态。 */
+            @media (prefers-reduced-motion: reduce) {
+                .search-panel {
+                    transform: none;
+                    transition: none;
+                }
+                .search-panel-head,
+                .search-bar,
+                .search-body,
+                .search-foot {
+                    opacity: 1;
+                    transform: none;
+                    transition: none;
+                }
             }
             .search-panel-inner {
                 padding:
@@ -1906,6 +2009,10 @@
                 animation: none;
             }
         }
+        /* 卡片入场：整块淡入，不做错开延迟。
+           之前按序号逐张延迟（--i × 70ms）会让首屏后面的卡片等得偏久，
+           延迟期间卡片还是透明的，滚动稍快就会看到「一块空白」。
+           现在所有卡片同时淡入，节奏更干脆。 */
         .post-card-enter {
             animation: postCardEnter 0.28s ease both;
         }
@@ -1981,8 +2088,10 @@
             font-size: 0.85rem;
             line-height: 1;
         }
+        /* 二级菜单触发按钮（三个点）：一层平涂的浅灰圆底，不加投影，
+           保持卡片本身的干净感，只让三个点有一个落脚的区域。 */
         .options {
-            background: transparent;
+            background: #f1f1f1;
             border: none;
             width: 26px;
             height: 26px;
@@ -1995,7 +2104,11 @@
             transition: background 0.2s ease;
         }
         html:not(.is-touch-input) .options:hover {
-            background: rgba(17, 17, 17, 0.04);
+            background: #e6e6e6;
+        }
+        .options:active,
+        .post-card.menu-open .options {
+            background: #dedede;
         }
         .options svg {
             width: 16px;
@@ -2333,14 +2446,26 @@
             color: var(--color-text-primary);
         }
         /* 文章页顶部一行：左边返回，右边分享。
-           返回原本自带 24px 下边距，放进这一行后改由行本身控制间距。 */
+           返回原本自带 24px 下边距，放进这一行后改由行本身控制间距。
+
+           顶部渐变虚化层（body::before，手机 110px / 桌面 150px 高）是 fixed 的，
+           会把刚进入文章页时这一行按钮也虚化掉，所以整行要往下挪一点。
+
+           挪动之后如果只改上边距，这一行就会「上面空、下面挤」，看着偏上。
+           这里用上下相等的留白让它居中：
+             导航底边 → 按钮 = 24（导航自带的下边距）+ 4（本行 padding-top）= 28
+             按钮 → 标题     = 28（本行 margin-bottom）
+           两边都是 28px，视觉上正好落在导航和标题中间。
+           代价是「导航栏 → 标题」的总距离比原来多 8px（88 → 96），
+           这是「整行下移」和「上下留白相等」同时成立时的最小增量。 */
         .article-topbar {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
             flex-wrap: wrap;
-            margin-bottom: 24px;
+            padding-top: 4px;
+            margin-bottom: 28px;
         }
         .article-topbar .back-link {
             margin-bottom: 0;
@@ -3498,6 +3623,18 @@
             background: rgba(255, 255, 255, 0.1);
             color: #e7e9ee;
         }
+        /* 手机端搜索入口的常驻灰底，在深色下要换成浅色微光，
+           否则 rgba(17,17,17,.05) 落在深底上等于没有 */
+        @media (max-width: 600px) {
+            [data-theme="dark"] .search-trigger {
+                background: rgba(255, 255, 255, 0.08);
+                border-color: rgba(255, 255, 255, 0.1);
+                color: var(--color-text-secondary);
+            }
+            html.is-touch-input [data-theme="dark"] .search-trigger:active {
+                background: rgba(255, 255, 255, 0.16);
+            }
+        }
 
         /* 遮罩在深色下要更浓一些，否则面板边界会糊成一片 */
         [data-theme="dark"] .search-backdrop {
@@ -3668,8 +3805,18 @@
         [data-theme="dark"] .tag-pinned {
             background: rgba(255, 255, 255, 0.14);
         }
+        /* 深色模式下同样只做平涂：用一层比卡片略亮的深灰作为圆底，
+           不加投影，避免深底上堆出一圈脏边。 */
+        [data-theme="dark"] .options {
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: none;
+        }
         html:not(.is-touch-input) [data-theme="dark"] .options:hover {
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.14);
+        }
+        [data-theme="dark"] .options:active,
+        [data-theme="dark"] .post-card.menu-open .options {
+            background: rgba(255, 255, 255, 0.2);
         }
         /* 三点图标内联了 fill="#000000"，深色模式下会变成看不见的黑点 */
         [data-theme="dark"] .options svg {
