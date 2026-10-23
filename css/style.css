@@ -2655,6 +2655,56 @@
         #view-article.active + .site-footer {
             margin-top: 24px;
         }
+        /* 文章页底部一行：左边「返回」，右边「问题反馈」，和顶部 .article-topbar 呼应。
+           加按钮之前，底部这一行只有「返回」，高度由行盒决定：27.92px
+           （16px 基准字号 × 1.7 行高，再加 inline-flex 基线对齐多出来的那一点）。
+           这一行有多高，页脚就被推多远——所以这里必须把高度还回原来的值。
+           现在行里的按钮和顶部「分享」同尺寸（39.44px），比这一行高，
+           用上下各 -5.76px 的负外边距把多出来的 11.52px 还掉：
+             24（分割线自带的下边距）- 5.76 + 39.44 + 24（页脚自带的上边距）- 5.76
+             = 75.92px，正好等于加按钮之前分割线到页脚的距离，
+           页脚位置、整页高度都和以前一致，按钮本身尺寸不变，
+           只是上下各多占 5.76px，落在两侧本来就空着的留白里（上下留白仍然相等）。
+           用负外边距而不是写死 height，是为了万一换行（极窄屏幕）这一行还能正常长高。 */
+        .article-bottombar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: -5.76px 0;
+        }
+        /* 反馈入口：外观和尺寸都跟顶部的「分享」按钮完全一致（同款胶囊描边、
+           同样 6px / 14px 内距），多出来的高度由上面 .article-bottombar 的负外边距抵消。
+           它是要跳转的链接，所以额外去掉下划线。 */
+        .article-feedback {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border: 1px solid var(--color-border);
+            border-radius: 999px;
+            background: transparent;
+            color: var(--color-text-secondary);
+            font: inherit;
+            font-size: 0.82rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+        .article-feedback i {
+            font-size: 0.95rem;
+        }
+        html:not(.is-touch-input) .article-feedback:hover {
+            color: var(--color-text-primary);
+            border-color: var(--color-text-tertiary);
+            background: var(--color-surface);
+        }
+        .article-feedback:focus-visible {
+            outline: 2px solid var(--color-accent);
+            outline-offset: 2px;
+        }
 
         /* ==================== 音乐播放器卡片 ==================== */
         .music-player-card {

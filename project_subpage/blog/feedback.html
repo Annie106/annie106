@@ -26,11 +26,18 @@
   html { color-scheme: light; }
   html[data-theme="dark"] { color-scheme: dark; }
 
+  /* 样式表里有一层固定在页面顶部的渐变虚化遮罩（body::before，桌面高 150px），
+     它是给首页吸顶导航下面的内容做「滚上去自然虚化」用的。
+     这个页面没有吸顶导航，那层遮罩只会把「返回首页」和标题糊掉，所以这里关掉它。
+     content: none 表示这个伪元素根本不生成，配 !important 是为了压过样式表里
+     深色模式等更具体的选择器。 */
+  body::before { content: none !important; }
+
   .feedback-page {
     width: 100%;
     max-width: 640px;
     margin: 0 auto;
-    padding: 64px 24px 96px;
+    padding: 32px 24px 96px;
     animation: pageEnter 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
     color: var(--color-text-primary);
   }
@@ -80,7 +87,7 @@
     font-size: 0.875rem;
     color: var(--color-text-tertiary);
     text-decoration: none;
-    margin-bottom: 48px;
+    margin-bottom: 28px;
     transition: color var(--transition-fast);
   }
   html:not(.is-touch-input) .back-link:hover { color: var(--color-text-primary); }
@@ -227,6 +234,11 @@
     color: var(--color-text-tertiary);
     font-weight: 400;
     margin-left: 2px;
+  }
+
+  .required-star {
+    color: #e53935;
+    margin-right: 4px;
   }
 
   .form-field input,
@@ -509,7 +521,7 @@
   }
 
   @media (max-width: 640px) {
-    .feedback-page { padding: 40px 20px 72px; }
+    .feedback-page { padding: 24px 20px 72px; }
     .feedback-intro h1 { font-size: 1.5rem; }
     .notice-card { padding: 20px 22px; }
     .action-row { flex-wrap: wrap; }
@@ -561,7 +573,7 @@
 
         <!-- ① 反馈类型：必选 -->
         <div class="field">
-          <label class="field-label">反馈类型<span class="required">（必选）</span></label>
+          <label class="field-label"><span class="required-star" aria-hidden="true">*</span>反馈类型<span class="required">（必选）</span></label>
           <div class="radio-group">
             <label><input type="radio" name="type" value="文章问题" required><span>文章问题</span></label>
             <label><input type="radio" name="type" value="Bug反馈"><span>Bug 反馈</span></label>
@@ -576,7 +588,7 @@
 
         <!-- ② 整体评价：必选 -->
         <div class="field">
-          <label class="field-label">整体评价<span class="required">（必选）</span></label>
+          <label class="field-label"><span class="required-star" aria-hidden="true">*</span>整体评价<span class="required">（必选）</span></label>
           <div class="rating-group">
             <label><input type="radio" name="rating" value="1" required><span>1</span></label>
             <label><input type="radio" name="rating" value="2"><span>2</span></label>
@@ -589,7 +601,7 @@
 
         <!-- ③ 反馈内容：必填 -->
         <div class="form-field">
-          <label for="feedbackMessage">反馈内容<span class="required">（必填）</span></label>
+          <label for="feedbackMessage"><span class="required-star" aria-hidden="true">*</span>反馈内容<span class="required">（必填）</span></label>
           <textarea
             id="feedbackMessage"
             name="message"
@@ -601,7 +613,7 @@
 
         <!-- ④ 是否允许联系 -->
         <div class="field">
-          <label class="field-label">是否允许我们联系你<span class="required">（必选）</span></label>
+          <label class="field-label"><span class="required-star" aria-hidden="true">*</span>是否允许我们联系你<span class="required">（必选）</span></label>
           <div class="radio-group">
             <label><input type="radio" name="contact_allowed" value="允许" id="contactYes"><span>允许</span></label>
             <label><input type="radio" name="contact_allowed" value="不允许" id="contactNo" checked><span>不允许</span></label>
@@ -611,7 +623,7 @@
           <!-- 选择「允许」时才出现 -->
           <div class="contact-input" id="contactInput">
             <div class="field">
-              <span class="field-label">联系方式类型<span class="required">（必选）</span></span>
+              <span class="field-label"><span class="required-star" aria-hidden="true">*</span>联系方式类型<span class="required">（必选）</span></span>
               <div class="radio-group">
                 <label><input type="radio" name="contact_type" value="微信" id="contactTypeWechat"><span>微信</span></label>
                 <label><input type="radio" name="contact_type" value="邮箱" id="contactTypeEmail"><span>邮箱</span></label>
@@ -619,7 +631,7 @@
             </div>
 
             <div class="field">
-              <label class="field-label" for="contactValue">你的联系方式<span class="required">（必填）</span></label>
+              <label class="field-label" for="contactValue"><span class="required-star" aria-hidden="true">*</span><span class="contact-value-label-text">你的联系方式</span><span class="required">（必填）</span></label>
               <input
                 type="text"
                 id="contactValue"
@@ -676,7 +688,7 @@
   const contactInput      = document.getElementById('contactInput');
   const contactTypeRadios = form.querySelectorAll('input[name="contact_type"]');
   const contactValue      = document.getElementById('contactValue');
-  const contactValueLabel = form.querySelector('label[for="contactValue"]');
+  const contactValueLabel = form.querySelector('.contact-value-label-text');
 
   /* ============================================================
      ★ 核心：一句 checkValidity() 搞定所有必填校验
@@ -754,7 +766,7 @@
       contactValue.disabled = true;
       contactValue.type = 'text';
       contactValue.placeholder = '请先选择联系方式类型';
-      contactValueLabel.firstChild.textContent = '你的联系方式';
+      contactValueLabel.textContent = '你的联系方式';
       contactValue.value = '';
     }
   }
@@ -774,11 +786,11 @@
       if (radio.value === '邮箱') {
         contactValue.type = 'email';
         contactValue.placeholder = '请输入你的邮箱地址';
-        contactValueLabel.firstChild.textContent = '你的邮箱地址';
+        contactValueLabel.textContent = '你的邮箱地址';
       } else {
         contactValue.type = 'text';
         contactValue.placeholder = '请输入你的微信号';
-        contactValueLabel.firstChild.textContent = '你的微信号';
+        contactValueLabel.textContent = '你的微信号';
       }
       contactValue.value = '';
       updateSubmitState();

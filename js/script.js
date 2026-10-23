@@ -271,6 +271,7 @@
             const backBtn = $('#backBtn');
             const backBtn2 = $('#backBtn2');
             const articleShare = $('#articleShare');
+            const articleFeedback = $('#articleFeedback');
             const wechatShareGuide = $('#wechatShareGuide');
             const wechatShareGuideCopy = $('#wechatShareGuideCopy');
             const wechatShareGuideClose = $('#wechatShareGuideClose');
@@ -1397,6 +1398,12 @@
                 articleMeta.hidden = isUnavailableArticle;
                 articleUnavailableNotice.hidden = !isUnavailableArticle;
                 articleShare.hidden = isUnavailableArticle;
+                // 底部「问题反馈」入口：把当前文章带给反馈页（地址格式和卡片「⋯」菜单一致）
+                if (articleFeedback) {
+                    articleFeedback.href = 'project_subpage/blog/feedback.html?article='
+                        + encodeURIComponent(post.id)
+                        + '&title=' + encodeURIComponent(post.title || '');
+                }
                 articleTitle.textContent = post.title;
                 articleMeta.innerHTML = isUnavailableArticle ? '' : `
                     <span><i class="ri-calendar-line"></i> ${post.date}</span>
