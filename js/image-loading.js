@@ -4,7 +4,7 @@
     if (window.AnnieImageLoading) return;
 
     var FAST_ACCESS_KEY = 'annie-manor-fast-last-access';
-    var FAST_COOLDOWN_MS = 10000;
+    var FAST_COOLDOWN_MS = 20000;
     var managedImages = new WeakSet();
     var slowPreviewImages = new WeakMap();
     var fastDecision = null;
@@ -54,8 +54,8 @@
         fastDecision = !(lastAccess > 0 && age >= 0 && age < FAST_COOLDOWN_MS);
         log(
             fastDecision
-                ? '最近 10 秒未访问高速链接，本次允许优先使用高速链接（存储：' + storageName + '）'
-                : '最近 10 秒内访问过高速链接，本次使用慢速链接（存储：' + storageName + '）'
+                ? '最近 20 秒未访问高速链接，本次允许优先使用高速链接（存储：' + storageName + '）'
+                : '最近 20 秒内访问过高速链接，本次使用慢速链接（存储：' + storageName + '）'
         );
         return fastDecision;
     }
