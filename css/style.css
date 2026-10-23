@@ -2532,7 +2532,7 @@
         .article-content {
             font-family: var(--font-serif);
             font-size: 1.05rem;
-            line-height: 1.5;
+            line-height: 1.78;
             letter-spacing: -0.01em;
             color: var(--color-text-primary);
         }
@@ -2614,7 +2614,7 @@
         }
         .article-content p {
             font-family: var(--font-sans);
-            margin: 0 0 0.6em;
+            margin: 0 0 0.8em;
             font-weight: 400;
         }
 
