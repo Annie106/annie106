@@ -8,7 +8,6 @@
                 date: '2026-10-23',
                 excerpt: '一小时的路程，六点五十之前到校。我提的是一道算术题，不是态度问题。',
                 tags: ['随笔'],
-                gateLink: 'VpS5Y1oZJUkyDUR/XgQ/UjIZUyVbCX9aLlpEIx0dY1M7BFxpBhQ7UnE=',   // 加密后的跳转地址（link-gate-encode.js 生成）
                 featured: true,
                 content: `
                     <p>先交代我的情况：我不住校，家到学校通勤一小时。学校要求早自习 6:50 之前到校。翻译一下——我最晚 5:50 就得出门，每天早上不到六点就得起，比住校的同学起得还早。</p>
@@ -1421,122 +1420,49 @@
             }
 
             /* ============================================================
-               需要密码才能打开的链接（地址加密存放，源码里看不到明文）
-               ① 给那篇文章加一行密文：gateLink: '密文',
-                  密文用 tools/link-gate-encode.js 生成：
-                      node tools/link-gate-encode.js "https://要跳转的地址" "密码"
-               ② 在正文里给那个链接加 class="gated-link"，href 写 # 即可：
+               链接提示窗
+               正文里给链接加 class="gated-link"、href 写 #，点它就弹这个窗：
                       <a class="gated-link" href="#">点击前往</a>
-               点这个链接会弹出密码框，密码正确才解得出地址并跳转。
-               可选 passwordHint: '提示文字'（显示在弹窗里）。
+               窗里只有「前往 / 取消 / × / 点遮罩」，都只是关掉窗口：
+               不做密码校验、不跳转，地址也不存在代码里。
                ============================================================ */
             let linkGateEls = null;
-            let linkGatePost = null;
-
-            /* 把密文解回地址：密码不对就解不出可用的地址，因此不需要另存密码。 */
-            function gateKeyBytes(password) {
-                if (window.TextEncoder) return Array.from(new TextEncoder().encode(password));
-                const bytes = [];
-                for (let i = 0; i < password.length; i += 1) bytes.push(password.charCodeAt(i) & 255);
-                return bytes;
-            }
-
-            function decodeGateLink(payload, password) {
-                try {
-                    if (!payload || !password) return '';
-                    const raw = window.atob(payload);
-                    const key = gateKeyBytes(password);
-                    if (!key.length) return '';
-                    const bytes = [];
-                    for (let i = 0; i < raw.length; i += 1) {
-                        bytes.push(raw.charCodeAt(i) ^ key[i % key.length]);
-                    }
-                    // 前 4 字节是随机盐，跳过；剩下的必须是一个地址
-                    const body = bytes.slice(4);
-                    const url = window.TextDecoder
-                        ? new TextDecoder().decode(new Uint8Array(body))
-                        : body.map(code => String.fromCharCode(code)).join('');
-                    return url.indexOf('http') === 0 ? url : '';
-                } catch (error) {
-                    return '';
-                }
-            }
-
             function ensureLinkGate() {
                 if (linkGateEls) return linkGateEls;
                 const wrap = document.createElement('div');
                 wrap.className = 'link-gate';
                 wrap.hidden = true;
                 wrap.innerHTML = [
-                    '<div class="link-gate-backdrop"></div>',
-                    '<form class="link-gate-card" id="linkGateForm" autocomplete="off">',
-                    '<div class="link-gate-icon" aria-hidden="true">×</div>',
-                    '<h2 class="link-gate-title">你需要得到授权后才能访问</h2>',
-                    '<p class="link-gate-desc" id="linkGateDesc">验证后前往链接。</p>',
-                    '<div class="link-gate-row">',
-                    '<input type="password" id="linkGatePwd" placeholder="请验证" autocomplete="off" aria-label="">',
-                    '<button type="submit" class="link-gate-btn">前往</button>',
-                    '</div>',
-                    '<p class="link-gate-error" id="linkGateError" hidden>错误，请重试</p>',
-                    '<button type="button" class="link-gate-back" id="linkGateBack">取消</button>',
-                    '</form>'
+                    '<div class="link-gate-backdrop" data-close></div>',
+                    '<div class="link-gate-card" role="dialog" aria-modal="true" aria-labelledby="linkGateTitle">',
+                    '<button type="button" class="link-gate-close" data-close aria-label="关闭">×</button>',
+                    '<h2 class="link-gate-title" id="linkGateTitle">根据相关规定，链接已停止访问</h2>',
+                    '<p class="link-gate-desc">点击任意处关闭</p>',
+                    '</div>'
                 ].join('');
                 document.body.appendChild(wrap);
                 const els = {
-                    wrap: wrap,
-                    form: wrap.querySelector('#linkGateForm'),
-                    desc: wrap.querySelector('#linkGateDesc'),
-                    pwd: wrap.querySelector('#linkGatePwd'),
-                    error: wrap.querySelector('#linkGateError')
+                    wrap: wrap
                 };
-                els.form.addEventListener('submit', function (event) {
-                    event.preventDefault();
-                    const post = linkGatePost;
-                    if (!post || !post.gateLink) return;
-                    const target = decodeGateLink(post.gateLink, els.pwd.value.trim());
-                    if (target) {
-                        window.location.href = target;
-                        return;
-                    }
-                    els.error.hidden = false;
-                    els.form.classList.remove('shake');
-                    void els.form.offsetWidth;
-                    els.form.classList.add('shake');
-                    els.pwd.select();
-                });
-                els.pwd.addEventListener('input', function () {
-                    if (!els.error.hidden) els.error.hidden = true;
-                });
-                wrap.querySelector('#linkGateBack').addEventListener('click', function () {
-                    hideLinkGate();
+                /* 「前往」「取消」「×」「点遮罩」都只是关掉窗口 */
+                wrap.addEventListener('click', function (event) {
+                    if (event.target.closest('[data-close]')) hideLinkGate();
                 });
                 document.addEventListener('keydown', function (event) {
-                    if (event.key === 'Escape' && !wrap.hidden) {
-                        hideLinkGate();
-                    }
+                    if (event.key === 'Escape' && !wrap.hidden) hideLinkGate();
                 });
                 linkGateEls = els;
                 return els;
             }
 
-            function showLinkGate(post) {
+            function showLinkGate() {
                 const els = ensureLinkGate();
-                linkGatePost = post;
-                els.desc.textContent = post.passwordHint || '验证后前往链接。';
-                els.pwd.value = '';
-                els.error.hidden = true;
-                els.form.classList.remove('shake');
                 els.wrap.hidden = false;
-                window.requestAnimationFrame(function () { els.pwd.focus(); });
             }
 
             function hideLinkGate() {
-                linkGatePost = null;
                 if (!linkGateEls || linkGateEls.wrap.hidden) return;
                 linkGateEls.wrap.hidden = true;
-                linkGateEls.pwd.value = '';
-                linkGateEls.error.hidden = true;
-                linkGateEls.form.classList.remove('shake');
             }
 
             function renderArticle(post) {
@@ -1690,11 +1616,10 @@
                     setFrameSource(embeddedPageFrame, null);
                 }
 
-                // 正文里标了 gated-link 的链接：点它先弹密码框，输对了才跳转
+                // 正文里标了 gated-link 的链接：点它弹出提示窗（不校验、不跳转）
                 const gatedLinks = articleContent.querySelectorAll('a.gated-link');
                 for (let i = 0; i < gatedLinks.length; i += 1) {
                     gatedLinks[i].addEventListener('click', function (event) {
-                        if (!post.gateLink) return;
                         event.preventDefault();
                         showLinkGate(post);
                     });

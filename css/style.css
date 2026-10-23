@@ -2619,10 +2619,11 @@
         }
 
         /* 需要密码后跳转外部链接的文章：密码弹窗 */
+        /* 链接提示窗（点正文里 .gated-link 弹出的那个） */
         .link-gate {
             position: fixed;
             inset: 0;
-            z-index: 200;
+            z-index: 120;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -2636,123 +2637,52 @@
         .link-gate-backdrop {
             position: absolute;
             inset: 0;
-            background: rgba(15, 18, 22, 0.42);
+            background: rgba(0, 0, 0, 0.42);
         }
 
         .link-gate-card {
             position: relative;
             width: 100%;
-            max-width: 360px;
-            padding: 24px 22px 18px;
-            background: var(--color-surface);
-            border: 1px solid var(--color-border);
+            max-width: 460px;
+            padding: 20px 24px 18px;
+            background: var(--color-bg);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-lg);
             text-align: center;
         }
 
-        .link-gate-card.shake {
-            animation: linkGateShake 0.32s ease-in-out;
-        }
-
-        @keyframes linkGateShake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-6px); }
-            75% { transform: translateX(6px); }
-        }
-
-        .link-gate-icon {
-            font-size: 1.4rem;
+        .link-gate-close {
+            display: block;
+            margin: 0 auto 4px;
+            padding: 0 6px;
+            border: 0;
+            background: none;
+            font-size: 20px;
             line-height: 1;
-            margin-bottom: 10px;
+            color: var(--color-text-tertiary);
+            cursor: pointer;
+        }
+
+        html:not(.is-touch-input) .link-gate-close:hover {
+            color: var(--color-text-primary);
         }
 
         .link-gate-title {
-            margin: 0 0 6px;
-            font-size: 1.02rem;
+            margin: 0;
+            font-size: 1.05rem;
             font-weight: 600;
             color: var(--color-text-primary);
         }
 
         .link-gate-desc {
-            margin: 0 0 16px;
-            font-size: 0.85rem;
-            line-height: 1.6;
+            margin: 6px 0 0;
+            font-size: 0.82rem;
             color: var(--color-text-secondary);
         }
 
-        .link-gate-row {
-            display: flex;
-            gap: 8px;
-        }
-
-        .link-gate-row input {
-            flex: 1 1 auto;
-            min-width: 0;
-            padding: 8px 14px;
-            font-family: inherit;
-            font-size: 0.9rem;
-            color: var(--color-text-primary);
-            background: var(--color-bg);
-            border: 1px solid var(--color-border);
-            border-radius: 999px;
-            transition: border-color var(--transition-fast);
-        }
-
-        .link-gate-row input:focus {
-            outline: none;
-            border-color: var(--color-accent);
-        }
-
-        .link-gate-btn {
-            flex: 0 0 auto;
-            padding: 8px 18px;
-            font-family: inherit;
-            font-size: 0.9rem;
-            color: var(--color-text-secondary);
-            background: transparent;
-            border: 1px solid var(--color-border);
-            border-radius: 999px;
-            cursor: pointer;
-            transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
-        }
-
-        html:not(.is-touch-input) .link-gate-btn:hover {
-            color: var(--color-text-primary);
-            border-color: var(--color-text-tertiary);
-            background: var(--color-bg);
-        }
-
-        .link-gate-btn:focus-visible {
-            outline: 2px solid var(--color-accent);
+        .link-gate-close:focus-visible {
+            outline: 2px solid var(--color-text-primary);
             outline-offset: 2px;
-        }
-
-        .link-gate-error {
-            margin: 10px 0 0;
-            font-size: 0.8rem;
-            color: #d9534f;
-        }
-
-        .link-gate-error[hidden] {
-            display: none;
-        }
-
-        .link-gate-back {
-            margin-top: 14px;
-            padding: 0;
-            font-family: inherit;
-            font-size: 0.8rem;
-            color: var(--color-text-tertiary);
-            background: none;
-            border: none;
-            cursor: pointer;
-            text-decoration: underline;
-            text-underline-offset: 3px;
-        }
-
-        html:not(.is-touch-input) .link-gate-back:hover {
-            color: var(--color-text-secondary);
         }
 
         @media (max-width: 640px) {
@@ -2761,15 +2691,11 @@
             }
 
             .link-gate-card {
-                padding: 20px 18px 16px;
+                max-width: none;
+                padding: 18px 18px 16px;
             }
         }
 
-        @media (prefers-reduced-motion: reduce) {
-            .link-gate-card.shake {
-                animation: none;
-            }
-        }
         .article-content a {
             overflow-wrap: anywhere;
         }
