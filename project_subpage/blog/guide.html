@@ -1188,7 +1188,7 @@
                     <li><code>embeddedPage</code>：填相对路径如 <code>'project_subpage/projects/xxx/index.html'</code>，这篇文章会把那个网页嵌进来显示</li>
                     <li><code>externalPage</code>：填路径，点文章直接跳过去。跟上面那个二选一</li>
                 </ul>
-                <p>文章正文和通过博客打开的同源内嵌页面里的图片，都会自动使用模糊占位和加载完成后的清晰化动画。普通图片写 <code>&lt;img src="..." alt="..." width="..." height="..." loading="lazy"&gt;</code> 即可；建议填写图片实际宽高，减少加载时的页面跳动。需要高速链接时，同时写 <code>data-fast-src</code>（高速）和 <code>data-slow-src</code>（慢速/大图预览），系统会自动按 10 秒规则选择、后台预加载慢速图，并在高速失败时回退。想要贴合图片的占位效果，可再加 <code>data-tone="#8c806b"</code> 和小尺寸图片的 <code>data-lqip="data:image/jpeg;base64,..."</code>。</p>
+                <p>文章正文和通过博客打开的同源内嵌页面里的图片，都会自动使用模糊占位和加载完成后的清晰化动画。普通图片写 <code>&lt;img src="..." alt="..." width="..." height="..." loading="lazy"&gt;</code> 即可；建议填写图片实际宽高，减少加载时的页面跳动。需要高速链接时，同时写 <code>data-fast-src</code>（高速）和 <code>data-slow-src</code>（慢速/大图预览），系统会自动按 20 秒规则选择、后台预加载慢速图，并在高速失败时回退。想要贴合图片的占位效果，可再加 <code>data-tone="#8c806b"</code> 和小尺寸图片的 <code>data-lqip="data:image/jpeg;base64,..."</code>。</p>
 
                 <p>加新文章就复制一整段（从 <code>{</code> 到 <code>},</code>），粘到数组里改掉内容和 <code>id</code>。</p>
                 <div class="guide-warning">

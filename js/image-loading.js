@@ -3,7 +3,7 @@
 
     if (window.AnnieImageLoading) return;
 
-    var FAST_ACCESS_KEY = 'annie-manor-fast-last-access';
+    var FAST_ACCESS_KEY = 'annie-image-fast-last-access';
     var FAST_COOLDOWN_MS = 20000;
     var managedImages = new WeakSet();
     var slowPreviewImages = new WeakMap();
@@ -111,35 +111,22 @@
             img.style.backgroundSize = 'cover';
             img.style.backgroundPosition = 'center';
         }
-
-        var frame = img.closest('.manor-shot');
-        if (frame) {
-            if (tone) frame.style.setProperty('--manor-tone', tone);
-            if (lqip) frame.style.setProperty('--manor-lqip', 'url("' + lqip + '")');
-        }
     }
 
     function settleImage(img, loaded, animate) {
         img.classList.remove('annie-image-loading');
-        var frame = img.closest('.manor-shot');
         var reduceMotion = window.matchMedia &&
             window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (loaded && animate && !reduceMotion) {
-            var revealClass = frame ? 'is-revealing' : 'annie-image-revealing';
-            img.classList.add(revealClass);
+            img.classList.add('annie-image-revealing');
             img.addEventListener('animationend', function () {
-                img.classList.remove(revealClass);
+                img.classList.remove('annie-image-revealing');
             }, { once: true });
             window.setTimeout(function () {
-                img.classList.remove(revealClass);
+                img.classList.remove('annie-image-revealing');
             }, 600);
         } else {
             img.classList.remove('annie-image-revealing');
-            img.classList.remove('is-revealing');
-        }
-
-        if (frame) {
-            frame.classList.add('is-ready');
         }
 
         if (window.parent !== window) {
@@ -155,8 +142,7 @@
 
     function initializeImage(img) {
         if (managedImages.has(img) || img.classList.contains('avatar') ||
-            img.id === 'manorLightboxImage' || img.closest('.manor-lightbox') ||
-            img.closest('.manor-shot')) {
+            img.closest('[data-image-loading="off"]')) {
             return;
         }
         managedImages.add(img);
