@@ -69,7 +69,6 @@
   - 逻辑见 `js/script.js` 的「全站搜索：检索核心 / 交互」「搜索入口：空间自适应」，样式见 `css/style.css` 的「全站搜索」段落。
 - 直链下载页（`project_subpage/projects/download/index.html`）的搜索：按名称、版本、简介、功能检索，多关键词按「与」匹配，命中处高亮，带结果计数、清空按钮、Esc 清空和空状态出口；输入 140ms 防抖，手机上搜索框与按钮保持同一行。
 - 文章卡片二级菜单支持三种类型：打开站内文章、跳转到文章配置的独立页面（`externalPage`）、或自定义链接（`link`）
-- 归宿照片页（`project_subpage/blog/manor_photo.html`）的图片：默认就是可见的（`opacity: 1`），淡入只在「确认还没加载完」时才播一次。之前把 `opacity: 0` 写在 CSS 默认值里、靠 `load` 事件才显示，内嵌在 iframe 时 `loading="lazy"` 的图可能一直不触发 `load`，表现为「页面看不到图，点开放大却能显示」——因为 lightbox 是新建 img 重新加载的。现在无论 `load` / `error` / 2.5 秒超时，最终都会落到可见状态，两张图也都改成了 `loading="eager"`。
 - 文章详情支持内嵌独立 HTML 页面（`embeddedPage`），自动调整高度并适配主题
 - 文章分享：打开文章时地址栏带上 `?article=<id>`，文章页顶部的「分享」按钮和卡片菜单均可复制该链接；别人打开链接直达对应文章，链接失效时自动回到首页
 - 微信内分享：微信内置浏览器（UA 含 `MicroMessenger` / `wxwork`，或注入了 `WeixinJSBridge`）不支持 Web Share API，也没有让网页主动唤起「分享给朋友」面板的接口，因此点击分享按钮会先复制链接、再弹出指向右上角「···」的引导浮层；鸿蒙 NEXT 版微信（ArkWeb 内核，UA 可能不带 `MicroMessenger`）同样按微信内处理。**注意**：鸿蒙/华为手机自带的浏览器也是 ArkWeb 内核，所以判断时会先排除 `HuaweiBrowser`、`UCBrowser`、`Quark`、`MQQBrowser` 等已知普通浏览器标记（见 `js/script.js` 的 `NON_WECHAT_APP_BROWSER`），否则手机上的普通浏览器也会被误判成微信、弹出无意义的引导浮层；其它浏览器仍走系统分享面板/复制链接。桌面版微信（Windows/macOS）的分享入口在左上角，浮层的箭头与文案会自动换成「左上角」
@@ -84,7 +83,7 @@
 - 点击图标复制微信号、QQ 号和邮箱地址（优先使用 Clipboard API，兼容旧浏览器）
 - 首页背景音乐卡片，提供播放/暂停、音量、进度和收起控制；用户的音乐启用状态保存在浏览器本地
 - 独立视频播放页 `movie.html`：视频列表配置在 `VIDEO_LIST` 数组，支持侧边播放列表面板、加载动画、左上角水印，以及针对验证码、地区限制、解码失败、资源禁用等情况的详细错误提示与"重新加载 / 换一个视频"操作
-- 子页面：博客自带页面在 `project_subpage/blog/`（没做完的项目、未开放文章提示页、反馈表单、反馈成功页、使用指南），自己的项目页在 `project_subpage/projects/`（直链下载站 `projects/download/index.html` 与误踢申诉指南 `projects/appeal-guide/index.html`）
+- 子页面：博客自带页面在 `project_subpage/blog/`（没做完的项目、未开放文章提示页、反馈表单、反馈成功页、使用指南），自己的项目页在 `project_subpage/projects/`
 - 关于页在 `index.html` 的 `view-about` 视图内展示（RH 工作室介绍），由 `data-nav="about"` 触发切换
 
 ## 修改内容

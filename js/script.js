@@ -2,6 +2,16 @@
             // ==================== ★★★ 在这里修改你的博客内容 ★★★ ====================
             // 所有文章数据都集中在这个数组里，增删改都非常方便。
             const blogPosts = [{
+                id: 14,
+                pinned: false,
+                title: '最新｜百度网盘不限速下载方法',
+                date: '2026-10-25',
+                excerpt: '发现的新方法，赶紧用起来',
+                tags: ['指南', '随笔'],
+                featured: true,
+                // 独立页面，作为文章正文内嵌展示（照片、排版都在这个文件里）
+                embeddedPage: 'project_subpage/blog/article_14_baidu.html',
+            }, {
                 id: 13,
                 pinned: false,
                 title: '六点五十的早自习，先给我演示一下怎么到',
