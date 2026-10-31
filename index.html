@@ -304,7 +304,7 @@
 
         <!-- ==================== 页脚 ==================== -->
         <footer class="site-footer">
-            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.20.081</p>
+            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.20.087</p>
         </footer>
     </div>
 
@@ -496,6 +496,120 @@
                     toast.hidden = true;
                 }, 300);
             }, 5000);
+        })();
+    </script>
+
+    <!-- ==================== 电影错误弹窗 ==================== -->
+    <!-- 电影模块在 iframe 里，弹窗会被那个框裁掉；
+         所以由模块把错误上报到这里，在博客层弹出，样式与站内浮层一致。 -->
+    <div class="movie-error-overlay" id="movieErrorOverlay" hidden>
+        <div class="movie-error-backdrop" id="movieErrorBackdrop"></div>
+        <div class="movie-error-panel" role="dialog" aria-modal="true" aria-labelledby="movieErrorTitle">
+            <div class="movie-error-icon" id="movieErrorIcon">⚠️</div>
+            <h3 class="movie-error-title" id="movieErrorTitle"></h3>
+            <p class="movie-error-reason" id="movieErrorReason"></p>
+            <p class="movie-error-detail" id="movieErrorDetail" hidden></p>
+            <div class="movie-error-actions" id="movieErrorActions"></div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const overlay = document.getElementById('movieErrorOverlay');
+            const backdrop = document.getElementById('movieErrorBackdrop');
+            const iconEl = document.getElementById('movieErrorIcon');
+            const titleEl = document.getElementById('movieErrorTitle');
+            const reasonEl = document.getElementById('movieErrorReason');
+            const detailEl = document.getElementById('movieErrorDetail');
+            const actionsEl = document.getElementById('movieErrorActions');
+            const frame = document.getElementById('movieFrame');
+
+            if (!overlay || !frame) return;
+
+            let closeTimer = null;
+
+            function post(action) {
+                if (frame.contentWindow) {
+                    frame.contentWindow.postMessage({ type: 'annie-movie-action', action: action }, '*');
+                }
+            }
+
+            function makeButton(label, primary, onClick) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'movie-error-btn' + (primary ? ' primary' : '');
+                btn.textContent = label;
+                btn.addEventListener('click', onClick);
+                return btn;
+            }
+
+            function close() {
+                overlay.classList.remove('is-open');
+                window.clearTimeout(closeTimer);
+                closeTimer = window.setTimeout(function () {
+                    if (!overlay.classList.contains('is-open')) overlay.hidden = true;
+                }, 240);
+            }
+
+            function open(data) {
+                iconEl.textContent = data.icon || '⚠️';
+                titleEl.textContent = data.title || '播放出错';
+                reasonEl.textContent = data.reason || '';
+
+                if (data.detail) {
+                    detailEl.textContent = data.detail;
+                    detailEl.hidden = false;
+                } else {
+                    detailEl.hidden = true;
+                }
+
+                actionsEl.innerHTML = '';
+
+                if (data.priority === 'captcha' && data.url) {
+                    actionsEl.appendChild(makeButton('打开直链完成验证', true, function () {
+                        window.open(data.url, '_blank', 'noopener');
+                        close();
+                    }));
+                    actionsEl.appendChild(makeButton('重新加载', false, function () {
+                        post('reload');
+                        close();
+                    }));
+                } else if (data.priority === 'novideo') {
+                    actionsEl.appendChild(makeButton('打开视频列表', true, function () {
+                        post('list');
+                        close();
+                    }));
+                } else {
+                    actionsEl.appendChild(makeButton('重新加载', true, function () {
+                        post('reload');
+                        close();
+                    }));
+                    if (data.canList) {
+                        actionsEl.appendChild(makeButton('换一个视频', false, function () {
+                            post('list');
+                            close();
+                        }));
+                    }
+                }
+
+                window.clearTimeout(closeTimer);
+                overlay.hidden = false;
+                void overlay.offsetWidth;
+                overlay.classList.add('is-open');
+            }
+
+            window.addEventListener('message', function (event) {
+                if (event.source !== frame.contentWindow) return;
+                if (event.data && event.data.type === 'annie-movie-error') open(event.data);
+            });
+
+            backdrop.addEventListener('click', close);
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && !overlay.hidden) close();
+            });
+
+            // 切走电影视图时 iframe 会重新加载，顺手清掉残留弹窗
+            frame.addEventListener('load', close);
         })();
     </script>
 </body>

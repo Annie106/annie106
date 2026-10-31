@@ -165,6 +165,18 @@
         var useFast = Boolean(fastSrc && slowSrc && shouldUseFast());
         var selectedSrc = useFast ? fastSrc : slowSrc;
         var settled = false;
+        var reported = false;
+
+        function reportResult(ok, url) {
+            if (reported) return;
+            reported = true;
+            log(
+                ok
+                    ? (img.getAttribute('data-fast-active') === 'true' ? '高速链接加载成功' : '慢速链接加载成功')
+                    : '图片加载失败',
+                url
+            );
+        }
 
         if (useFast) {
             rememberFastAccess();
@@ -175,14 +187,9 @@
         }
 
         img.addEventListener('load', function () {
+            reportResult(true, img.currentSrc || img.src);
             if (settled) return;
             settled = true;
-            log(
-                img.getAttribute('data-fast-active') === 'true'
-                    ? '高速链接加载成功'
-                    : '慢速链接加载成功',
-                img.currentSrc || img.src
-            );
             settleImage(img, true, true);
         });
 
@@ -194,23 +201,34 @@
                 img.src = slowSrc;
                 return;
             }
+            reportResult(false, img.currentSrc || img.src || selectedSrc);
             if (settled) return;
             settled = true;
             img.setAttribute('data-load-failed', 'true');
-            log('图片加载失败', img.currentSrc || img.src || selectedSrc);
             settleImage(img, false, false);
         });
 
         img.classList.add('annie-image-loading');
+
+        // 打开页面即开始加载：视口外的图片不再等待滚动，改为后台低优先级加载
+        if ((img.getAttribute('loading') || '').toLowerCase() === 'lazy') {
+            var rect = img.getBoundingClientRect();
+            var viewH = img.ownerDocument.defaultView.innerHeight || 0;
+            var inView = rect.bottom > -100 && rect.top < viewH + 100;
+            if (!inView && 'fetchPriority' in img) img.fetchPriority = 'low';
+            img.loading = 'eager';
+        }
+
         if (selectedSrc && currentSrc !== selectedSrc) img.src = selectedSrc;
 
         if (img.complete && img.naturalWidth > 0) {
+            reportResult(true, img.currentSrc || img.src || selectedSrc);
             settled = true;
             settleImage(img, true, false);
         } else if (img.complete && selectedSrc) {
+            reportResult(false, selectedSrc);
             settled = true;
             img.setAttribute('data-load-failed', 'true');
-            log('图片加载失败', selectedSrc);
             settleImage(img, false, false);
         }
 

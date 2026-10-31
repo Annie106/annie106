@@ -26,10 +26,7 @@ button{
 }
 /* 悬停效果只在真正用鼠标时生效：触屏点一下会让 :hover 一直粘在按钮上，
    按钮看起来就像没松开（常亮）。html:not(.is-touch-input) 由 js/touch-hover.js 维护。 */
-html:not(.is-touch-input) button:hover{
-  background:#f7f7f7;
-  border-color:#d8d8d8;
-}
+html:not(.is-touch-input) button:hover{transform:scale(1.04)}
 button:active{transform:scale(.97)}
 button.primary{
   background:#111;
@@ -37,10 +34,7 @@ button.primary{
   color:#fff;
   box-shadow:0 2px 8px rgba(0,0,0,.12);
 }
-html:not(.is-touch-input) button.primary:hover{
-  background:#333;
-  border-color:#333;
-}
+html:not(.is-touch-input) button.primary:hover{transform:scale(1.04)}
 
 /* ===== button-wrap 结构（无边框、无蓝色柔光） ===== */
 .button-wrap{
@@ -82,7 +76,6 @@ html:not(.is-touch-input) button.primary:hover{
   pointer-events:none;
 }
 .button-wrap:hover button{
-  background:#33333d;
   transform:translateY(-2px);
 }
 .button-wrap:hover .button-shadow{
@@ -256,13 +249,7 @@ body.mobile-mode #btnSpeed{width:50px;height:44px;font-size:14px}
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   transition:.18s;
 }
-html:not(.is-touch-input) .icon-btn:hover{
-  background:linear-gradient(135deg,
-              rgba(255,255,255,.38) 0%,
-              rgba(255,255,255,.18) 45%,
-              rgba(255,255,255,.08) 100%);
-  border-color:rgba(255,255,255,.34);
-}
+html:not(.is-touch-input) .icon-btn:hover{transform:scale(1.04)}
 .icon-btn:active{transform:scale(.95)}
 .icon-btn svg{width:18px;height:18px;display:block;pointer-events:none}
 .icon-btn.big svg{width:20px;height:20px}
@@ -282,11 +269,7 @@ html:not(.is-touch-input) .icon-btn:hover{
   transition:.18s;
 }
 html:not(.is-touch-input) #btnSpeed:hover{
-  background:linear-gradient(135deg,
-              rgba(255,255,255,.38) 0%,
-              rgba(255,255,255,.18) 45%,
-              rgba(255,255,255,.08) 100%);
-  border-color:rgba(255,255,255,.34);
+  transform:scale(1.04);
 }
 #btnSpeed.active{
   background:linear-gradient(135deg,#555,#222);
@@ -382,9 +365,7 @@ html:not(.is-touch-input) #btnSpeed:hover{
   box-shadow:none;
   letter-spacing:.4px;
 }
-html:not(.is-touch-input) #speedMenu button:hover{
-  background:rgba(255,255,255,.09);color:#fff;
-}
+html:not(.is-touch-input) #speedMenu button:hover{transform:scale(1.04)}
 #speedMenu button.active{
   background:rgba(255,255,255,.16);
   color:#fff;font-weight:700;
@@ -419,7 +400,7 @@ html:not(.is-touch-input) #speedMenu button:hover{
 #panel .icon-btn{
   color:#555;border:1px solid #eaeaea;background:#fff;box-shadow:none;
 }
-html:not(.is-touch-input) #panel .icon-btn:hover{background:#f5f5f5;border-color:#ddd}
+html:not(.is-touch-input) #panel .icon-btn:hover{transform:scale(1.04)}
 #list{list-style:none;margin:0;padding:10px 0;overflow-y:auto;flex:1}
 #list .empty{padding:26px 16px;text-align:center;color:var(--dim);font-size:13px}
 .item{
@@ -458,67 +439,112 @@ html:not(.is-touch-input) .item:hover{background:#f7f7f7}
   letter-spacing:.5px;
   transition:.18s;
 }
-html:not(.is-touch-input) .contact-btn:hover{
-  background:#333;
-  border-color:#333;
-  color:#fff;
-}
+html:not(.is-touch-input) .contact-btn:hover{transform:scale(1.04)}
 .contact-btn:active{transform:scale(.98)}
 
 #overlay{
-  --line:#383838;
-  --dim:#b8b8b8;
+  --ov-line:#e6e6e6;
+  --ov-dim:#8a8a92;
+  --ov-ink:#1a1a1a;
+  --ov-soft:#5f5f68;
+  --ov-surface:#fafafa;
+  --ov-surface-2:#f1f1f3;
+  --ov-edge:#d8d8dc;
+  --ov-hover:rgba(0,0,0,.035);
+  --ov-badge-bg:rgba(0,0,0,.06);
+  --ov-badge-ink:#3a3a42;
+  --ov-badge-line:rgba(0,0,0,.12);
+  --ov-quote-bg:rgba(0,0,0,.045);
+  --ov-quote-line:#b9b9bf;
+  --ov-quote-ink:#2a2a30;
+  --ov-detail-bg:#f5f5f7;
   position:absolute;inset:0;z-index:20;
-  display:flex;align-items:flex-start;justify-content:center;
-  padding:24px;overflow:auto;
-  background:radial-gradient(circle at 50% 20%,#282828 0%,#111 72%);
-  color:#f2f2f2;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;overflow:auto;
+  background:rgba(15,17,21,.34);
+  -webkit-backdrop-filter:blur(6px);
+  backdrop-filter:blur(6px);
+  opacity:0;
+  transition:opacity .24s ease;
+  color:var(--ov-ink);
+}
+#overlay.is-open{opacity:1}
+[data-theme="dark"] #overlay{
+  --ov-line:#2f333c;
+  --ov-dim:#9aa1ad;
+  --ov-ink:#e7e9ee;
+  --ov-soft:#b9b9c4;
+  --ov-surface:#1b1f26;
+  --ov-surface-2:#22262e;
+  --ov-edge:#3a3f4a;
+  --ov-hover:rgba(255,255,255,.03);
+  --ov-badge-bg:rgba(255,255,255,.1);
+  --ov-badge-ink:#e5e5e5;
+  --ov-badge-line:rgba(255,255,255,.18);
+  --ov-quote-bg:rgba(255,255,255,.06);
+  --ov-quote-line:#aaa;
+  --ov-quote-ink:#eee;
+  --ov-detail-bg:#141820;
 }
 #overlay[hidden]{display:none}
 .ov-card{
   width:min(640px,100%);
-  margin:auto 0;
-  animation:pop .22s ease;
+  max-height:100%;
+  overflow:auto;
+  margin:auto;
+  padding:20px 22px;
+  border:1px solid var(--ov-line);
+  border-radius:20px;
+  background:var(--panel);
+  box-shadow:
+    0 1px 2px rgba(15,23,42,.06),
+    0 24px 60px -12px rgba(15,23,42,.28);
+  opacity:0;
+  transform:translateY(10px) scale(.985);
+  transition:opacity .2s ease,transform .28s cubic-bezier(.22,1,.36,1);
 }
-@keyframes pop{from{opacity:0;transform:translateY(10px)}}
-.ov-ico{font-size:30px;line-height:1;margin-bottom:10px}
-.ov-card h2{margin:0 0 9px;font-size:18px;font-weight:650}
-.ov-reason{margin:0 0 16px;color:#b9b9c4;font-size:13.5px;line-height:1.65}
+#overlay.is-open .ov-card{opacity:1;transform:translateY(0) scale(1)}
+@media(prefers-reduced-motion:reduce){
+  #overlay,.ov-card{transition:none}
+}
+.ov-ico{font-size:24px;line-height:1;margin-bottom:6px}
+.ov-card h2{margin:0 0 6px;font-size:16px;font-weight:650}
+.ov-reason{margin:0 0 10px;color:var(--ov-soft);font-size:12.5px;line-height:1.55}
 
 .ov-scenarios{
-  border-top:1px solid var(--line);
-  padding-top:14px;
+  border-top:1px solid var(--ov-line);
+  padding-top:10px;
 }
 .ov-sec-title{
   font-size:12px;font-weight:600;
-  color:var(--dim);letter-spacing:.6px;
-  margin:0 0 10px;
+  color:var(--ov-dim);letter-spacing:.6px;
+  margin:0 0 7px;
 }
 .ov-scenario{
-  border:1px solid var(--line);
+  border:1px solid var(--ov-line);
   border-radius:10px;
-  margin-bottom:8px;
+  margin-bottom:5px;
   overflow:hidden;
-  background:#171717;
+  background:var(--ov-surface);
   transition:border-color .15s;
 }
-.ov-scenario:hover{border-color:#35353f}
-.ov-scenario[open]{background:#202020;border-color:#444}
+.ov-scenario:hover{border-color:var(--ov-edge)}
+.ov-scenario[open]{background:var(--ov-surface-2);border-color:var(--ov-edge)}
 .ov-scenario summary{
   display:flex;align-items:center;gap:9px;
-  padding:11px 13px;
+  padding:8px 12px;
   cursor:pointer;
   font-size:13.5px;
   list-style:none;
   user-select:none;
   transition:background .15s;
 }
-.ov-scenario summary:hover{background:rgba(255,255,255,.03)}
+.ov-scenario summary:hover{background:var(--ov-hover)}
 .ov-scenario summary::-webkit-details-marker{display:none}
 .ov-scenario summary::after{
   content:"▸";
   margin-left:auto;
-  color:var(--dim);
+  color:var(--ov-dim);
   font-size:11px;
   transition:transform .2s;
 }
@@ -529,9 +555,9 @@ html:not(.is-touch-input) .contact-btn:hover{
   font-size:10px;
   padding:1px 7px;
   border-radius:20px;
-  background:rgba(255,255,255,.1);
-  color:#e5e5e5;
-  border:1px solid rgba(255,255,255,.18);
+  background:var(--ov-badge-bg);
+  color:var(--ov-badge-ink);
+  border:1px solid var(--ov-badge-line);
   font-weight:600;
   letter-spacing:.3px;
   margin-right:4px;
@@ -542,22 +568,22 @@ html:not(.is-touch-input) .contact-btn:hover{
   border-color:rgba(255,107,107,.4);
 }
 .sc-body{
-  padding:2px 14px 14px 36px;
-  color:#b9b9c4;
+  padding:2px 12px 10px 32px;
+  color:var(--ov-soft);
   font-size:13px;
 }
-.sc-body p{margin:0 0 10px}
+.sc-body p{margin:0 0 8px}
 .sc-body ol{margin:0;padding-left:18px}
-.sc-body ol li{margin-bottom:8px;line-height:1.65}
-.sc-body ol li::marker{color:#bdbdbd}
+.sc-body ol li{margin-bottom:6px;line-height:1.55}
+.sc-body ol li::marker{color:var(--ov-dim)}
 .sc-quote{
   display:block;
   margin:6px 0 4px;
   padding:9px 12px;
-  border-left:3px solid #aaa;
-  background:rgba(255,255,255,.06);
+  border-left:3px solid var(--ov-quote-line);
+  background:var(--ov-quote-bg);
   border-radius:0 8px 8px 0;
-  color:#eee;
+  color:var(--ov-quote-ink);
   font-size:13px;
   line-height:1.6;
   user-select:text;
@@ -565,14 +591,14 @@ html:not(.is-touch-input) .contact-btn:hover{
 }
 
 .ov-detail{
-  margin-top:14px;padding:8px 10px;border-radius:8px;
-  background:#0d0d11;border:1px solid var(--line);
-  font:12px/1.6 ui-monospace,Menlo,Consolas,monospace;
-  color:#b8b8b8;
+  margin-top:10px;padding:7px 10px;border-radius:8px;
+  background:var(--ov-detail-bg);border:1px solid var(--ov-line);
+  font:11.5px/1.5 ui-monospace,Menlo,Consolas,monospace;
+  color:var(--ov-dim);
   word-break:break-all;
   white-space:pre-wrap;
 }
-.ov-btns{display:flex;flex-wrap:wrap;gap:14px;margin-top:18px;align-items:center}
+.ov-btns{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;align-items:center}
 
 #imgLoadingOverlay{
   position:fixed;inset:0;z-index:9999;
@@ -613,20 +639,20 @@ html:not(.is-touch-input) .contact-btn:hover{
 [data-theme="dark"] button{
   background:#1b1f26;color:var(--txt);border-color:var(--line);box-shadow:none;
 }
-html:not(.is-touch-input) [data-theme="dark"] button:hover{background:#242a33;border-color:#333947}
+html:not(.is-touch-input) [data-theme="dark"] button:hover{transform:scale(1.04)}
 [data-theme="dark"] button.primary{background:#e7e9ee;color:#111;border-color:#e7e9ee}
-html:not(.is-touch-input) [data-theme="dark"] button.primary:hover{background:#ffffff;border-color:#ffffff}
+html:not(.is-touch-input) [data-theme="dark"] button.primary:hover{transform:scale(1.04)}
 
 /* 列表面板 */
 [data-theme="dark"] #panel{background:var(--panel);border-left-color:var(--line);box-shadow:-12px 0 36px rgba(0,0,0,.6)}
 [data-theme="dark"] .p-head{background:var(--panel);border-bottom-color:var(--line)}
 [data-theme="dark"] #panel .icon-btn{color:var(--dim);border-color:var(--line);background:#1b1f26}
-html:not(.is-touch-input) [data-theme="dark"] #panel .icon-btn:hover{background:#242a33;border-color:#333947}
+html:not(.is-touch-input) [data-theme="dark"] #panel .icon-btn:hover{transform:scale(1.04)}
 html:not(.is-touch-input) [data-theme="dark"] .item:hover{background:rgba(255,255,255,.05)}
 [data-theme="dark"] .item.active{background:rgba(255,255,255,.09)}
 [data-theme="dark"] .p-foot{background:var(--panel);border-top-color:var(--line)}
 [data-theme="dark"] .contact-btn{background:#e7e9ee;border-color:#e7e9ee;color:#111}
-html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{background:#ffffff;border-color:#ffffff;color:#111}
+html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{transform:scale(1.04)}
 </style>
 <script>
 (function () {
@@ -801,7 +827,7 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{background:#fff
     { name: '花木兰', url: '  https://links.8uid.com/d/igyccypj8xcp' },
     { name: '流浪地球2', url: 'https://links.8uid.com/d/nqxfvxm1lrxm' },
     { name: '复仇者联盟3 4k', url: 'https://links.8uid.com/d/enbifeenuy02' },
-    { name: '痴迷', url: 'https://links.8uid.com/d/4f2651f105b2b1ab7abfa76f31004f6d ' },
+    { name: '痴迷', url: '' },
     { name: '视频 2', url: 'https://links.8uid.com/d/gk8z5ww0n86u' },
   ];
 
@@ -826,6 +852,13 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{background:#fff
   const listEl   = $('list'),    overlay= $('overlay'),ovIcon = $('ovIcon');
   const ovTitle  = $('ovTitle'), ovReason=$('ovReason'),ovScenarios = $('ovScenarios');
   const ovDetail = $('ovDetail'),ovBtns = $('ovBtns');
+
+  /* 弹窗显示：配合 #overlay.is-open 做进场过渡 */
+  function showOverlay() {
+    overlay.hidden = false;
+    void overlay.offsetWidth;
+    overlay.classList.add('is-open');
+  }
   const btnFull  = $('btnFull'), btnPlay = $('btnPlay'), playIcon = $('playIcon');
   const volBox   = $('volBox'),  volRange= $('volRange'),btnMute = $('btnMute');
   const speedBox = $('speedBox'),btnSpeed= $('btnSpeed'),speedMenu = $('speedMenu');
@@ -1141,7 +1174,7 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{background:#fff
     hideLoading();
     const sc = SCENARIOS[priority];
 
-    overlay.hidden = false;
+    showOverlay();
     ovIcon.textContent = sc.icon;
     ovTitle.textContent = sc.title;
     ovReason.textContent = sc.desc;
@@ -1227,6 +1260,21 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{background:#fff
     } else {
       ovDetail.hidden = true;
     }
+
+    /* 嵌在博客里时，错误交给外层博客页面弹窗显示，避免被 iframe 裁掉 */
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({
+        type: 'annie-movie-error',
+        priority: priority,
+        icon: sc.icon,
+        title: sc.title,
+        reason: sc.desc,
+        detail: ovDetail.hidden ? '' : ovDetail.textContent,
+        url: url || '',
+        canList: playlist.length > 1
+      }, '*');
+      hideOverlay();
+    }
   }
 
   /* =========================================================
@@ -1244,7 +1292,7 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{background:#fff
     const wasTimeout = timedOut;
     timedOut = false;
 
-    overlay.hidden = true;
+    hideOverlay();
     imgLoadingOverlay.hidden = true;
 
     if (priorityOverride) {
@@ -1265,10 +1313,29 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{background:#fff
     showImageThenDecide(url, code, wasTimeout);
   }
 
+  /* 弹窗隐藏：先播完退场过渡再真正隐藏 */
   function hideOverlay() {
-    overlay.hidden = true;
+    if (!overlay.hidden && overlay.classList.contains('is-open')) {
+      overlay.classList.remove('is-open');
+      window.setTimeout(function () {
+        if (!overlay.classList.contains('is-open')) overlay.hidden = true;
+      }, 240);
+    } else {
+      overlay.hidden = true;
+    }
     imgLoadingOverlay.hidden = true;
   }
+
+  /* 接收外层博客页面弹窗上的操作 */
+  window.addEventListener('message', function (e) {
+    const d = e.data;
+    if (!d || d.type !== 'annie-movie-action') return;
+    if (d.action === 'reload') {
+      if (index >= 0) loadOnly(index);
+    } else if (d.action === 'list') {
+      setPanel(true);
+    }
+  });
 
   /* =========================================================
      ⑬ 加载动画控制
@@ -1900,8 +1967,19 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{background:#fff
   if (playlist.length) {
     nowTitle.textContent = '请选择视频';
     setPanel(true);
+  } else if (window.parent && window.parent !== window) {
+    window.parent.postMessage({
+      type: 'annie-movie-error',
+      priority: 'novideo',
+      icon: '🎬',
+      title: '没有视频',
+      reason: '请在 HTML 源码顶部的 VIDEO_LIST 数组中添加新视频链接。',
+      detail: '',
+      url: '',
+      canList: true
+    }, '*');
   } else {
-    overlay.hidden = false;
+    showOverlay();
     ovIcon.textContent = '🎬';
     ovTitle.textContent = '没有视频';
     ovReason.textContent = '请在 HTML 源码顶部的 VIDEO_LIST 数组中添加新视频链接。';
