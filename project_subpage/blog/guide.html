@@ -633,7 +633,22 @@
             scrollbar-width: thin;
             padding: 8px 0;
         }
+        .guide-toc-indicator {
+            position: absolute;
+            top: 0;
+            right: 0;
+            left: 0;
+            z-index: 0;
+            border-radius: 8px;
+            background: var(--color-surface);
+            pointer-events: none;
+        }
+        .guide-toc-indicator.is-ready {
+            transition: transform .16s ease-out;
+        }
         .guide-toc-link {
+            position: relative;
+            z-index: 1;
             display: block;
             padding: 6px 10px;
             border-radius: 8px;
@@ -642,13 +657,16 @@
             line-height: 1.45;
             text-decoration: none !important;
             overflow-wrap: anywhere;
+            transition: background-color .2s ease, color .2s ease;
         }
         .guide-toc-link:hover, .guide-toc-link:focus-visible,
         .guide-toc-link.is-active {
-            background: var(--color-surface);
             color: var(--color-text-primary);
         }
-        .guide-toc-link.is-active { font-weight: 600; }
+        .guide-toc-link:hover, .guide-toc-link:focus-visible {
+            background: var(--color-surface);
+        }
+        .guide-toc-link.is-active { background: transparent; }
         .guide-toc-link.is-sub { padding-left: 22px; font-size: .76rem; }
         .guide-toc-toggle, .guide-toc-backdrop { display: none; }
         @media (max-width: 779px) {
@@ -750,6 +768,8 @@
         }
         @media (prefers-reduced-motion: reduce) {
             .guide-toc { transition: none; }
+            .guide-toc-indicator.is-ready { transition: none; }
+            .guide-toc-link { transition: none; }
             .guide-top-btn { transition: none; }
         }
 
@@ -1922,6 +1942,11 @@ git push</code></pre>
 
             const article = frame ? frame.closest('#view-article') : null;
             let activeLink = null;
+            const activeIndicator = hostDoc.createElement('span');
+            activeIndicator.className = 'guide-toc-indicator';
+            activeIndicator.setAttribute('aria-hidden', 'true');
+            list.appendChild(activeIndicator);
+            let indicatorReady = false;
             let isOpen = false;
             // 点击目录后短暂锁定该条目，防止紧邻子标题在下一次滚动更新中抢走高亮。
             let pinnedHeadingIndex = -1;
@@ -2057,6 +2082,10 @@ git push</code></pre>
                     const y = (frameRect ? frameRect.top : 0) + heading.getBoundingClientRect().top;
                     if (y <= readingLine) current = index;
                 });
+                const atArticleEnd = frameRect
+                    ? frameRect.bottom <= host.innerHeight + 1
+                    : (host.scrollY || hostRoot.scrollTop || 0) + host.innerHeight
+                        >= Math.max(hostRoot.scrollHeight, hostDoc.body.scrollHeight) - 1;
                 if (pinnedHeadingIndex >= 0) {
                     const pinnedRect = headings[pinnedHeadingIndex].getBoundingClientRect();
                     const pinnedTop = (frameRect ? frameRect.top : 0) + pinnedRect.top;
@@ -2066,6 +2095,7 @@ git push</code></pre>
                         pinnedHeadingIndex = -1;
                     }
                 }
+                if (atArticleEnd) current = headings.length - 1;
                 const link = links[current];
                 if (link !== activeLink) {
                     if (activeLink) activeLink.classList.remove('is-active');
@@ -2076,6 +2106,15 @@ git push</code></pre>
                     else if (link.offsetTop + link.offsetHeight > list.scrollTop + list.clientHeight) {
                         list.scrollTop = link.offsetTop + link.offsetHeight - list.clientHeight;
                     }
+                }
+                if (atArticleEnd) list.scrollTop = Math.max(0, list.scrollHeight - list.clientHeight);
+                activeIndicator.style.transform = 'translate3d(0, ' + link.offsetTop + 'px, 0)';
+                activeIndicator.style.height = link.offsetHeight + 'px';
+                if (!indicatorReady) {
+                    host.requestAnimationFrame(function () {
+                        activeIndicator.classList.add('is-ready');
+                    });
+                    indicatorReady = true;
                 }
             }
             host.addEventListener('scroll', queueUpdate, { passive: true });
