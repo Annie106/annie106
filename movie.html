@@ -420,17 +420,21 @@ html:not(.is-touch-input) .item:hover{background:#f7f7f7}
 /* 联系我们 */
 .p-foot{
   flex:none;
+  display:flex;
+  gap:10px;
   padding:14px 16px calc(14px + env(safe-area-inset-bottom));
   border-top:1px solid var(--line);
   background:#fff;
 }
 .contact-btn{
+  flex:1 1 0;
+  min-width:0;
   display:block;
-  width:100%;
   padding:10px 12px;
   font-size:14px;
   font-weight:500;
   text-align:center;
+  white-space:nowrap;
   border-radius:9px;
   background:#111;
   border:1px solid #111;
@@ -438,6 +442,12 @@ html:not(.is-touch-input) .item:hover{background:#f7f7f7}
   cursor:pointer;
   letter-spacing:.5px;
   transition:.18s;
+}
+/* 次级按钮：投稿 */
+.contact-btn.ghost{
+  background:#fff;
+  border-color:#111;
+  color:#111;
 }
 html:not(.is-touch-input) .contact-btn:hover{transform:scale(1.04)}
 .contact-btn:active{transform:scale(.98)}
@@ -652,6 +662,7 @@ html:not(.is-touch-input) [data-theme="dark"] .item:hover{background:rgba(255,25
 [data-theme="dark"] .item.active{background:rgba(255,255,255,.09)}
 [data-theme="dark"] .p-foot{background:var(--panel);border-top-color:var(--line)}
 [data-theme="dark"] .contact-btn{background:#e7e9ee;border-color:#e7e9ee;color:#111}
+[data-theme="dark"] .contact-btn.ghost{background:transparent;border-color:rgba(255,255,255,.32);color:#e7e9ee}
 html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{transform:scale(1.04)}
 </style>
 <script>
@@ -793,6 +804,7 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{transform:scale
     <ul id="list"></ul>
     <div class="p-foot">
       <button class="contact-btn" id="btnContact" type="button">联系我们</button>
+      <button class="contact-btn ghost" id="btnSubmit" type="button">我要投稿</button>
     </div>
   </aside>
 
@@ -832,7 +844,8 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{transform:scale
   ];
 
   const PROBE_IMAGE_URL = 'https://links.8uid.com/d/49nb0z6k4a78';
-  const CONTACT_URL = 'index.html';
+  const CONTACT_URL = 'index.html?view=about';
+  const SUBMIT_URL = 'project_subpage/blog/building.html';
 
   /* =========================================================
      ② 元素引用
@@ -1022,52 +1035,49 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{transform:scale
   const SCENARIOS = {
     nodecode: {
       icon: '🔇',
-      title: '你的浏览器不支持此视频',
-      desc: '视频的声音部分可以正常播放，但画面部分你的浏览器无法显示。这通常是因为这个视频使用H.265 / HEVC的格式，你当前使用的浏览器不支持。',
+      title: '你的浏览器不支持此视频编码',
+      desc: '视频文件能加载，但当前浏览器解不出画面。最常见的原因是视频用了 H.265 / HEVC 编码，edge 不支持这种编码。',
       steps: [
-        '使用Chrome等主流浏览器，或者换一台设备再试。',
-        '如果更换浏览器后仍然无法显示画面，请使用Chrome浏览器。',
-        //#endregion'<span class="sc-quote">你好，这个视频在我这边只能听到声音，看不到画面，能麻烦换成 MP4（H.264）格式重新上传一下吗？</span>'
+        '换用最新版 Chrome 打开本页，或者换一台设备再试 ；macOS / iOS 上的 Safari 对 HEVC 支持更好，也可以试一次。',
       ]
     },
     captcha: {
-      icon: '✖',
+      icon: '🛡️',
       title: '需要人机验证',
-      desc: '遇到错误，请求被拦截。可能是短时间内多次访问触发了服务商的人机验证机制。',
+      desc: '视频地址可以访问，但请求被服务商的防护机制拦下了。短时间内反复刷新、或同一网络下访问太频繁时最容易触发。',
       steps: [
-        '点击下方「打开直链完成验证」，在新窗口中完成人机验证（勾选、拼图、滑块等）。',
-        '验证成功后回到本页面，点击「重新加载」。',
-        '如果验证通过后仍无法播放，等待几分钟后重试；一直不行，说明不是验证问题，看下面其他情况。'
+        '点下方「打开直链完成验证」，在新窗口里完成勾选、拼图或滑块验证。',
+        '验证通过后回到本页，点「重新加载」再播一次。',
+        '验证完成后仍然失败，等 5～10 分钟再试；若持续失败，请提交反馈。'
       ]
     },
     region: {
       icon: '📍',
       title: '当前地区可能无法访问',
-      desc: '无法加载，说明网络层面被拦截。该链接在部分地区（如福建、重庆等）可能存在网络屏蔽。',
+      desc: '请求在网络上就被拦住了，没有到达视频服务器。这类直链在部分地区（如福建、重庆）会被运营商屏蔽。',
       steps: [
-        '如果你当前在福建、重庆等地区，尝试切换网络：从 Wi-Fi 切换到手机流量，或更换不同运营商的网络。',
-        '使用可靠的 VPN 或代理后重试。',
-        '请其他地区的朋友帮忙测试，确认是否只是地区性屏蔽。',
-        '如果在公司或校园网内，防火墙也可能拦截，可尝试使用个人网络。'
+        '换一条网络再试：Wi-Fi 切手机流量，或换一家运营商的网络。',
+        '在福建、重庆等地区，可以开启可靠的 VPN / 代理后重试。',
+        '请其他地区的朋友打开同一个链接，能播就说明是地区性屏蔽。',
+        '公司网、校园网常带防火墙拦截，改用个人网络更容易成功。'
       ]
     },
     disabled: {
       icon: '🔗',
-      title: '链接已失效',
-      desc: '当前网络正常，但无法访问视频链路。链接可能已经过期或失效。',
+      title: '视频已失效',
+      desc: '你的网络没有问题，但视频服务器上找不到这个文件了。常见于视频被删除、过期，或服务商关闭了访问渠道。',
       steps: [
-        '联系分享者，确认链接是否正常，有没有新的替代链接。',
-        '如果这是你自己上传的链接，登录服务商后台检查链接状态和有效期。',
-        '尝试使用其他可用的备用链接。'
+        '点「换一个视频」，先从列表里选别的片子。',
+        '如果列表里也都播不了，说明视频源已经失效了。',
       ]
     },
     aborted: {
       icon: '⏸️',
       title: '播放被中断',
-      desc: '视频加载过程被中断了，通常是切换视频或网络抖动导致的。',
+      desc: '加载过程被打断了，常见于切换视频、拖动进度条过快，或网络短暂抖动。',
       steps: [
-        '点击「重新加载」，或者在列表里重新点一次这个视频。',
-        '如果频繁出现，检查网络是否稳定。'
+        '点「重新加载」，或在列表里重新点一次这个视频。',
+        '反复出现的话，检查网络是否稳定，尽量避开下载、直播等占带宽的操作。'
       ]
     }
   };
@@ -1170,7 +1180,10 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{transform:scale
   /* =========================================================
      ⑪ 普通错误面板
      ========================================================= */
-  function renderErrorUI(priority, code, wasTimeout, url, probe) {
+  async function renderErrorUI(priority, code, wasTimeout, url, probe) {
+    /* 其它入口（如视频轨检测）也可能在全屏里触发，统一先退全屏 */
+    await exitFullscreenIfNeeded();
+
     hideLoading();
     const sc = SCENARIOS[priority];
 
@@ -1240,19 +1253,30 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{transform:scale
       }
     }
 
+    /* 错误详情：中文说明 + 原始错误码，方便直接截图反馈，也方便排查 */
     const parts = [];
     if (code) {
-      const names = { 1: 'ABORTED', 2: 'NETWORK', 3: 'DECODE', 4: 'SRC_NOT_SUPPORTED' };
-      parts.push('MediaError ' + code + (names[code] ? ' (' + names[code] + ')' : ''));
+      const names = {
+        1: 'ABORTED · 加载被中止',
+        2: 'NETWORK · 网络错误或地址不可用',
+        3: 'DECODE · 解码失败',
+        4: 'SRC_NOT_SUPPORTED · 格式或地址不受支持'
+      };
+      parts.push('错误码 ' + code + '（' + (names[code] || '未知') + '）');
     }
     if (priority === 'nodecode') {
-      parts.push('画面未能显示，建议换浏览器或换 MP4 格式的视频');
+      parts.push('画面未解码，可换浏览器或改用 H.264 的 MP4');
     }
     if (video.networkState != null) {
-      const ns = { 0: 'NETWORK_EMPTY', 1: 'NETWORK_IDLE', 2: 'NETWORK_LOADING', 3: 'NETWORK_NO_SOURCE' };
-      parts.push('network=' + (ns[video.networkState] || video.networkState));
+      const ns = {
+        0: '尚未开始加载',
+        1: '已暂停加载',
+        2: '正在加载',
+        3: '找不到可用的视频源'
+      };
+      parts.push('加载状态：' + (ns[video.networkState] || ('未知(' + video.networkState + ')'))) ;
     }
-    if (wasTimeout) parts.push('超时(60s)');
+    if (wasTimeout) parts.push('等待 60 秒仍未出画面');
 
     if (parts.length) {
       ovDetail.textContent = parts.join('  ·  ');
@@ -1270,6 +1294,7 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{transform:scale
         title: sc.title,
         reason: sc.desc,
         detail: ovDetail.hidden ? '' : ovDetail.textContent,
+        steps: (sc.steps || []).slice(),
         url: url || '',
         canList: playlist.length > 1
       }, '*');
@@ -1278,9 +1303,52 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{transform:scale
   }
 
   /* =========================================================
+     ⑪-b 出错时先退出全屏
+     全屏时浏览器只绘制全屏元素内部，页面级弹窗、以及 iframe 外层的
+     博客弹窗都不会显示。所以任何错误提示出现前，先把全屏退掉。
+     ========================================================= */
+  async function exitFullscreenIfNeeded() {
+    /* iOS / iPadOS 的原生视频全屏，只能用它自己的接口退出 */
+    if (video.webkitDisplayingFullscreen && video.webkitExitFullscreen) {
+      try { video.webkitExitFullscreen(); } catch (e) {}
+    }
+
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if (fsEl) {
+      try {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      } catch (e) {}
+
+      /* 等 fullscreenchange 落地（最多 400ms），避免弹窗跟着全屏一起被裁掉 */
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        await new Promise(function (resolve) {
+          let done = false;
+          const finish = function () { if (done) return; done = true; resolve(); };
+          document.addEventListener("fullscreenchange", finish, { once: true });
+          document.addEventListener("webkitfullscreenchange", finish, { once: true });
+          window.setTimeout(finish, 400);
+        });
+      }
+    }
+
+    /* 兜底：把全屏按钮与页面状态同步回非全屏 */
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      document.body.classList.remove('in-fullscreen');
+      if (btnFull) {
+        btnFull.innerHTML = SVG.fsEnter;
+        btnFull.title = '全屏 (F)';
+      }
+    }
+  }
+
+  /* =========================================================
      ⑫ 错误入口
      ========================================================= */
-  function showVideoError(priorityOverride) {
+  async function showVideoError(priorityOverride) {
+    /* 全屏里出错：先退出全屏，再显示错误内容 */
+    await exitFullscreenIfNeeded();
+
     clearTimeout(watchdog);
     clearVideoTrackCheck();
     hidePlayIcon();
@@ -1788,8 +1856,24 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{transform:scale
   $('btnClose').addEventListener('click', () => setPanel(false));
   scrim.addEventListener('click', () => setPanel(false));
 
+  /* 站内页面跳转：在博客 iframe 里时让外层整页打开，
+     否则页面会被塞进播放器那个 16:9 的框里 */
+  function openPage(url) {
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.location.href = url;
+        return;
+      }
+    } catch (e) {}
+    window.location.href = url;
+  }
+
   $('btnContact').addEventListener('click', () => {
-    window.location.href = CONTACT_URL;
+    openPage(CONTACT_URL);
+  });
+
+  $('btnSubmit').addEventListener('click', () => {
+    openPage(SUBMIT_URL);
   });
 
   /* =========================================================

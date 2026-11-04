@@ -2362,14 +2362,29 @@
             color: var(--color-text-secondary);
             font-size: 0.9rem;
         }
+        /* 电影播放器：宽高都跟着视口走。
+           电脑端缩放较大时（浏览器缩放 / 系统缩放），视口高度会明显变小，
+           只按 vw 定高会让播放器超出屏幕、底部控制条看不到；
+           这里同时受视口高度约束，并按 16:9 换算宽度，保证整块都能看见。 */
         .movie-frame {
             display: block;
-            width: 100%;
-            height: clamp(360px, 56vw, 720px);
+            width: auto;
+            max-width: 100%;
+            height: min(clamp(360px, 56vw, 720px), max(260px, calc(100vh - 190px)));
+            height: min(clamp(360px, 56vw, 720px), max(260px, calc(100dvh - 190px)));
+            aspect-ratio: 16 / 9;
+            margin-inline: auto;
             border: 0;
             border-radius: var(--radius-md);
             background: #080809;
             box-shadow: var(--shadow-md);
+        }
+        /* 老浏览器不认 aspect-ratio 时退回满宽，宁可上下留黑边也不裁掉画面 */
+        @supports not (aspect-ratio: 16 / 9) {
+            .movie-frame {
+                width: 100%;
+                height: auto;
+            }
         }
         @media (max-width: 700px) {
             #view-movie.active-view {
@@ -2380,7 +2395,8 @@
                 to { opacity: 1; }
             }
             .movie-frame {
-                height: min(78vh, 760px);
+                width: 100%;
+                height: auto;
             }
             .about-intro {
                 padding: 42px 20px;
@@ -4118,6 +4134,26 @@
             color: var(--color-text-tertiary);
             word-break: break-all;
             white-space: pre-wrap;
+        }
+        .movie-error-steps {
+            margin: 0 0 14px;
+            padding-left: 18px;
+            font-size: 12.8px;
+            line-height: 1.6;
+            color: var(--color-text-secondary);
+        }
+        .movie-error-steps li { margin-bottom: 6px; }
+        .movie-error-steps li:last-child { margin-bottom: 0; }
+        .movie-error-steps .sc-quote {
+            display: block;
+            margin: 6px 0 2px;
+            padding: 8px 10px;
+            border-left: 3px solid var(--color-border);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            background: var(--color-surface);
+            color: var(--color-text-primary);
+            font-size: 12.5px;
+            line-height: 1.6;
         }
         .movie-error-actions { display: flex; flex-wrap: wrap; gap: 10px; }
         .movie-error-btn {
