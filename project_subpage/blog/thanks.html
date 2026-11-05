@@ -123,8 +123,8 @@
       && window.parent !== window;
     if (embedded) {
       page.classList.add('is-embedded');
-      document.querySelector('.thanks-page h1').textContent = '感谢你的投稿';
-      document.getElementById('thanksMessage').textContent = '你的投稿已成功提交，感谢分享！';
+      document.querySelector('.thanks-page h1').textContent = '已提交';
+      document.getElementById('thanksMessage').textContent = '你的投稿已成功提交，正在等待处理。';
       document.getElementById('thanksClose').addEventListener('click', function () {
         window.parent.postMessage(
           { type: 'annie-movie-submission', action: 'close' },

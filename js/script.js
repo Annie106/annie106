@@ -1696,10 +1696,10 @@
                 script.src = 'https://giscus.app/client.js';
                 script.async = true;
                 script.crossOrigin = 'anonymous';
-                script.dataset.repo = 'Annie106/annie106';
+                script.dataset.repo = 'annie106/annie106';
                 script.dataset.repoId = 'R_kgDOSTMWsg';
                 script.dataset.category = 'General';
-                script.dataset.categoryId = 'DIC_kwDOSTMWss4DKarP';
+                script.dataset.categoryId = 'DIC_kwDOSTMWss4DKarQ';
                 script.dataset.mapping = 'specific';
                 script.dataset.term = `文章 ${post.id}：${post.title}`;
                 script.dataset.strict = '0';
