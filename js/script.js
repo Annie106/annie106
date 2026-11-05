@@ -128,6 +128,8 @@
                 excerpt: '有视频网站、直链下载站等',
                 tags: ['网站'],  
                 content: `
+                        <p>夕照 · 独栋别墅</p>
+                        <p><a href="https://annie106.github.io/hotel" target="_blank" rel="noopener noreferrer">https://annie106.github.io/hotel</a></p>
                         <p>视频站</p>
                         <p><a href="https://annie106.github.io/annie106/movie.html" target="_blank" rel="noopener noreferrer">https://annie106.github.io/annie106/movie.html</a></p>
                         <p>直链下载站</p>
