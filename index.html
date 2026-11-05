@@ -35,6 +35,9 @@
     <!-- 现代化图标库 Remix Icon -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
 
+    <link rel="preconnect" href="https://giscus.app" crossorigin>
+    <link rel="preload" href="https://giscus.app/client.js" as="script" crossorigin="anonymous" fetchpriority="low">
+
     <link rel="stylesheet" href="css/style.css">
 
     <!-- 深色模式：尽早设置主题，避免页面闪烁 -->
@@ -291,6 +294,12 @@
                     ></iframe>
                 </div>
             </div>
+            <hr class="divider-thin article-comments-divider" id="articleCommentsDivider">
+            <section class="article-comments" id="articleCommentsSection" aria-labelledby="articleCommentsTitle">
+                <div class="comments-stage" id="articleCommentsStage">
+                    <div class="giscus" id="articleComments"></div>
+                </div>
+            </section>
             <hr class="divider-thin">
             <div class="article-bottombar">
                 <span class="back-link" id="backBtn2"><i class="ri-arrow-left-line"></i> 返回</span>
@@ -304,7 +313,7 @@
 
         <!-- ==================== 页脚 ==================== -->
         <footer class="site-footer">
-            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.20.098</p>
+            <p>© 2026 <a href="index.html?view=about">Annie</a> · 由 <a href="index.html?view=about">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.21.025</p>
         </footer>
     </div>
 
@@ -419,6 +428,19 @@
             </div>
         </section>
     </div>
+
+    <section class="movie-submission-panel" id="movieSubmissionPanel" role="dialog"
+             aria-labelledby="movieSubmissionTitle" aria-modal="false" aria-hidden="true" hidden>
+        <div class="movie-submission-panel-head">
+            <h2 id="movieSubmissionTitle">电影投稿</h2>
+            <button class="movie-submission-close" id="movieSubmissionClose" type="button"
+                    aria-label="关闭投稿窗口">
+                <i class="ri-close-line" aria-hidden="true"></i>
+            </button>
+        </div>
+        <iframe class="movie-submission-frame" id="movieSubmissionFrame"
+                title="电影投稿表单" loading="lazy"></iframe>
+    </section>
 
     <div class="feedback-success-toast" id="feedbackSuccessToast" role="status" aria-live="polite" hidden>
         <i class="ri-checkbox-circle-line" aria-hidden="true"></i>

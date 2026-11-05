@@ -64,6 +64,24 @@
     font-variant-numeric: tabular-nums;
   }
 
+  .thanks-page .thanks-close {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .thanks-page.is-embedded .redirect-countdown { display: none; }
+  .thanks-page.is-embedded .thanks-close { display: inline-flex; }
+
   @media (prefers-reduced-motion: reduce) {
     .thanks-page { animation: none; }
   }
@@ -85,13 +103,14 @@
 
     <h1>感谢你的反馈</h1>
 
-    <p>
+    <p id="thanksMessage">
       你的意见已提交，会用于改进这个博客。<br>
       页面将在倒计时结束后自动返回首页。
     </p>
     <p class="redirect-countdown" id="redirectCountdown" role="status" aria-live="polite">
       3 秒后自动返回首页
     </p>
+    <button class="thanks-close" id="thanksClose" type="button">关闭并继续观看</button>
 
   </div>
 </div>
@@ -99,6 +118,30 @@
 <script>
   (function () {
     const countdown = document.getElementById('redirectCountdown');
+    const page = document.querySelector('.thanks-page');
+    const embedded = new URLSearchParams(window.location.search).get('embedded') === '1'
+      && window.parent !== window;
+    if (embedded) {
+      page.classList.add('is-embedded');
+      document.querySelector('.thanks-page h1').textContent = '感谢你的投稿';
+      document.getElementById('thanksMessage').textContent = '你的投稿已成功提交，感谢分享！';
+      document.getElementById('thanksClose').addEventListener('click', function () {
+        window.parent.postMessage(
+          { type: 'annie-movie-submission', action: 'close' },
+          '*'
+        );
+      });
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+          window.parent.postMessage(
+            { type: 'annie-movie-submission', action: 'close' },
+            '*'
+          );
+        }
+      });
+      return;
+    }
+
     let secondsRemaining = 3;
 
     const countdownTimer = window.setInterval(function () {

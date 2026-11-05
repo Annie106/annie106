@@ -25,6 +25,19 @@
         if (embeddedPageFrame && embeddedPageFrame.contentWindow) {
             embeddedPageFrame.contentWindow.postMessage({ type: 'annie-theme', theme: theme }, '*');
         }
+        const giscusFrame = document.querySelector('.giscus-frame');
+        if (giscusFrame && giscusFrame.contentWindow) {
+            giscusFrame.contentWindow.postMessage(
+                {
+                    giscus: {
+                        setConfig: {
+                            theme: theme,
+                        },
+                    },
+                },
+                'https://giscus.app'
+            );
+        }
     }
 
     function init() {

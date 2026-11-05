@@ -105,7 +105,7 @@
                 id: 10,
                 pinned: true,
                 title: '使用、修改和部署这个博客的操作指南',
-                date: '2026-10-22',
+                date: '2026-11-05',
                 excerpt: '从零开始构建个人博客的完整教程，包含配置、部署和进阶技巧',
                 tags: ['教程', '指南', '置顶'],
                 featured: true,
@@ -276,6 +276,9 @@
             const viewMovie = $('#view-movie');
             const viewAbout = $('#view-about');
             const movieFrame = $('#movieFrame');
+            const movieSubmissionPanel = $('#movieSubmissionPanel');
+            const movieSubmissionFrame = $('#movieSubmissionFrame');
+            const movieSubmissionClose = $('#movieSubmissionClose');
             const viewArticle = $('#view-article');
             const postsListHome = $('#postsListHome');
             const postsListBlog = $('#postsListBlog');
@@ -304,6 +307,10 @@
             const articleContent = $('#articleContent');
             const articleUnavailableNotice = $('#articleUnavailableNotice');
             const articleUnavailableMount = $('#articleUnavailableMount');
+            const articleCommentsDivider = $('#articleCommentsDivider');
+            const articleCommentsSection = $('#articleCommentsSection');
+            const articleComments = $('#articleComments');
+            const articleCommentsStage = $('#articleCommentsStage');
             const embeddedArticleNormalMount = $('#embeddedArticleNormalMount');
             const embeddedPageFrame = $('#embeddedPageFrame');
             const embeddedArticleWrap = $('#embeddedArticleWrap');
@@ -719,6 +726,70 @@
             document.addEventListener('visibilitychange', function() {
                 if (document.visibilityState === 'hidden') saveViewState();
             });
+            // 从子页面返回时补播一次入场动画。
+            // 只切 class 不管用：.view.active-view / .article-detail 本身已经声明了同名的
+            // fadeSlideIn，remove 再 add 不会让动画重新开始，会直接停在 finished 状态。
+            // 所以这里用 Web Animations API 显式播一遍，数值与 CSS 里的 fadeSlideIn 对齐。
+            function replayViewEnterAnimation(el) {
+                if (!el || typeof el.animate !== 'function') return;
+                if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+                // 元素自带的 CSS fadeSlideIn 有时会自己跑起来，先撤掉，
+                // 避免两段动画叠在同一个 opacity 上，淡入会变慢、发灰
+                el.getAnimations().forEach(function(item) {
+                    if (item.animationName) item.cancel();
+                });
+                const anim = el.animate(
+                    [
+                        { opacity: 0, transform: 'translateY(14px)' },
+                        { opacity: 1, transform: 'translateY(0)' }
+                    ],
+                    { duration: 350, easing: 'ease', fill: 'both' }
+                );
+                // 播完就撤掉，避免 fill 一直盖着，影响下次站内切换的 CSS 动画
+                anim.addEventListener('finish', function() { anim.cancel(); }, { once: true });
+            }
+
+            // 判断这次加载是不是「从站内其它页面返回」：
+            //   1) 浏览器后退导致的整页重载（bfcache 没命中）→ navigation type 是 back_forward；
+            //   2) 子页面点「返回」链接跳回来 → referrer 是同源的另一个页面。
+            function isReturningFromPage() {
+                const entries = performance.getEntriesByType
+                    ? performance.getEntriesByType('navigation')
+                    : null;
+                const navType = entries && entries[0] ? entries[0].type : '';
+                if (navType === 'back_forward') return true;
+                if (!document.referrer) return false;
+                try {
+                    const ref = new URL(document.referrer);
+                    if (ref.origin !== window.location.origin) return false;
+                    // 同源同路径说明是自己刷新，不算返回
+                    return ref.pathname !== window.location.pathname;
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            // 返回后的首帧先把目标视图藏住，等首帧画完再淡入；
+            // 否则会先看到完整内容、再闪一下重新淡入。
+            function playReturnEnterAnimation() {
+                if (!isReturningFromPage()) return;
+                const activeView = document.querySelector('.view.active-view, .article-detail.active');
+                if (!activeView) return;
+                activeView.style.opacity = '0';
+                window.requestAnimationFrame(function() {
+                    window.requestAnimationFrame(function() {
+                        activeView.style.opacity = '';
+                        replayViewEnterAnimation(activeView);
+                    });
+                });
+            }
+
+            window.addEventListener('pageshow', function(event) {
+                if (!event.persisted) return;
+                const activeView = document.querySelector('.view.active-view, .article-detail.active');
+                if (!activeView) return;
+                replayViewEnterAnimation(activeView);
+            });
 
             function sizeMovieFrame() {
                 if (currentView !== 'movie') return;
@@ -753,6 +824,69 @@
                 movieDocument.addEventListener('webkitfullscreenchange', handleFullscreenChange);
                     movieDocument.querySelector('#player')?.addEventListener('webkitendfullscreen', handleFullscreenChange);
                 movieDocument.querySelector('#player')?.addEventListener('webkitendfullscreen', handleFullscreenChange);
+            });
+
+            let movieSubmissionUrl = '';
+            function isMovieSubmissionMessageFromPage(event) {
+                return event.origin === window.location.origin
+                    || (window.location.protocol === 'file:' && event.origin === 'null');
+            }
+
+            function closeMovieSubmission(restoreFocus = true) {
+                if (!movieSubmissionPanel || movieSubmissionPanel.hidden) return;
+                movieSubmissionPanel.classList.remove('is-open');
+                movieSubmissionPanel.setAttribute('aria-hidden', 'true');
+                window.setTimeout(function() {
+                    if (!movieSubmissionPanel.classList.contains('is-open')) {
+                        movieSubmissionPanel.hidden = true;
+                    }
+                }, 300);
+                if (restoreFocus) movieFrame.focus({ preventScroll: true });
+            }
+
+            function openMovieSubmission(data) {
+                const url = new URL('project_subpage/blog/submission.html', window.location.href);
+                url.searchParams.set('embedded', '1');
+                if (data.movie) url.searchParams.set('movie', String(data.movie));
+                if (data.title) url.searchParams.set('title', String(data.title));
+
+                if (movieSubmissionUrl !== url.href) {
+                    movieSubmissionUrl = url.href;
+                    movieSubmissionFrame.src = movieSubmissionUrl;
+                }
+
+                movieSubmissionPanel.hidden = false;
+                movieSubmissionPanel.setAttribute('aria-hidden', 'false');
+                window.requestAnimationFrame(function() {
+                    movieSubmissionPanel.classList.add('is-open');
+                });
+                movieSubmissionClose.focus({ preventScroll: true });
+            }
+
+            movieSubmissionClose.addEventListener('click', closeMovieSubmission);
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && movieSubmissionPanel
+                    && !movieSubmissionPanel.hidden) {
+                    closeMovieSubmission();
+                }
+            });
+
+            window.addEventListener('message', function(event) {
+                const data = event.data;
+                if (!data || data.type !== 'annie-movie-submission') return;
+
+                if (event.source === movieFrame.contentWindow
+                    && isMovieSubmissionMessageFromPage(event)
+                    && data.action === 'open') {
+                    openMovieSubmission(data);
+                    return;
+                }
+
+                if (event.source === movieSubmissionFrame.contentWindow
+                    && isMovieSubmissionMessageFromPage(event)
+                    && data.action === 'close') {
+                    closeMovieSubmission();
+                }
             });
 
             // ==================== 内嵌文章高度上报 ====================
@@ -1254,7 +1388,7 @@
                     // 「问题反馈」带上这两个参数，反馈页就知道是针对哪篇文章提的意见。
                     const menuItems = articleMenus[p.id] || [
                         { label: '复制文章链接', type: 'share' },
-                        { label: '查看评论', type: 'link', url: 'project_subpage/blog/building.html' },
+                        { label: '查看评论', type: 'link', url: 'project_subpage/blog/comments.html?article={id}&title={title}' },
                         { label: '问题反馈', type: 'link', url: 'project_subpage/blog/feedback.html?article={id}&title={title}' },
                     ];
                     const menuLinks = menuItems.map(item => {
@@ -1475,6 +1609,187 @@
                 linkGateEls.wrap.hidden = true;
             }
 
+            let commentsObserver = null;
+            let commentsFailTimer = null;
+            let commentsFrameObserver = null;
+
+            function clearCommentsLoading() {
+                if (commentsFailTimer) {
+                    clearTimeout(commentsFailTimer);
+                    commentsFailTimer = null;
+                }
+                if (commentsObserver) {
+                    commentsObserver.disconnect();
+                    commentsObserver = null;
+                }
+                if (commentsFrameObserver) {
+                    commentsFrameObserver.disconnect();
+                    commentsFrameObserver = null;
+                }
+            }
+
+            /* 骨架和 giscus 卡片共用同一套网格：头像 40px、右侧 12px 间距、上下 14px，
+               所以骨架淡出时 iframe 不会挪位置 */
+            function buildCommentsSkeleton(count) {
+                const wrap = document.createElement('div');
+                wrap.className = 'comments-skeleton';
+                wrap.setAttribute('aria-hidden', 'true');
+                for (let i = 0; i < (count || 2); i += 1) {
+                    const card = document.createElement('div');
+                    card.className = 'comments-skeleton-card';
+
+                    const avatar = document.createElement('div');
+                    avatar.className = 'comments-skeleton-avatar';
+
+                    const main = document.createElement('div');
+                    main.className = 'comments-skeleton-main';
+
+                    const name = document.createElement('div');
+                    name.className = 'comments-skeleton-line comments-skeleton-line--name';
+
+                    const time = document.createElement('div');
+                    time.className = 'comments-skeleton-line comments-skeleton-line--time';
+
+                    const body = document.createElement('div');
+                    body.className = 'comments-skeleton-line';
+
+                    const bodyShort = document.createElement('div');
+                    bodyShort.className = 'comments-skeleton-line comments-skeleton-line--short';
+
+                    main.append(name, time, body, bodyShort);
+                    card.append(avatar, main);
+                    wrap.appendChild(card);
+                }
+                return wrap;
+            }
+
+            function showCommentsRetry(post) {
+                if (!articleComments) return;
+                articleComments.replaceChildren();
+                const retrySkeleton = articleCommentsStage ? articleCommentsStage.querySelector('.comments-skeleton') : null;
+                if (retrySkeleton) retrySkeleton.remove();
+                const box = document.createElement('div');
+                box.className = 'comments-retry';
+                const text = document.createElement('p');
+                text.className = 'comments-retry-text';
+                text.textContent = '评论加载失败，可能是网络问题。';
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'comments-retry-btn';
+                btn.textContent = '重新加载';
+                btn.addEventListener('click', function () {
+                    clearCommentsLoading();
+                    mountArticleComments(post);
+                });
+                box.append(text, btn);
+                articleComments.appendChild(box);
+            }
+
+            function mountArticleComments(post) {
+                if (!articleComments) return;
+                articleComments.replaceChildren();
+                if (articleCommentsStage && !articleCommentsStage.querySelector('.comments-skeleton')) {
+                    articleCommentsStage.appendChild(buildCommentsSkeleton());
+                }
+
+                const script = document.createElement('script');
+                script.src = 'https://giscus.app/client.js';
+                script.async = true;
+                script.crossOrigin = 'anonymous';
+                script.dataset.repo = 'Annie106/annie106';
+                script.dataset.repoId = 'R_kgDOSTMWsg';
+                script.dataset.category = 'General';
+                script.dataset.categoryId = 'DIC_kwDOSTMWss4DKarP';
+                script.dataset.mapping = 'specific';
+                script.dataset.term = `文章 ${post.id}：${post.title}`;
+                script.dataset.strict = '0';
+                script.dataset.reactionsEnabled = '0';
+                script.dataset.emitMetadata = '0';
+                script.dataset.inputPosition = 'bottom';
+                script.dataset.theme = document.documentElement.getAttribute('data-theme') === 'dark'
+                    ? 'dark'
+                    : 'light';
+                script.dataset.lang = 'zh-CN';
+                articleComments.appendChild(script);
+
+                /* 骨架留到 iframe 真正出现再撤，中间这段时间不留白 */
+                if (commentsFrameObserver) commentsFrameObserver.disconnect();
+                commentsFrameObserver = new MutationObserver(function (mutations) {
+                    const frame = articleComments.querySelector('iframe.giscus-frame');
+                    if (!frame) return;
+                    commentsFrameObserver.disconnect();
+                    commentsFrameObserver = null;
+
+                    /* 等 iframe 高度稳定（说明评论内容已经渲染完）再撤骨架，
+                       否则会看到 iframe 从 150px 慢慢长到成稿高度的过程 */
+                    /* giscus 自己的「正在加载评论……」也是一个高度约 150px 的稳定块，
+                       所以不能用「高度稳定」当完成信号。评论区真正渲染出来至少 200px 以上，
+                       要求连续 1 秒高于 200px 才算就绪；15 秒兜底，避免一直盖着骨架 */
+                    let lastHeight = -1;
+                    let stableTicks = 0;
+                    let ticks = 0;
+                    const readyTimer = setInterval(function () {
+                        ticks += 1;
+                        const height = frame.getBoundingClientRect().height;
+                        if (height > 200 && Math.abs(height - lastHeight) < 2) {
+                            stableTicks += 1;
+                        } else {
+                            stableTicks = 0;
+                        }
+                        lastHeight = height;
+                        if (stableTicks >= 4 || ticks > 60) {
+                            clearInterval(readyTimer);
+                            frame.classList.add('is-ready');
+                            const skeleton = articleCommentsStage ? articleCommentsStage.querySelector('.comments-skeleton') : null;
+                            if (skeleton) {
+                                skeleton.classList.add('is-hidden');
+                                setTimeout(function () {
+                                    if (skeleton.parentNode) skeleton.remove();
+                                }, 260);
+                            }
+                        }
+                    }, 250);
+                });
+                commentsFrameObserver.observe(articleComments, { childList: true });
+
+                /* 兜底：12 秒后如果 iframe 还没撑起来，说明请求失败，给一个重试入口 */
+                if (commentsFailTimer) clearTimeout(commentsFailTimer);
+                commentsFailTimer = setTimeout(function () {
+                    commentsFailTimer = null;
+                    const frame = articleComments.querySelector('iframe.giscus-frame');
+                    const height = frame ? frame.getBoundingClientRect().height : 0;
+                    if (height < 80) showCommentsRetry(post);
+                }, 12000);
+            }
+
+            function renderArticleComments(post, isUnavailableArticle) {
+                if (!articleCommentsSection || !articleComments) return;
+
+                clearCommentsLoading();
+                articleCommentsSection.hidden = isUnavailableArticle;
+                if (articleCommentsDivider) articleCommentsDivider.hidden = isUnavailableArticle;
+                articleComments.replaceChildren();
+                const staleSkeleton = articleCommentsStage ? articleCommentsStage.querySelector('.comments-skeleton') : null;
+                if (staleSkeleton) staleSkeleton.remove();
+                if (isUnavailableArticle) return;
+
+                if (articleCommentsStage) articleCommentsStage.appendChild(buildCommentsSkeleton());
+
+                /* 距离视口还有 800px 时就开始加载：读者看正文的时间足够把评论拉回来，
+                   滚到底部时基本已经渲染好，同时不占用首屏资源 */
+                if ('IntersectionObserver' in window) {
+                    commentsObserver = new IntersectionObserver(function (entries) {
+                        if (entries.some(function (entry) { return entry.isIntersecting; })) {
+                            clearCommentsLoading();
+                            mountArticleComments(post);
+                        }
+                    }, { rootMargin: '800px 0px' });
+                    commentsObserver.observe(articleCommentsSection);
+                } else {
+                    mountArticleComments(post);
+                }
+            }
+
             function renderArticle(post) {
                 currentArticleId = post.id;
                 const isUnavailableArticle = !isArticlePublic(post);
@@ -1513,6 +1828,7 @@
                 if (window.AnnieImageLoading) {
                     window.AnnieImageLoading.initialize(articleContent);
                 }
+                renderArticleComments(post, isUnavailableArticle);
                 // 换了文章就重新开始量高度，否则会沿用上一篇记下的旧值
                 embeddedFrameHeight = 0;
                 if (embeddedPageObserver) {
@@ -2494,6 +2810,7 @@
                 const previousView = currentView;
                 // 切到别的视图时收起搜索浮层，回来时是干净的页面
                 dismissSearchOnViewChange(viewName);
+                if (viewName !== 'movie') closeMovieSubmission(false);
                 if (previousView !== 'article') {
                     viewScrollPositions[previousView] = window.scrollY;
                 }
@@ -2795,6 +3112,7 @@
                     articleHistoryEntryActive = false;
                     renderArticle(urlPost);
                     switchView('article');
+                    playReturnEnterAnimation();
                     return;
                 }
                 // 链接里的 id 不存在（文章被删了、链接被改过）时，
@@ -2809,11 +3127,13 @@
                 // 关于页面也可以通过 ?view=about 直接打开，不受本地界面记忆影响。
                 if (new URL(window.location.href).searchParams.get(VIEW_PARAM) === 'about') {
                     switchView('about');
+                    playReturnEnterAnimation();
                     return;
                 }
 
                 // 从别的 HTML 页面返回时，回到离开时的界面
                 if (!restoreViewState(savedState)) switchView('home');
+                playReturnEnterAnimation();
             }
 
             init();

@@ -992,6 +992,7 @@
 │   ├── blog/                ← 博客自带的页面
 │   │   ├── building.html    ← 没做完的项目
 │   │   ├── articl...le.html ← 未开放文章的提示页
+│   │   ├── submission.html  ← 电影投稿表单
 │   │   ├── feedback.html    ← 反馈表单
 │   │   ├── thanks.html      ← 反馈提交成功页
 │   │   ├── guide.html       ← 你正在看的这份指南
@@ -1389,6 +1390,8 @@
     { name: '另一部', url: '播放地址' },
 ];</code></pre>
                 <p><code>name</code> 是列表里显示的名字，<code>url</code> 是播放地址。照格式增删，注意逗号。</p>
+                <p>电影列表底部的「我要投稿」会在博客页面右下角打开投稿面板，不会离开电影页或重载播放器；当前播放状态会保留。面板中的表单会自动带上当前电影名称，提交成功后会在面板里显示感谢提示，关闭面板即可继续观看。点击关闭按钮、按 <kbd>Esc</kbd>，或点击表单里的「返回首页」都只会关闭面板。</p>
+                <p>投稿表单内容在 <code>project_subpage/blog/submission.html</code>，提交成功提示在 <code>project_subpage/blog/thanks.html</code>。若要调整面板外观，改 <code>css/style.css</code>；博客负责接收电影页打开请求及控制面板，逻辑在 <code>js/script.js</code>，电影页的投稿按钮在 <code>movie.html</code>。</p>
 
                 <!-- 6.12 页脚 -->
                 <h3 class="guide-subtitle">

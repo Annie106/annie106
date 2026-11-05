@@ -45,6 +45,13 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        button,
+        input,
+        textarea,
+        select {
+            font-family: var(--font-sans);
+        }
+
         html {
             scroll-behavior: smooth;
             -webkit-font-smoothing: antialiased;
@@ -2741,6 +2748,149 @@
             border-top: 1px solid var(--color-divider);
             margin: 32px 0;
         }
+        .article-comments {
+            max-width: 860px;
+            margin: 0 auto 0 0;
+        }
+        .article-comments-divider {
+            max-width: 860px;
+            margin: 36px 0 28px;
+        }
+        .article-comments[hidden] {
+            display: none;
+        }
+        .article-comments-title {
+            margin: 0 0 20px;
+            color: var(--color-text-primary);
+            font-family: var(--font-sans);
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        .article-comments .giscus {
+            min-height: 120px;
+        }
+        /* 文章页评论区：骨架与 giscus 卡片同构（头像 40px、12px 间距、14px 上下留白），
+           加载完成后骨架淡出、iframe 淡入上移，整块高度不跳动 */
+        .comments-stage {
+            position: relative;
+            min-height: 281px;
+        }
+        .comments-skeleton {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--color-bg);
+            pointer-events: none;
+            transition: opacity 240ms ease;
+        }
+        .comments-skeleton.is-hidden {
+            opacity: 0;
+        }
+        /* 所有骨架共用一道斜向光带，1.5s 从左扫到右 */
+        .comments-skeleton::after {
+            content: '';
+            position: absolute;
+            inset: -20% -15%;
+            background: linear-gradient(105deg, transparent 32%, rgba(255, 255, 255, 0.75) 50%, transparent 68%);
+            transform: translateX(-100%);
+            animation: commentsShimmer 1.5s linear infinite;
+        }
+        [data-theme='dark'] .comments-skeleton::after {
+            background: linear-gradient(105deg, transparent 32%, rgba(255, 255, 255, 0.09) 50%, transparent 68%);
+        }
+        @keyframes commentsShimmer {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(100%); }
+        }
+        .comments-skeleton-card {
+            display: flex;
+            gap: 12px;
+            padding: 14px 0;
+        }
+        .comments-skeleton-avatar {
+            width: 40px;
+            height: 40px;
+            flex: none;
+            border-radius: 50%;
+            background: var(--color-surface);
+        }
+        .comments-skeleton-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-top: 2px;
+        }
+        .comments-skeleton-line {
+            height: 12px;
+            border-radius: 6px;
+            background: var(--color-surface);
+        }
+        .comments-skeleton-line--name {
+            width: 92px;
+        }
+        .comments-skeleton-line--time {
+            width: 60px;
+            height: 10px;
+        }
+        .comments-skeleton-line--short {
+            width: 62%;
+        }
+        /* giscus iframe：内容就绪后淡入并上移 8px */
+        #articleComments iframe.giscus-frame {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+        #articleComments iframe.giscus-frame.is-ready {
+            animation: commentFrameIn 420ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+        }
+        @keyframes commentFrameIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .comments-skeleton::after {
+                animation: none;
+            }
+            #articleComments iframe.giscus-frame {
+                opacity: 1;
+                transform: none;
+            }
+            #articleComments iframe.giscus-frame.is-ready {
+                animation: none;
+            }
+        }
+        .comments-retry {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 16px 0;
+        }
+        .comments-retry-text {
+            margin: 0;
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+        }
+        .comments-retry-btn {
+            padding: 6px 14px;
+            border: 1px solid var(--color-divider);
+            border-radius: 999px;
+            background: transparent;
+            color: var(--color-text-primary);
+            font: inherit;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+        .comments-retry-btn:hover {
+            border-color: var(--color-text-tertiary);
+        }
+
         #view-article .divider-thin {
             margin: 24px 0;
         }
@@ -3119,6 +3269,97 @@
             transform: translate(-50%, -10px);
             transition: opacity var(--transition-smooth), transform var(--transition-smooth);
             pointer-events: none;
+        }
+
+        .movie-submission-panel {
+            position: fixed;
+            z-index: 1600;
+            right: 24px;
+            bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            width: min(440px, calc(100vw - 40px));
+            height: min(760px, 82vh);
+            overflow: hidden;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            background: var(--color-bg);
+            box-shadow: var(--shadow-lg);
+            opacity: 0;
+            transform: translateY(14px) scale(.985);
+            transition: opacity var(--transition-smooth), transform var(--transition-smooth);
+        }
+
+        .movie-submission-panel[hidden] {
+            display: none;
+        }
+
+        .movie-submission-panel.is-open {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .movie-submission-panel-head {
+            display: flex;
+            flex: none;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 54px;
+            padding: 8px 12px 8px 18px;
+            border-bottom: 1px solid var(--color-border);
+            background: var(--color-bg);
+        }
+
+        .movie-submission-panel-head h2 {
+            margin: 0;
+            color: var(--color-text-primary);
+            font-size: .9375rem;
+            font-weight: 600;
+        }
+
+        .movie-submission-close {
+            display: inline-flex;
+            width: 36px;
+            height: 36px;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--color-border);
+            border-radius: 50%;
+            background: var(--color-surface);
+            color: var(--color-text-secondary);
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: color var(--transition-fast), background var(--transition-fast);
+        }
+
+        .movie-submission-close:hover {
+            background: var(--color-border-light);
+            color: var(--color-text-primary);
+        }
+
+        .movie-submission-frame {
+            display: block;
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            border: 0;
+            background: var(--color-bg);
+        }
+
+        @media (max-width: 700px) {
+            .movie-submission-panel {
+                right: 10px;
+                bottom: max(10px, env(safe-area-inset-bottom));
+                width: calc(100vw - 20px);
+                height: min(78dvh, 720px);
+                border-radius: var(--radius-md);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .movie-submission-panel {
+                transition: none;
+            }
         }
 
         .feedback-success-toast[hidden],

@@ -845,7 +845,7 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{transform:scale
 
   const PROBE_IMAGE_URL = 'https://links.8uid.com/d/49nb0z6k4a78';
   const CONTACT_URL = 'index.html?view=about';
-  const SUBMIT_URL = 'project_subpage/blog/building.html';
+  const SUBMIT_URL = 'project_subpage/blog/submission.html';
 
   /* =========================================================
      ② 元素引用
@@ -1873,7 +1873,17 @@ html:not(.is-touch-input) [data-theme="dark"] .contact-btn:hover{transform:scale
   });
 
   $('btnSubmit').addEventListener('click', () => {
-    openPage(SUBMIT_URL);
+    setPanel(false);
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({
+        type: 'annie-movie-submission',
+        action: 'open',
+        movie: index >= 0 ? String(index + 1) : '',
+        title: index >= 0 && playlist[index] ? playlist[index].name : '',
+      }, '*');
+    } else {
+      openPage(SUBMIT_URL);
+    }
   });
 
   /* =========================================================

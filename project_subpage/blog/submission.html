@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Annie · 投稿</title>
+<link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
+<script>
+  (function () {
+    const systemPrefersDark = window.matchMedia
+      && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    let savedTheme = null;
+    try { savedTheme = localStorage.getItem('annie-theme'); } catch (e) {}
+    document.documentElement.setAttribute(
+      'data-theme',
+      savedTheme === 'light' || savedTheme === 'dark'
+        ? savedTheme
+        : (systemPrefersDark ? 'dark' : 'light')
+    );
+  })();
+</script>
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  html, body { overflow-x: hidden; }
+  html { color-scheme: light; }
+  html[data-theme="dark"] { color-scheme: dark; }
+
+  /* 样式表里有一层固定在页面顶部的渐变虚化遮罩（body::before，桌面高 150px），
+     它是给首页吸顶导航下面的内容做「滚上去自然虚化」用的。
+     这个页面没有吸顶导航，那层遮罩只会把「返回首页」和标题糊掉，所以这里关掉它。 */
+  body::before { content: none !important; }
+
+  .feedback-page {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 32px 24px 96px;
+    animation: pageEnter 0.55s cubic-bezier(0.4, 0, 0.2, 1) both;
+    color: var(--color-text-primary);
+  }
+
+  @keyframes pageEnter {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .article-context-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    margin-bottom: 24px;
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+  }
+
+  /* 修复：作者样式里的 display:flex 会覆盖 UA 的 [hidden]{display:none} */
+  .article-context-card[hidden] { display: none !important; }
+
+  .article-context-card i {
+    font-size: 1.25rem;
+    color: var(--color-text-tertiary);
+  }
+
+  .article-context-card .label {
+    font-weight: 500;
+    color: var(--color-text-tertiary);
+  }
+
+  .article-context-card .article-title {
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: var(--color-text-tertiary);
+    text-decoration: none;
+    margin-bottom: 28px;
+    transition: color var(--transition-fast);
+  }
+  html:not(.is-touch-input) .back-link:hover { color: var(--color-text-primary); }
+  .back-link i { font-size: 1rem; transition: transform var(--transition-fast); }
+  html:not(.is-touch-input) .back-link:hover i { transform: translateX(-3px); }
+  .back-link:focus-visible,
+  .btn-primary:focus-visible,
+  .btn-ghost:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+  }
+
+  .feedback-intro h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+    margin-bottom: 12px;
+    line-height: 1.35;
+  }
+  .feedback-intro .subtitle {
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+    line-height: 1.75;
+    margin-bottom: 40px;
+  }
+
+  .notice-card {
+    padding: 24px 28px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 28px;
+    box-shadow: var(--shadow-xs);
+  }
+  .notice-card p {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    line-height: 1.8;
+    margin: 0;
+  }
+  .notice-card p + p { margin-top: 12px; }
+
+  .disclaimer {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+    line-height: 1.75;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border);
+    margin-top: 16px;
+  }
+
+  /* 勾选框 */
+  .agree-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    margin-bottom: 32px;
+    user-select: none;
+    position: relative;
+  }
+
+  .agree-checkbox input {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    cursor: pointer;
+    z-index: 2;
+    margin: 0;
+  }
+
+  .agree-checkbox svg {
+    display: block;
+    width: 1.25em;
+    height: 1.25em;
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
+    overflow: visible;
+    transition: color 0.4s ease;
+  }
+
+  .agree-checkbox svg .box {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .agree-checkbox svg .check {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+  }
+
+  .agree-checkbox input:checked ~ svg { color: var(--color-text-primary); }
+
+  .agree-checkbox input:focus-visible ~ svg {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+
+  .agree-checkbox input:checked ~ svg .check {
+    animation: drawCheck 0.45s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards;
+  }
+
+  @keyframes drawCheck { to { stroke-dashoffset: 0; } }
+
+  .agree-checkbox .checkbox-text {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+
+  /* 表单 */
+  .feedback-form {
+    display: grid;
+    gap: 24px;
+  }
+
+  .form-field,
+  .field {
+    display: grid;
+    gap: 8px;
+  }
+
+  .form-field label,
+  .field-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+
+  .required {
+    color: var(--color-text-tertiary);
+    font-weight: 400;
+    margin-left: 2px;
+  }
+
+  .required-star {
+    color: #e53935;
+    margin-right: 4px;
+  }
+
+  .form-field input,
+  .form-field textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: 0.9375rem;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    box-sizing: border-box;
+  }
+
+  .form-field textarea {
+    min-height: 160px;
+    resize: vertical;
+  }
+
+  .form-field input::placeholder,
+  .form-field textarea::placeholder {
+    color: var(--color-text-tertiary);
+    opacity: 1;
+  }
+
+  .form-field input:focus-visible,
+  .form-field textarea:focus-visible {
+    outline: none;
+    border-color: var(--color-text-secondary);
+    box-shadow: 0 0 0 3px var(--color-border);
+  }
+
+  .feedback-form .agree-checkbox { margin: 0; }
+
+  /* 单选组 */
+  .radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .radio-group label {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    padding: 8px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: border-color var(--transition-fast),
+                background var(--transition-fast),
+                color var(--transition-fast);
+    user-select: none;
+  }
+
+  .radio-group label:hover { border-color: var(--color-text-tertiary); }
+
+  .radio-group input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .radio-group input:checked + span {
+    color: var(--color-text-primary);
+    font-weight: 500;
+  }
+
+  .radio-group label:has(input:checked) {
+    border-color: var(--color-text-primary);
+    background: var(--color-surface);
+  }
+
+  .radio-group label:has(input:focus-visible) {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* 评分组 */
+  .rating-group { display: flex; gap: 8px; }
+
+  .rating-group label {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: border-color var(--transition-fast),
+                background var(--transition-fast),
+                color var(--transition-fast);
+    user-select: none;
+  }
+
+  .rating-group label:hover { border-color: var(--color-text-tertiary); }
+
+  .rating-group input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .rating-group label:has(input:checked) {
+    border-color: var(--color-text-primary);
+    background: var(--color-text-primary);
+    color: var(--color-bg);
+  }
+
+  .rating-group label:has(input:focus-visible) {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  .rating-hint {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    margin-top: 4px;
+  }
+
+  /* 「其他」补充输入框 */
+  .other-input {
+    display: none;
+    margin-top: 10px;
+  }
+
+  .other-input.visible { display: block; }
+
+  .other-input input,
+  .contact-input input[type="text"],
+  .contact-input input[type="email"] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: 0.875rem;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    box-sizing: border-box;
+  }
+
+  .other-input input::placeholder,
+  .contact-input input::placeholder { color: var(--color-text-tertiary); }
+
+  .other-input input:focus-visible,
+  .contact-input input:focus-visible {
+    outline: none;
+    border-color: var(--color-text-secondary);
+    box-shadow: 0 0 0 3px var(--color-border);
+  }
+
+  .contact-input input:disabled {
+    background: var(--color-surface);
+    cursor: not-allowed;
+  }
+
+  /* 联系方式（仅在选择「允许」时出现） */
+  .contact-input {
+    display: none;
+    margin-top: 14px;
+    padding: 18px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+
+  .contact-input.visible {
+    display: grid;
+    gap: 16px;
+    animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+
+  .contact-input .field-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+
+  /* 按钮 */
+  .action-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 28px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--color-bg);
+    background: var(--color-accent);
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background var(--transition-fast),
+                transform var(--transition-fast),
+                box-shadow var(--transition-fast),
+                opacity var(--transition-fast);
+  }
+  html:not(.is-touch-input) .btn-primary:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0); box-shadow: none;
+  }
+  .btn-primary:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-primary:disabled:hover {
+    background: var(--color-accent);
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-primary i { font-size: 1rem; transition: transform var(--transition-fast); }
+  html:not(.is-touch-input) .btn-primary:hover:not(:disabled) i { transform: translateX(3px); }
+
+  .btn-primary.loading {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+  .btn-primary.loading i { animation: spin 1s linear infinite; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .btn-ghost {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+    background: none;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 6px 0;
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+  html:not(.is-touch-input) .btn-ghost:hover { color: var(--color-text-secondary); }
+
+  .submit-hint {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    line-height: 1.6;
+    margin-top: -4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .feedback-page,
+    .back-link i,
+    .btn-primary,
+    .btn-primary i,
+    .agree-checkbox svg,
+    .form-field input,
+    .form-field textarea,
+    .radio-group label,
+    .rating-group label,
+    .other-input input,
+    .contact-input input { transition: none; }
+    .agree-checkbox input:checked ~ svg .check { animation: none; stroke-dashoffset: 0; }
+    .btn-primary.loading i { animation: none; }
+    .contact-input.visible { animation: none; }
+  }
+
+  @media (max-width: 640px) {
+    .feedback-page { padding: 24px 20px 72px; }
+    .feedback-intro h1 { font-size: 1.5rem; }
+    .notice-card { padding: 20px 22px; }
+    .action-row { flex-wrap: wrap; }
+    .rating-group label { width: 40px; height: 40px; }
+    .contact-input { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="main-container">
+  <div class="feedback-page">
+
+    <a href="../../index.html" class="back-link">
+      <i class="ri-arrow-left-line"></i>
+      返回首页
+    </a>
+
+    <div class="feedback-intro">
+      <!-- 电影模块：仅在本页出现，不出现在首页 -->
+      <div id="movieContextCard" class="article-context-card" hidden>
+        <i class="ri-film-line"></i>
+        <div>
+          <span class="label">投稿的电影：</span>
+          <span class="article-title" id="movieContextTitle"></span>
+        </div>
+      </div>
+
+      <h1>投稿</h1>
+      <p class="subtitle">
+        欢迎推荐、投稿内容，你的分享会让这里更丰富。请填写下方表单提交。
+      </p>
+
+      <div class="notice-card">
+        <p>每位访客每天仅可提交 <strong>一次</strong> 投稿，提交后请耐心等待，我们会尽快处理。</p>
+        <p class="disclaimer">
+          提交的数据会被保留。你的信息会在第三方服务商中保留30天，请勿在表单中填写密码或其他敏感信息。
+        </p>
+      </div>
+
+      <form class="feedback-form" id="movieForm" action="https://api.web3forms.com/submit" method="POST">
+        <input type="hidden" name="access_key" value="14cc0dde-c616-4604-a802-84686ae0c843">
+        <input type="hidden" name="redirect" value="thanks.html">
+        <input type="hidden" name="subject" value="博客电影投稿">
+        <input type="hidden" name="from_name" value="Annie 的博客">
+
+        <!-- 电影模块标识：让后台能区分这是「电影投稿」而不是普通反馈 -->
+        <input type="hidden" name="module" value="movie">
+        <input type="hidden" name="movie_id" id="movie_id" value="">
+
+        <!-- ⓪ 电影模块：电影名称 -->
+        <div class="form-field">
+          <label for="movieTitle"><span class="required-star" aria-hidden="true">*</span>电影名称<span class="required">（必填）</span></label>
+          <input
+            type="text"
+            id="movieTitle"
+            name="movie_title"
+            placeholder="请输入你要投稿的电影名称"
+            autocomplete="off"
+            required
+          >
+        </div>
+
+        <!-- ① 投稿类型：必选 -->
+        <div class="field">
+          <label class="field-label"><span class="required-star" aria-hidden="true">*</span>投稿类型<span class="required">（必选）</span></label>
+          <div class="radio-group">
+            <label><input type="radio" name="type" value="电影推荐" required><span>电影</span></label>
+            <label><input type="radio" name="type" value="其他" id="typeOther"><span>其他</span></label>
+          </div>
+          <div class="other-input" id="typeOtherInput">
+            <input type="text" name="type_other" id="typeOtherText" placeholder="请简要说明具体类型">
+          </div>
+        </div>
+
+        <!-- ② 推荐指数：必选 -->
+        <div class="field">
+          <label class="field-label"><span class="required-star" aria-hidden="true">*</span>推荐指数<span class="required">（必选）</span></label>
+          <div class="rating-group">
+            <label><input type="radio" name="rating" value="1" required><span>1</span></label>
+            <label><input type="radio" name="rating" value="2"><span>2</span></label>
+            <label><input type="radio" name="rating" value="3"><span>3</span></label>
+            <label><input type="radio" name="rating" value="4"><span>4</span></label>
+            <label><input type="radio" name="rating" value="5"><span>5</span></label>
+          </div>
+          <p class="rating-hint">1 表示不太推荐，5 表示非常推荐</p>
+        </div>
+
+        <!-- ③ 投稿内容：必填 -->
+        <div class="form-field">
+          <label for="feedbackMessage"><span class="required-star" aria-hidden="true">*</span>投稿内容<span class="required">（必填）</span></label>
+          <textarea
+            id="feedbackMessage"
+            name="message"
+            rows="6"
+            placeholder="请介绍这部电影，或写下你的影评、推荐理由"
+            required
+          ></textarea>
+        </div>
+
+        <!-- ④ 是否允许联系 -->
+        <div class="field">
+          <label class="field-label"><span class="required-star" aria-hidden="true">*</span>是否允许我们联系你<span class="required">（必选）</span></label>
+          <div class="radio-group">
+            <label><input type="radio" name="contact_allowed" value="允许" id="contactYes"><span>允许</span></label>
+            <label><input type="radio" name="contact_allowed" value="不允许" id="contactNo" checked><span>不允许</span></label>
+          </div>
+          <p class="rating-hint">选择「允许」后需留下联系方式，方便我们回复你</p>
+
+          <!-- 选择「允许」时才出现 -->
+          <div class="contact-input" id="contactInput">
+            <div class="field">
+              <span class="field-label"><span class="required-star" aria-hidden="true">*</span>联系方式类型<span class="required">（必选）</span></span>
+              <div class="radio-group">
+                <label><input type="radio" name="contact_type" value="微信" id="contactTypeWechat"><span>微信</span></label>
+                <label><input type="radio" name="contact_type" value="邮箱" id="contactTypeEmail"><span>邮箱</span></label>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="contactValue"><span class="required-star" aria-hidden="true">*</span><span class="contact-value-label-text">你的联系方式</span><span class="required">（必填）</span></label>
+              <input
+                type="text"
+                id="contactValue"
+                name="contact_value"
+                placeholder="请先选择联系方式类型"
+                autocomplete="off"
+                disabled
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- ⑤ 同意声明：必填 -->
+        <label class="agree-checkbox" for="agreeCheckbox">
+          <input type="checkbox" id="agreeCheckbox" name="consent" value="同意" required>
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <rect class="box" x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
+            <path class="check" d="M 18 33 L 28 43 L 46 22"></path>
+          </svg>
+          <span class="checkbox-text">我已阅读并同意上述说明</span>
+        </label>
+
+        <div class="action-row">
+          <button class="btn-primary" id="submitBtn" type="submit" disabled>
+            提交投稿
+            <i class="ri-send-plane-line" aria-hidden="true"></i>
+          </button>
+          <a class="btn-ghost" href="../../index.html">返回首页</a>
+        </div>
+
+        <p class="submit-hint" id="submitHint">请填写必填项后提交</p>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<script src="../../js/touch-hover.js"></script>
+<script src="../../js/theme.js"></script>
+
+<script>
+(function () {
+  const form              = document.getElementById('movieForm');
+  const typeOther         = document.getElementById('typeOther');
+  const typeOtherInput    = document.getElementById('typeOtherInput');
+  const typeOtherText     = document.getElementById('typeOtherText');
+  const submitBtn         = document.getElementById('submitBtn');
+  const submitHint        = document.getElementById('submitHint');
+  const redirectField     = form.querySelector('input[name="redirect"]');
+  const movieIdInput      = document.getElementById('movie_id');
+  const movieTitleInput   = document.getElementById('movieTitle');
+  const movieContextCard  = document.getElementById('movieContextCard');
+  const movieContextTitle = document.getElementById('movieContextTitle');
+
+  const contactRadios     = form.querySelectorAll('input[name="contact_allowed"]');
+  const contactInput      = document.getElementById('contactInput');
+  const contactTypeRadios = form.querySelectorAll('input[name="contact_type"]');
+  const contactValue      = document.getElementById('contactValue');
+  const contactValueLabel = form.querySelector('.contact-value-label-text');
+
+  /* ============================================================
+     ★ 每日一次投稿限制
+     用 localStorage 记录最后一次提交的「日期」，同一天内不再允许提交。
+     ============================================================ */
+  const SUBMIT_DATE_KEY = 'annie-movie-submit-date';
+
+  function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + '-' +
+           String(d.getMonth() + 1).padStart(2, '0') + '-' +
+           String(d.getDate()).padStart(2, '0');
+  }
+  function readSubmitDate() {
+    try { return localStorage.getItem(SUBMIT_DATE_KEY); } catch (e) { return null; }
+  }
+  function writeSubmitDate(v) {
+    try { localStorage.setItem(SUBMIT_DATE_KEY, v); } catch (e) {}
+  }
+
+  let submittedToday = (readSubmitDate() === todayKey());
+
+  /* ============================================================
+     ★ 核心：一句 checkValidity() 搞定所有必填校验
+     ============================================================ */
+  function updateSubmitState() {
+    if (submittedToday) {
+      submitBtn.disabled = true;
+      submitBtn.classList.remove('loading');
+      submitHint.textContent = '今天已经提交过一次投稿啦，明天再来吧～';
+      return;
+    }
+    const ok = form.checkValidity();
+    submitBtn.disabled = !ok;
+    submitHint.textContent = ok
+      ? '信息已填写完整，可以提交'
+      : '请填写必填项后提交';
+  }
+
+  /* ---------- 从 URL 读取电影信息（电影模块，不在首页显示） ---------- */
+  const urlParams = new URLSearchParams(window.location.search);
+  const movieId = urlParams.get('movie');
+  const rawTitle = urlParams.get('title') || '';
+  const isEmbeddedMovieSubmission = urlParams.get('embedded') === '1';
+  let movieTitle = rawTitle;
+  if (/%[0-9a-fA-F]{2}/.test(rawTitle)) {
+    try { movieTitle = decodeURIComponent(rawTitle); } catch (e) { movieTitle = rawTitle; }
+  }
+
+  if (movieId) {
+    movieIdInput.value = movieId;
+  }
+  if (movieTitle) {
+    movieTitleInput.value = movieTitle;
+    movieContextCard.hidden = false;
+    movieContextTitle.textContent = movieTitle;
+  }
+
+  if (isEmbeddedMovieSubmission && window.parent !== window) {
+    function closeEmbeddedSubmission(event) {
+      event.preventDefault();
+      window.parent.postMessage(
+        { type: 'annie-movie-submission', action: 'close' },
+        '*'
+      );
+    }
+
+    document.querySelectorAll('a[href="../../index.html"]').forEach(function (link) {
+      link.addEventListener('click', closeEmbeddedSubmission);
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        closeEmbeddedSubmission(event);
+      }
+    });
+  }
+
+  /* 「其他」选中时，动态把补充输入框设为必填 */
+  form.querySelectorAll('input[name="type"]').forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      if (typeOther.checked) {
+        typeOtherInput.classList.add('visible');
+        typeOtherText.required = true;
+        typeOtherText.focus();
+      } else {
+        typeOtherInput.classList.remove('visible');
+        typeOtherText.required = false;
+        typeOtherText.value = '';
+      }
+      updateSubmitState();
+    });
+  });
+
+  /* ============================================================
+     联系方式：只有选择「允许」时才出现，并动态切换必填状态
+     ============================================================ */
+  function isContactAllowed() {
+    const checked = form.querySelector('input[name="contact_allowed"]:checked');
+    return !!checked && checked.value === '允许';
+  }
+
+  function updateContactField() {
+    const allowed = isContactAllowed();
+
+    contactInput.classList.toggle('visible', allowed);
+
+    if (allowed) {
+      contactTypeRadios[0].required = true;
+    } else {
+      contactTypeRadios.forEach(function (r) {
+        r.required = false;
+        r.checked = false;
+      });
+      contactValue.required = false;
+      contactValue.disabled = true;
+      contactValue.type = 'text';
+      contactValue.placeholder = '请先选择联系方式类型';
+      contactValueLabel.textContent = '你的联系方式';
+      contactValue.value = '';
+    }
+  }
+
+  contactRadios.forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      updateContactField();
+      updateSubmitState();
+    });
+  });
+
+  /* 微信 / 邮箱 切换时更新输入框类型与提示文案 */
+  contactTypeRadios.forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      contactValue.disabled = false;
+      contactValue.required = true;
+      if (radio.value === '邮箱') {
+        contactValue.type = 'email';
+        contactValue.placeholder = '请输入你的邮箱地址';
+        contactValueLabel.textContent = '你的邮箱地址';
+      } else {
+        contactValue.type = 'text';
+        contactValue.placeholder = '请输入你的微信号';
+        contactValueLabel.textContent = '你的微信号';
+      }
+      contactValue.value = '';
+      updateSubmitState();
+    });
+  });
+
+  /* 所有输入变化都重新算一次 */
+  form.addEventListener('input', updateSubmitState);
+  form.addEventListener('change', updateSubmitState);
+
+  /* 初始化 */
+  updateContactField();
+  updateSubmitState();
+
+  /* ============================================================
+     提交后的跳转
+     web3forms 的 redirect 只在「原生表单提交」时生效，而且必须是绝对的
+     https 地址。所以这里在页面打开时按当前环境准备好这个字段。
+     ============================================================ */
+  const THANKS_URL = 'thanks.html';
+
+  if (/^https?:$/.test(window.location.protocol)) {
+    const thanksUrl = new URL(THANKS_URL, window.location.href);
+    if (isEmbeddedMovieSubmission) {
+      thanksUrl.searchParams.set('embedded', '1');
+    }
+    redirectField.value = thanksUrl.href;
+  } else {
+    redirectField.remove();
+  }
+
+  form.addEventListener('submit', function (e) {
+    if (submittedToday) {
+      e.preventDefault();
+      updateSubmitState();
+      return;
+    }
+    if (!form.checkValidity()) {
+      e.preventDefault();
+      updateSubmitState();
+      return;
+    }
+
+    /* ★ 记录今天已提交，防止刷新页面后重复投稿 */
+    submittedToday = true;
+    writeSubmitDate(todayKey());
+
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+    submitHint.textContent = '正在提交……';
+  });
+
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Annie · 文章评论</title>
+  <link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+  <link rel="preconnect" href="https://giscus.app" crossorigin>
+  <link rel="preload" href="https://giscus.app/client.js" as="script" crossorigin="anonymous" fetchpriority="low">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css">
+  <link rel="stylesheet" href="../../css/style.css">
+  <script>
+    (function () {
+      let savedTheme = null;
+      try { savedTheme = localStorage.getItem('annie-theme'); } catch (e) {}
+      const prefersDark = window.matchMedia
+        && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute(
+        'data-theme',
+        savedTheme === 'light' || savedTheme === 'dark'
+          ? savedTheme
+          : (prefersDark ? 'dark' : 'light')
+      );
+    })();
+  </script>
+  <style>
+    body::before,
+    body::after {
+      content: none !important;
+      display: none !important;
+    }
+
+    /* 评论区在页面里上下居中：style.css 里 .article-detail.active 的 display:block
+       优先级高于 .comments-page，会把这里的 flex 盖掉，所以选择器要带上 .article-detail.active。
+       justify-content 用 safe center：内容超过一屏时退回顶部对齐，不会把返回按钮裁掉。 */
+    .article-detail.active.comments-page {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: safe center;
+    }
+
+    .comments-eyebrow {
+      margin: 0 0 8px;
+      color: var(--color-text-tertiary);
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+    }
+
+    .comments-content {
+      max-width: 860px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    #commentsWidget {
+      font-family: var(--font-sans);
+    }
+
+    .comments-error {
+      margin-bottom: 24px;
+      color: var(--color-text-secondary);
+      line-height: 1.8;
+    }
+
+    .comments-error[hidden] {
+      display: none;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="main-container" id="app">
+    <main class="article-detail active comments-page">
+      <div class="article-topbar">
+        <a class="back-link" id="commentsBack" href="../../index.html">
+          <i class="ri-arrow-left-line" aria-hidden="true"></i>
+          返回
+        </a>
+      </div>
+      <header class="comments-content">
+        <p class="comments-eyebrow">文章评论</p>
+        <h1 class="article-full-title" id="commentsTitle">评论</h1>
+      </header>
+      <hr class="divider-thin">
+      <p class="comments-error comments-content" id="commentsError" role="alert" hidden>
+        缺少文章信息，请从文章卡片的「查看评论」入口打开。
+      </p>
+      <div class="comments-content">
+        <div class="article-comments">
+          <div class="giscus" id="commentsWidget"></div>
+        </div>
+      </div>
+      <hr class="divider-thin">
+      <div class="article-bottombar">
+        <a class="back-link" id="commentsBackBottom" href="../../index.html">
+          <i class="ri-arrow-left-line" aria-hidden="true"></i>
+          返回
+        </a>
+        <a class="article-feedback" id="commentsFeedback" href="feedback.html">
+          <i class="ri-feedback-line" aria-hidden="true"></i>
+          <span>问题反馈</span>
+        </a>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <p>© 2026 <a href="../../index.html">Annie</a> · 由 <a href="../../index.html">RH 工作室</a> 维护 · 保留所有权利 · 版本 0.4.21.004</p>
+    </footer>
+  </div>
+  <script>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const articleId = params.get('article');
+      const articleTitle = params.get('title');
+      const title = document.getElementById('commentsTitle');
+      const error = document.getElementById('commentsError');
+      const widget = document.getElementById('commentsWidget');
+      const backLink = document.getElementById('commentsBack');
+      const backLinkBottom = document.getElementById('commentsBackBottom');
+      const feedbackLink = document.getElementById('commentsFeedback');
+
+      if (!articleId || !/^\d+$/.test(articleId) || !articleTitle) {
+        error.hidden = false;
+        widget.hidden = true;
+        return;
+      }
+
+      title.textContent = articleTitle;
+      document.title = `Annie · ${articleTitle} · 评论`;
+      const articleUrl = `../../index.html?article=${encodeURIComponent(articleId)}`;
+      backLink.href = articleUrl;
+      backLinkBottom.href = articleUrl;
+      feedbackLink.href = `feedback.html?article=${encodeURIComponent(articleId)}&title=${encodeURIComponent(articleTitle)}`;
+
+      const script = document.createElement('script');
+      script.src = 'https://giscus.app/client.js';
+      script.async = true;
+      script.crossOrigin = 'anonymous';
+      script.dataset.repo = 'Annie106/annie106';
+      script.dataset.repoId = 'R_kgDOSTMWsg';
+      script.dataset.category = 'General';
+      script.dataset.categoryId = 'DIC_kwDOSTMWss4DKarP';
+      script.dataset.mapping = 'specific';
+      script.dataset.term = `文章 ${articleId}：${articleTitle}`;
+      script.dataset.strict = '1';
+      script.dataset.reactionsEnabled = '1';
+      script.dataset.emitMetadata = '0';
+      script.dataset.inputPosition = 'bottom';
+      script.dataset.theme = document.documentElement.getAttribute('data-theme') === 'dark'
+        ? 'dark'
+        : 'light';
+      script.dataset.lang = 'zh-CN';
+      widget.appendChild(script);
+
+      function syncGiscusTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        const frame = widget.querySelector('.giscus-frame');
+        if (frame && frame.contentWindow) {
+          frame.contentWindow.postMessage(
+            {
+              giscus: {
+                setConfig: {
+                  theme: theme,
+                },
+              },
+            },
+            'https://giscus.app'
+          );
+        }
+      }
+
+      window.addEventListener('storage', function (event) {
+        if (event.key === 'annie-theme' && (event.newValue === 'light' || event.newValue === 'dark')) {
+          syncGiscusTheme(event.newValue);
+        }
+      });
+
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (event) {
+          try {
+            if (!localStorage.getItem('annie-theme')) {
+              syncGiscusTheme(event.matches ? 'dark' : 'light');
+            }
+          } catch (error) {
+            syncGiscusTheme(event.matches ? 'dark' : 'light');
+          }
+        });
+      }
+
+      const blogHome = new URL('../../index.html', window.location.href);
+      const referrer = document.referrer ? new URL(document.referrer) : null;
+      if (referrer && referrer.origin === blogHome.origin && referrer.pathname === blogHome.pathname) {
+        [backLink, backLinkBottom].forEach(function (link) {
+          link.addEventListener('click', function (event) {
+            event.preventDefault();
+            window.history.back();
+          });
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

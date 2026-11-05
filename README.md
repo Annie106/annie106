@@ -33,6 +33,7 @@ archive/                    归档，不参与显示
 - 全站搜索（<kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd> 或 <kbd>/</kbd>）：搜标题、摘要、标签、正文；多关键词按「与」匹配，命中高亮，空状态给最近搜索与标签入口
 - 文章卡片「⋯」菜单支持三类：站内文章、独立页面（`externalPage`）、自定义链接（`link`）
 - 文章可内嵌独立 HTML（`embeddedPage`），自动调高并跟随主题
+- 每篇公开文章使用 Giscus 展示 GitHub Discussions 评论；博客启动时会低优先级预载 Giscus 脚本和连接，打开文章时再加载对应讨论；文章卡片的「查看评论」会打开独立评论页，讨论串按文章 ID 区分；仓库需启用 Discussions 并安装 Giscus App
 - 分享链接形如 `index.html?article=<id>`；微信内改为复制链接 + 右上角引导，其它端走系统分享
 - `isPublic: false` 关闭单篇正文，改为 `true` 恢复
 - 页面状态记忆：离开文章、切标签、关页后返回，恢复视图与滚动位置
@@ -52,6 +53,17 @@ archive/                    归档，不参与显示
 | 视频列表 | `movie.html` 的 `VIDEO_LIST` |
 | 样式 | `css/style.css` |
 | 分享封面 | 换图后同步 `index.html` 里的三处地址与宽高 |
+
+### 新建独立 HTML 页面
+
+在 `<head>` 中复用博客主样式和 Remix Icon，页面正文、标题、按钮和表单控件会默认使用博客字体与主题变量，并可直接复用文章页的 `.article-topbar`、`.article-bottombar`、`.back-link`、`.article-feedback`、`.divider-thin` 等 UI 样式：
+
+```html
+<link rel="stylesheet" href="../../css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css">
+```
+
+如果页面不使用站点导航，且顶部虚化遮罩挡住页面内容，可在该页面样式中关闭 `body::before`。
 
 几个注意点：
 
