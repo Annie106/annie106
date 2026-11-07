@@ -19,6 +19,18 @@
             --color-tag-text: #555555;
             --color-divider: #eeeeee;
 
+            /* 文章卡片里「主标签」那一处唯一的彩色强调。
+               只在卡片内、只有十几像素宽的一小段字，
+               不参与导航、按钮和筛选条，所以不会破坏全站的黑白基调 */
+            --card-accent: #b45f74;
+
+            /* 卡片右上角三点按钮的圆底。做成变量而不是在浅色/深色里各写一遍，
+               是因为「悬停显示」和「触屏常驻」两条规则都要用同一个底色；
+               写死颜色会让深色下的触屏分支拿到浅色值（之前就是这么翻车的） */
+            --card-control-bg: #f1f1f1;
+            --card-control-bg-hover: #e6e6e6;
+            --card-control-bg-active: #dedede;
+
             /* 正文链接：颜色跟随正文，只靠下划线和悬停变色区分，
                这样深浅两种模式都清晰，也不会和强调色打架 */
             --color-link: var(--color-text-primary);
@@ -2139,7 +2151,7 @@
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             align-items: stretch;
-            gap: 18px;
+            gap: 20px;
         }
         .home-loading {
             grid-column: 1 / -1;
@@ -2195,62 +2207,133 @@
             position: relative;
         }
         .task {
-            background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(248,248,248,0.96));
-            border: 1px solid rgba(17, 17, 17, 0.08);
-            border-radius: 16px;
-            /* 卡片整体压扁一些：上下内边距比左右小，主要省的是高度 */
-            padding: 13px 16px 11px;
-            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+            /* 卡片只做一层极淡的描边 + 几乎看不见的投影：
+               视觉主体交给标题和摘要，容器本身尽量「消失」。 */
+            background: var(--color-bg);
+            border: 1px solid rgba(17, 17, 17, 0.07);
+            border-radius: 14px;
+            padding: 20px 22px 18px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 10px 24px -16px rgba(15, 23, 42, 0.10);
             transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
         @media (hover: hover) and (pointer: fine) {
             .task:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
-                border-color: rgba(17, 17, 17, 0.12);
+                box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
+                border-color: rgba(17, 17, 17, 0.13);
             }
         }
+        /* 悬停时卡片底边的横线：压在下边框的位置上，从中线同时向左右两端
+           生长到完整宽度，移出时顺着同一条 transition 原路收回。
+           用 scaleX 而不是 width，纯合成层动画，长列表也不会掉帧；
+           左右各留 14px（= 卡片圆角半径）让线条止于圆角之前。 */
+        .task::after {
+            content: '';
+            position: absolute;
+            left: 14px;
+            right: 14px;
+            bottom: -1px;
+            height: 2px;
+            border-radius: 2px;
+            background: rgba(17, 17, 17, 0.16);
+            transform: scaleX(0);
+            transform-origin: 50% 50%;
+            transition: transform 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
+            pointer-events: none;
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .task:hover::after {
+                transform: scaleX(1);
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .task::after {
+                transition: none;
+            }
+        }
+        /* 元信息行：日期 · 主标签 · 其余标签，全部收在一行里，
+           右侧留出三点按钮的位置 */
         .tags {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 10px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
         .tags-left {
             display: flex;
             align-items: center;
-            gap: 8px;
+            flex-wrap: wrap;
+            gap: 6px 10px;
+            min-width: 0;
+        }
+        .post-card-date {
+            color: var(--color-text-tertiary);
+            font-size: 0.76rem;
+            font-weight: 500;
+            line-height: 1.6;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+        /* 主标签当作「分类」用：只上色、不做胶囊，
+           和后面的 #标签 拉开层次 */
+        .tag-cat {
+            color: var(--card-accent);
+            font-size: 0.76rem;
+            font-weight: 600;
+            line-height: 1.6;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
         }
         .tag {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 4px 11px;
+            padding: 2px 9px;
             border-radius: 999px;
-            background: rgba(17, 17, 17, 0.06);
-            color: #222;
-            font-size: 0.66rem;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
+            background: rgba(17, 17, 17, 0.045);
+            color: #6a6a72;
+            font-size: 0.71rem;
+            font-weight: 500;
+            line-height: 1.7;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
         }
+        /* 置顶：一枚圆形图钉 + 一枚「置顶」文字胶囊，两段分开（参考图的形态）。
+           放在元信息行最后，中性灰，不上强调色 */
         .tag-pinned {
-            width: 24px;
-            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
             padding: 0;
             border-radius: 50%;
-            background: rgba(17, 17, 17, 0.12);
+            background: rgba(17, 17, 17, 0.06);
             color: var(--color-text-primary);
         }
         .tag-pinned i {
-            font-size: 0.85rem;
+            font-size: 0.78rem;
             line-height: 1;
         }
-        /* 二级菜单触发按钮（三个点）：一层平涂的浅灰圆底，不加投影，
-           保持卡片本身的干净感，只让三个点有一个落脚的区域。 */
+        .tag-pinned-label {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 9px;
+            border-radius: 999px;
+            background: rgba(17, 17, 17, 0.06);
+            color: var(--color-text-secondary);
+            font-size: 0.71rem;
+            font-weight: 500;
+            line-height: 1.7;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+        /* 二级菜单触发按钮（三个点）：常态只留一个很淡的三点，
+           指针移到卡片上才浮出浅灰圆底，避免右上角抢标题的视线。 */
         .options {
-            background: #f1f1f1;
+            background: transparent;
             border: none;
             width: 26px;
             height: 26px;
@@ -2260,14 +2343,32 @@
             justify-content: center;
             cursor: pointer;
             padding: 0;
-            transition: background 0.2s ease;
+            flex: 0 0 26px;
+            opacity: 0.45;
+            transition: background 0.2s ease, opacity 0.2s ease;
+        }
+        html:not(.is-touch-input) .task:hover .options,
+        html:not(.is-touch-input) .options:focus-visible {
+            opacity: 1;
+            background: var(--card-control-bg);
         }
         html:not(.is-touch-input) .options:hover {
-            background: #e6e6e6;
+            background: var(--card-control-bg-hover);
         }
-        .options:active,
+        .options:active {
+            opacity: 1;
+            background: var(--card-control-bg-active);
+        }
+        /* 触屏没有悬停，圆底常驻，保证按钮可见可点 */
+        @media (hover: none) {
+            .options {
+                opacity: 1;
+                background: var(--card-control-bg);
+            }
+        }
         .post-card.menu-open .options {
-            background: #dedede;
+            opacity: 1;
+            background: var(--card-control-bg-active);
         }
         .options svg {
             width: 16px;
@@ -2291,10 +2392,10 @@
         }
         .post-menu {
             position: absolute;
-            /* 紧贴三点按钮下方：卡片上内边距 13px + 标签行高 26px + 5px 间隙，
-               右对齐卡片内边距（16px） */
-            top: 44px;
-            right: 16px;
+            /* 紧贴三点按钮下方：卡片上内边距 20px + 元信息行 26px + 6px 间隙，
+               右对齐卡片内边距（22px） */
+            top: 52px;
+            right: 22px;
             z-index: 6;
             min-width: 184px;
             padding: 6px;
@@ -2375,22 +2476,28 @@
             font-size: 1rem;
         }
         .task-title {
-            font-size: 1.08rem;
+            font-size: 1.14rem;
             font-weight: 700;
-            letter-spacing: -0.02em;
-            line-height: 1.3;
-            margin: 0 0 6px;
+            letter-spacing: -0.01em;
+            line-height: 1.45;
+            margin: 0 0 10px;
             color: var(--color-text-primary);
-        }
-        .task p {
-            font-size: 0.88rem;
-            color: var(--color-text-secondary);
-            line-height: 1.6;
-            /* 摘要与统计行之间留 12px */
-            margin: 0 0 12px;
+            /* 标题最多两行：同一行两张卡片高度不会被长标题拉歪 */
             display: -webkit-box;
-            -webkit-line-clamp: 3;
-            line-clamp: 3;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .task-excerpt {
+            font-size: 0.875rem;
+            color: #78787f;
+            line-height: 1.75;
+            /* 摘要与统计行之间留 14px */
+            margin: 0 0 14px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
@@ -2399,17 +2506,30 @@
                统计行统一贴底，位置才不会一张高一张低 */
             margin-top: auto;
             display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            gap: 10px;
+            align-items: center;
+            /* 底部整行左对齐：统计数字保持原来的最左位置不被挪动，
+               标签只是排在它后面，同样留在左侧 */
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+        }
+        /* 标签跟在统计数字后面、一起靠左；
+           标签多时自动换行，不会把这一行撑破 */
+        .post-card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 6px;
+            min-width: 0;
         }
         .stats-main {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 10px 14px;
-            font-size: 0.73rem;
-            color: var(--color-text-tertiary);
+            gap: 8px 14px;
+            font-size: 0.72rem;
+            color: #a3a3aa;
         }
         .stats-main > div {
             display: inline-flex;
@@ -2427,6 +2547,31 @@
         .stats-main svg[fill="#000000"] {
             fill: #000000;
             stroke: none;
+        }
+        /* 点赞图标内联了 fill="#000000"（写在 path 上），深色模式下会变成看不见的黑点。
+           必须落到 path 上才能盖掉行内的表现属性，跟统计行文字色走 */
+        [data-theme="dark"] .stats-main svg[fill="#000000"] path {
+            fill: currentColor;
+        }
+        /* 小屏：卡片内边距和字号各收一档，
+           元信息行允许换行（日期 + 分类 + 标签在 320px 宽下仍能读） */
+        @media (max-width: 600px) {
+            .task {
+                padding: 16px 16px 14px;
+                border-radius: 12px;
+            }
+            .task-title {
+                font-size: 1.06rem;
+            }
+            .post-menu {
+                top: 46px;
+                right: 16px;
+            }
+            /* 小屏圆角收到 12，底线跟着圆角收进 */
+            .task::after {
+                left: 12px;
+                right: 12px;
+            }
         }
 
         .view.active-view {
@@ -4023,6 +4168,14 @@
             --color-tag-text: #b3b9c2;
             --color-divider: #22252c;
 
+            /* 深色底上把强调色提亮、降饱和，避免玫瑰色在暗背景里发脏 */
+            --card-accent: #d98fa2;
+
+            /* 三点的圆底在深色下只做「一层比卡片略亮的平涂」，不加投影 */
+            --card-control-bg: rgba(255, 255, 255, 0.08);
+            --card-control-bg-hover: rgba(255, 255, 255, 0.14);
+            --card-control-bg-active: rgba(255, 255, 255, 0.20);
+
             /* 深色模式下的链接：颜色同样跟随正文（浅色），
                下划线用稍亮的灰，悬停时用 accent-hover（比正文稍暗）
                制造「变暗」的反馈——因为深色下 accent 是纯白，
@@ -4319,35 +4472,41 @@
 
         /* 文章卡片 */
         [data-theme="dark"] .task {
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.03));
-            border-color: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+            background: rgba(255, 255, 255, 0.035);
+            border-color: rgba(255, 255, 255, 0.09);
+            box-shadow: none;
         }
         @media (hover: hover) and (pointer: fine) {
             [data-theme="dark"] .task:hover {
-                box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5);
+                box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
                 border-color: rgba(255, 255, 255, 0.16);
             }
         }
+        /* 深色下把细线换成低亮度的白，浅灰在深底上会糊成一团 */
+        [data-theme="dark"] .task::after {
+            background: rgba(255, 255, 255, 0.24);
+        }
         [data-theme="dark"] .tag {
-            background: rgba(255, 255, 255, 0.08);
-            color: #d1d5dc;
+            background: rgba(255, 255, 255, 0.07);
+            color: #b3b9c2;
         }
-        [data-theme="dark"] .tag-pinned {
-            background: rgba(255, 255, 255, 0.14);
+        [data-theme="dark"] .tag-pinned,
+        [data-theme="dark"] .tag-pinned-label {
+            background: rgba(255, 255, 255, 0.09);
         }
-        /* 深色模式下同样只做平涂：用一层比卡片略亮的深灰作为圆底，
-           不加投影，避免深底上堆出一圈脏边。 */
-        [data-theme="dark"] .options {
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: none;
+        [data-theme="dark"] .tag-pinned-label {
+            color: #b3b9c2;
         }
-        html:not(.is-touch-input) [data-theme="dark"] .options:hover {
-            background: rgba(255, 255, 255, 0.14);
+        [data-theme="dark"] .task-excerpt {
+            color: #9aa1ad;
         }
-        [data-theme="dark"] .options:active,
-        [data-theme="dark"] .post-card.menu-open .options {
-            background: rgba(255, 255, 255, 0.2);
+        [data-theme="dark"] .stats-main {
+            color: #7d848f;
+        }
+        /* 三点的圆底颜色已经在深色变量里换掉了，这里只补图标填充：
+           和浅色一样保持常态极淡、悬停完整显示 */
+        [data-theme="dark"] .options svg {
+            fill: #d5d8de;
         }
         /* 三点图标内联了 fill="#000000"，深色模式下会变成看不见的黑点 */
         [data-theme="dark"] .options svg {
