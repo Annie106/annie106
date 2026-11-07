@@ -63,7 +63,7 @@ archive/                    归档，不参与显示
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css">
 ```
 
-如果页面不使用站点导航，且顶部虚化遮罩挡住页面内容，可在该页面样式中关闭 `body::before`。
+站点的顶部导航是一条**通栏、吸顶的半透明磨砂条**（`background` 给 64% 不透明白 + `backdrop-filter: blur(20px)`，页面一开始滚动时由 JS 给 `.site-header` 加 `.is-scrolled` 把底色压实到 78%，保证内容经过时文字仍清楚；不支持背景模糊的浏览器退回 96% 实底）：它在 HTML 里位于 `.main-container` 之外，样式靠「宽度加回左右留白 + 等量负 margin」顶到视口两侧，再用内边距让内容与 1080 主体容器对齐。条带高、控件高、导航胶囊高由 `:root` 里的 `--header-h` / `--header-control` / `--nav-h` 三个令牌统一控制（移动端在 `@media (max-width: 600px)` 里覆盖前两个），改它们即可整体缩放；需要给「顶部让位」的浮层（如音频提示条）读 `--header-h` 即可，别写死数字。
 
 几个注意点：
 

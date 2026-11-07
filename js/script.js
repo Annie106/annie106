@@ -270,8 +270,10 @@
             const $ = (sel) => document.querySelector(sel);
             const $$ = (sel) => document.querySelectorAll(sel);
 
+            const siteHeader = $('.site-header');
+            const siteNav = $('#siteNav');
+            const navPill = $('.nav-pill');
             const navLinks = $('#navLinks');
-            const mobileMenuBtn = $('#mobileMenuBtn');
             const homeLink = $('#homeLink');
             const viewHome = $('#view-home');
             const viewBlog = $('#view-blog');
@@ -2958,6 +2960,57 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
+            // ==================== 导航栏：滚动状态 ====================
+            /* 半透明的顶栏在页面静止时背后是空白，透出的几乎是纯底色；
+               一旦开始滚动，才真的有内容从下面经过。这时候给条带加一个
+               .is-scrolled，把底色压实一点点（72% → 84%），
+               既不改变观感，又能保证任何内容经过时文字都够清楚。
+               只切一个 class，不读其它布局，用 passive 监听。 */
+            function syncHeaderScroll() {
+                if (!siteHeader) return;
+                siteHeader.classList.toggle('is-scrolled', window.scrollY > 4);
+            }
+
+            // ==================== 导航栏：滑动指示块 ====================
+            /* 把黑色药丸挪到当前激活项下方。用 getBoundingClientRect 实时量：
+               字体异步加载完成、窗口缩放、移动端四项等分后宽度变化都能算准。
+               首次定位时临时关掉过渡，避免刚进页面就从左往右「飞」一遍。 */
+            let navPillReady = false;
+            function updateNavPill() {
+                if (!siteNav || !navPill || !navLinks) return;
+                const active = navLinks.querySelector('a.active');
+                if (!active || !active.offsetWidth) {
+                    siteNav.classList.remove('has-pill');
+                    navPillReady = false;
+                    return;
+                }
+                const navRect = siteNav.getBoundingClientRect();
+                const linkRect = active.getBoundingClientRect();
+                // 绝对定位的基准是内边距盒，所以扣掉左侧边框的宽度
+                const left = linkRect.left - navRect.left - siteNav.clientLeft;
+                // 药丸要比链接热区再缩一圈（值写在 CSS 的 --pill-inset-x 里，
+                // 上下那一圈由 .nav-pill 的 top/height 负责），
+                // 这样点得到的地方比看到的色块大，但不显得顶满胶囊
+                const insetX = parseFloat(
+                    getComputedStyle(siteNav).getPropertyValue('--pill-inset-x')
+                ) || 0;
+                const pillWidth = Math.max(0, linkRect.width - insetX * 2);
+
+                navPill.style.width = `${pillWidth}px`;
+                navPill.style.transform = `translate3d(${left + insetX}px, 0, 0)`;
+
+                if (!navPillReady) {
+                    navPill.style.transition = 'none';
+                    siteNav.classList.add('has-pill');
+                    // 读一次布局，让首帧的宽度/位移立即生效
+                    void navPill.offsetWidth;
+                    window.requestAnimationFrame(function() {
+                        navPill.style.transition = '';
+                        navPillReady = true;
+                    });
+                }
+            }
+
             function switchView(viewName) {
                 const previousView = currentView;
                 // 切到别的视图时收起搜索浮层，回来时是干净的页面
@@ -3016,13 +3069,20 @@
                     });
                 }
 
-                $$('.nav-links a').forEach(link => link.classList.remove('active'));
+                $$('.nav-links a').forEach(link => {
+                    link.classList.remove('active');
+                    link.removeAttribute('aria-current');
+                });
                 const navMap = { home: 'home', blog: 'blog', movie: 'movie', about: 'about', article: 'blog' };
                 const activeNav = navMap[viewName] || 'home';
                 const navLink = document.querySelector(`.nav-links a[data-nav="${activeNav}"]`);
-                if (navLink) navLink.classList.add('active');
+                if (navLink) {
+                    navLink.classList.add('active');
+                    navLink.setAttribute('aria-current', 'page');
+                }
+                // 视图切换后指示块要跟着走；等下一帧元素显示出来再量，尺寸才准
+                window.requestAnimationFrame(updateNavPill);
 
-                navLinks.classList.remove('open');
                 // 地址栏跟着视图走，分享出去的链接才能定位到具体文章
                 syncUrlWithView();
             }
@@ -3055,9 +3115,25 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
 
-            mobileMenuBtn.addEventListener('click', function() {
-                navLinks.classList.toggle('open');
+            // 窗口尺寸/横竖屏变化后，四项的宽度会变，指示块要重新量
+            let navResizeTick = null;
+            window.addEventListener('resize', function() {
+                if (navResizeTick) window.cancelAnimationFrame(navResizeTick);
+                navResizeTick = window.requestAnimationFrame(function() {
+                    navResizeTick = null;
+                    updateNavPill();
+                });
             });
+
+            // 字体加载完成后文字宽度会变，再量一次
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(updateNavPill).catch(function() {});
+            }
+            updateNavPill();
+
+            // 滚动状态：进出页面时都同步一次，避免刷新后停在中间位置却没打上标
+            window.addEventListener('scroll', syncHeaderScroll, { passive: true });
+            syncHeaderScroll();
 
             backBtn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -3220,9 +3296,6 @@
                         card.querySelector('.options').setAttribute('aria-expanded', 'false');
                         card.querySelector('.post-menu').hidden = true;
                     });
-                }
-                if (!e.target.closest('.site-header') && navLinks.classList.contains('open')) {
-                    navLinks.classList.remove('open');
                 }
             });
 

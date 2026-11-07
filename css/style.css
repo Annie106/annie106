@@ -36,6 +36,14 @@
 
             --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
             --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+            /* 顶部导航的尺寸令牌。放在 :root 而不是 .site-header 里，
+               是因为吸顶后「顶部被占掉多少高度」是全站共享的信息——
+               例如右下角的提示条要让到导航下方，得读同一个值，
+               否则改一次导航高度就要满文件找魔法数字。 */
+            --header-h: 75px;
+            --header-control: 36px;
+            --nav-h: calc(var(--header-control) + 4px);
         }
 
         * {
@@ -106,138 +114,281 @@
         }
 
         /* ==================== 头部导航 ==================== */
+        /* 一条通栏的顶栏（吸顶）：
+           左＝品牌（头像 + 名字 + 副标题），右＝分段式导航，白底 + 底部细分隔线。
+
+           尺寸由 :root 里的三个令牌决定，改它们就能整体缩放且不破坏比例：
+             --header-h       条带高度（桌面 64 = 8×8，移动 56 = 7×8）
+             --header-control 品牌标识的高度（头像直径 / 品牌悬停底色高）
+             --nav-h          导航胶囊高度 = 标识高度 + 4
+           两者都在条带里垂直居中，中心线始终重合；胶囊比标识高 4px 是
+           有意的「控件比标识厚一档」，让可点的导航比纯展示的名字更醒目。 */
         .site-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            width: 100%;
-            margin-top: 18px;
-            margin-bottom: 24px;
-            position: sticky;
-            top: 16px;
-            padding: 12px 16px;
-            /* 磨砂玻璃：半透明底色 + 背景模糊 + 高光边缘 */
-            border: 1px solid rgba(255, 255, 255, 0.55);
-            border-radius: 18px;
-            background: rgba(255, 255, 255, 0.18);
-            box-shadow:
-                0 0 0 1px rgba(17, 17, 17, 0.04),
-                0 10px 28px rgba(15, 23, 42, 0.06),
-                inset 0 1px 0 rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(26px) saturate(190%);
-            -webkit-backdrop-filter: blur(26px) saturate(190%);
-            z-index: 100;
-            transition: var(--transition-smooth);
+            gap: 16px;
+            flex: 0 0 auto;
+            height: calc(var(--header-h) + env(safe-area-inset-top, 0px));
+            /* 贴顶后给刘海屏留出安全区（普通浏览器里 env() 为 0） */
+            padding-top: env(safe-area-inset-top, 0px);
+
+            /* 宽度先把两侧留白加回来，再用等量负 margin 推出去：
+               body 是 align-items:center 的 flex 容器，若只写 width:100% 加负 margin，
+               元素只会被平移、宽度不变，右侧会空出一条。两者配合才真正铺满整幅。 */
+            width: calc(100% + var(--body-pad-x) * 2);
+            margin: 0 calc(var(--body-pad-x) * -1) 16px;
+
+            /* 内边距让内容仍与 1080 主体容器对齐。
+               这里用 100%（相对 body 内容宽）而不是 100vw，
+               是为了避开「vw 把滚动条算进去」引起的横向溢出 */
+            padding-inline: calc(var(--body-pad-x) + max(0px, (100% - var(--max-width)) / 2));
+
+            /* 半透明磨砂：底色只给 64% 不透明度，背后的模糊层负责把
+               滚过去的内容「糊」成一片柔和的色块，
+               这样既透得出内容是「在下面动」，文字也不会跟着花掉。 */
+            background: rgba(255, 255, 255, 0.64);
+            border-bottom: 1px solid rgba(17, 17, 17, 0.07);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            backdrop-filter: blur(20px) saturate(180%);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
-        /* ==================== 顶部渐变模糊 ==================== */
-        /* 固定在顶部的遮罩层：用遮罩让背景模糊与底色由上到下逐渐消失，
-           内容滚动到页面顶部时会自然虚化、淡出 */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 150px;
-            z-index: 90;
-            pointer-events: none;
-            background: linear-gradient(
-                to bottom,
-                rgba(255, 255, 255, 0.92) 0%,
-                rgba(255, 255, 255, 0.55) 45%,
-                rgba(255, 255, 255, 0) 100%
-            );
-            backdrop-filter: blur(14px) saturate(150%);
-            -webkit-backdrop-filter: blur(14px) saturate(150%);
-            -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.9) 35%, transparent 100%);
-            mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.9) 35%, transparent 100%);
+        /* 一旦页面开始滚动，底下就真的有内容经过了，这时候把底色再压实一点。
+           幅度只有 14%，肉眼几乎看不出跳变，但能保证文字在任何内容上方都稳。
+           用 :has 之外没有更省的办法——这段靠 JS 给 .is-scrolled 打标。 */
+        .site-header.is-scrolled {
+            background: rgba(255, 255, 255, 0.78);
+            border-bottom-color: rgba(17, 17, 17, 0.09);
         }
 
+        /* 不支持背景模糊时，半透明会让文字压在内容上变得难认，
+           退回接近实心的底色，宁可失去通透感也要保住可读性 */
+        @supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
+            .site-header,
+            .site-header.is-scrolled {
+                background: rgba(255, 255, 255, 0.96);
+            }
+        }
+
+        /* ---------- 品牌区 ---------- */
         .site-branding {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
+            min-width: 0;
+            flex-shrink: 0;
+            /* 与导航胶囊同高，悬停底色才是一个和右边等高的胶囊 */
+            height: var(--header-control);
+            /* 左边不留内边距：头像边缘必须和下方正文的左边线对齐 */
+            padding: 0 12px 0 0;
+            border-radius: 999px;
+            color: inherit;
+            text-decoration: none;
+            transition: background-color var(--transition-fast);
         }
 
-
-        /* 头像占位 —— 替换 src 即可 */
         .avatar {
-            width: 42px;
-            height: 42px;
+            width: var(--header-control);
+            height: var(--header-control);
             border-radius: 50%;
             object-fit: cover;
-            border: 1.5px solid var(--color-border);
-            background: var(--color-surface);
             flex-shrink: 0;
+            /* 头像来自外链 CDN，万一加载失败（鉴权/断网）时这里是柔和灰底，
+               不会露出破图图标和挤出来的替代文字 */
+            background: linear-gradient(135deg, #f2f2f4, #e4e5e9);
+            color: transparent;
+            font-size: 0;
+            /* 头像用极细的描边代替边框：不给盒子撑尺寸，缩放时也不抖 */
+            box-shadow:
+                0 0 0 1px rgba(17, 17, 17, 0.07),
+                0 2px 6px rgba(15, 23, 42, 0.06);
+            transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
         }
 
+        /* 两行文字的总高 ≈ 名字 16×1.3 + 副标题 12×1.3 = 36.4，
+           正好等于头像直径，三者构成一个方块，视觉重心才是稳的 */
         .site-title-group {
             display: flex;
             flex-direction: column;
+            min-width: 0;
+            line-height: 1.3;
         }
         .site-title {
-            font-size: 1.15rem;
+            font-size: 1rem;
             font-weight: 650;
-            letter-spacing: -0.01em;
+            letter-spacing: -0.015em;
             color: var(--color-text-primary);
-            text-decoration: none;
-            line-height: 1.2;
+            white-space: nowrap;
         }
         .site-subtitle {
-            font-size: 0.78rem;
+            /* 名字 : 副标题 = 4 : 3，层级清楚但不会小到看不清 */
+            font-size: 0.75rem;
             color: var(--color-text-tertiary);
-            letter-spacing: 0.02em;
+            letter-spacing: 0.03em;
             font-weight: 400;
+            white-space: nowrap;
+        }
+
+        /* ---------- 导航（分段控件） ---------- */
+        .site-nav {
+            /* 三个内缩量分开管不同的事：
+               --nav-pad      容器内边距，决定链接热区大小
+               --pill-inset-* 黑色药丸相对链接热区的额外内缩，
+                              比容器内边距再多留一圈，药丸就不会顶满胶囊 */
+            --nav-pad: 3px;
+            /* 药丸是这一组里唯一要「变大」的东西：内缩压到最小，
+               只留 1~2px 让它在胶囊里不显得糊死 */
+            --pill-inset-x: 2px;
+            --pill-inset-y: 1px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            height: var(--nav-h);
+            padding: var(--nav-pad);
+            border-radius: 999px;
+            background: rgba(17, 17, 17, 0.05);
+            /* 用 inset 描边代替 border：border 会吃掉 2px 高度，
+               导致药丸高度算出来是 28 而不是 30，比例不再是整数 */
+            box-shadow:
+                inset 0 0 0 1px rgba(17, 17, 17, 0.07),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
         }
 
         .nav-links {
+            position: relative;
+            z-index: 1;
             display: flex;
-            gap: 10px;
-            align-items: center;
+            align-items: stretch;
+            height: 100%;
+            gap: 2px;
             list-style: none;
-            padding: 6px;
-            border: 1px solid rgba(17, 17, 17, 0.06);
-            border-radius: 999px;
-            background: rgba(17, 17, 17, 0.04);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
         }
         .nav-links li {
             display: flex;
         }
         .nav-links a {
+            position: relative;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            text-decoration: none;
-            color: var(--color-text-secondary);
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: all var(--transition-fast);
-            padding: 8px 14px;
+            /* 高度交给 flex 拉伸填满容器内容区（胶囊高 − 上下内缩 3×2），
+               不写死数值，改 --nav-h 时自动跟随。
+               横向 12px：药丸宽 = 文字 + 24，比原来的 16px 更紧凑，
+               配合加高后的胶囊，宽高比从 2.0 收到 1.5 左右，不再是一条扁担 */
+            padding: 0 12px;
             border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            line-height: 1.2;
+            letter-spacing: 0.01em;
+            color: var(--color-text-secondary);
+            text-decoration: none;
             white-space: nowrap;
+            /* 离开激活态时颜色立刻回落，不会留下「白字浮在浅底上」的空档 */
+            transition:
+                color 0.12s ease,
+                background-color var(--transition-fast),
+                transform var(--transition-fast);
         }
-        /* 悬停样式统一加上 html:not(.is-touch-input)：
-           触屏点一下后浏览器会把 :hover 粘住，按钮/链接会一直保持按下样式 */
-        html:not(.is-touch-input) .nav-links a:hover,
+        /* 焦点环：键盘 Tab 时必须看得见当前停在哪一项 */
+        .nav-links a:focus-visible {
+            outline: 2px solid var(--color-text-primary);
+            outline-offset: 2px;
+        }
+        /* 悬停＝浅灰底（提示「可点」），激活＝黑底（说明「你在这里」）。
+           两者刻意不同，避免以前那种「悬停和激活长得一模一样」的困惑。
+           悬停底色画在伪元素上而不是链接本身，是为了让它和药丸一样
+           比热区小一圈——否则鼠标一移上去，色块会突然涨大 8×10px。
+           isolation 给链接建层叠上下文，伪元素的 z-index: -1 才会落在
+           文字下面、而不是跑到胶囊背景后面。 */
+        .nav-links a {
+            isolation: isolate;
+        }
+        .nav-links a::before {
+            content: '';
+            position: absolute;
+            /* 链接自己已经距胶囊内边 nav-pad，这里只需再缩药丸那一圈 */
+            inset: var(--pill-inset-y) var(--pill-inset-x);
+            border-radius: 999px;
+            background: rgba(17, 17, 17, 0.055);
+            opacity: 0;
+            z-index: -1;
+            transition: opacity var(--transition-fast);
+        }
+        html:not(.is-touch-input) .nav-links a:not(.active):hover {
+            color: var(--color-text-primary);
+        }
+        html:not(.is-touch-input) .nav-links a:not(.active):hover::before {
+            opacity: 1;
+        }
+        html:not(.is-touch-input) .nav-links a:not(.active):active {
+            transform: scale(0.96);
+        }
         .nav-links a.active {
             color: #ffffff;
-            background: #111111;
-            box-shadow: 0 4px 12px rgba(17, 17, 17, 0.14);
+            /* 进入激活态时等药丸先滑到位，再变字色。
+               transition 取的是「目标状态」的定义，所以这里能和上面那条
+               形成不对称的时序：进慢、出快。 */
+            transition:
+                color 0.12s ease 0.1s,
+                background-color var(--transition-fast),
+                transform var(--transition-fast);
         }
-        .nav-links a::after {
-            display: none;
+        /* 没有 JS（指示块不生效）时，激活项自己带底色兜底 */
+        .site-nav:not(.has-pill) .nav-links a.active {
+            background: #141414;
+            box-shadow: 0 2px 8px rgba(17, 17, 17, 0.16);
         }
 
-        .mobile-menu-btn {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--color-text-primary);
-            padding: 4px;
+        /* 滑动指示块：JS 量出激活项的位置后写 transform / width */
+        .nav-pill {
+            position: absolute;
+            top: calc(var(--nav-pad) + var(--pill-inset-y));
+            left: 0;
+            width: 0;
+            height: calc(100% - (var(--nav-pad) + var(--pill-inset-y)) * 2);
+            border-radius: 999px;
+            background: #141414;
+            box-shadow: 0 2px 8px rgba(17, 17, 17, 0.18);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 0;
+            will-change: transform, width;
+            transition:
+                transform 0.36s cubic-bezier(0.32, 0.9, 0.24, 1),
+                width 0.36s cubic-bezier(0.32, 0.9, 0.24, 1),
+                opacity 0.2s ease;
+        }
+        .site-nav.has-pill .nav-pill {
+            opacity: 1;
+        }
+
+        /* 品牌区悬停：整块轻微浮起，头像同步放大一点点 */
+        @media (hover: hover) {
+            html:not(.is-touch-input) .site-branding:hover {
+                background: rgba(17, 17, 17, 0.045);
+            }
+            html:not(.is-touch-input) .site-branding:hover .avatar {
+                transform: scale(1.06);
+                box-shadow:
+                    0 0 0 1px rgba(17, 17, 17, 0.1),
+                    0 4px 12px rgba(15, 23, 42, 0.1);
+            }
+        }
+
+        /* 尊重「减少动态效果」的系统偏好 */
+        @media (prefers-reduced-motion: reduce) {
+            .site-header,
+            .nav-pill,
+            .nav-links a,
+            .avatar,
+            .site-branding {
+                transition: none !important;
+            }
         }
 
         /* ==================== 个人简介 ==================== */
@@ -246,8 +397,9 @@
             grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
             align-items: center;
             gap: clamp(24px, 5vw, 64px);
-            /* 底部留白收窄一些：和「最新文章」之间的空档不要太大 */
-            padding: 16px 0 14px;
+            /* 顶部 8 + 顶栏自己的 16 = 24，比原来 40 收紧一档；
+               底部留白也窄：和「最新文章」之间的空档不要太大 */
+            padding: 8px 0 14px;
             border-bottom: 1px solid var(--color-divider);
             margin-bottom: 16px;
         }
@@ -2123,8 +2275,7 @@
             display: block;
         }
         .post-card.menu-open {
-            /* 高于顶部渐变模糊层（90）、低于导航栏（100），
-               这样卡片菜单滚到页面顶部时不会被虚化 */
+            /* 低于吸顶导航栏（100）：卡片菜单滚到页面顶部时不会盖住顶栏 */
             z-index: 95;
         }
         @media (hover: none) {
@@ -2483,16 +2634,10 @@
         /* 文章页顶部一行：左边返回，右边分享。
            返回原本自带 24px 下边距，放进这一行后改由行本身控制间距。
 
-           顶部渐变虚化层（body::before，手机 110px / 桌面 150px 高）是 fixed 的，
-           会把刚进入文章页时这一行按钮也虚化掉，所以整行要往下挪一点。
-
-           挪动之后如果只改上边距，这一行就会「上面空、下面挤」，看着偏上。
-           这里用上下相等的留白让它居中：
-             导航底边 → 按钮 = 24（导航自带的下边距）+ 4（本行 padding-top）= 28
-             按钮 → 标题     = 28（本行 margin-bottom）
-           两边都是 28px，视觉上正好落在导航和标题中间。
-           代价是「导航栏 → 标题」的总距离比原来多 8px（88 → 96），
-           这是「整行下移」和「上下留白相等」同时成立时的最小增量。 */
+           导航底边 → 按钮 = 24（导航自带的下边距）+ 4（本行 padding-top）= 28
+           按钮 → 标题     = 28（本行 margin-bottom）
+           上下留白相等，视觉上正好落在导航和标题中间。
+           （顶部虚化层已随吸顶栏一起移除，这 4px 留白保留是为了上下均衡。） */
         .article-topbar {
             display: flex;
             align-items: center;
@@ -3241,7 +3386,9 @@
 
         .audio-error-toast {
             position: fixed;
-            top: 20px;
+            /* 导航吸顶后，top: 20px 会正好压在导航右侧那几个链接上，
+               所以让它从导航底边往下让开 */
+            top: calc(var(--header-h) + 12px);
             right: 20px;
             z-index: 1000;
             display: flex;
@@ -3719,86 +3866,63 @@
             body {
                 --body-pad-x: 16px;
             }
-            .site-header {
-                margin-top: 12px;
-                margin-bottom: 12px;
-                top: 12px;
-                padding: 10px 12px;
-                border-radius: 15px;
-                gap: 10px;
-                min-height: 66px;
+            /* 条带加高到 68 是为了放得下「名字 + 副标题」两行，
+               标识与胶囊仍按小屏那一档（32 / 36）走 */
+            :root {
+                --header-h: 68px;
+                --header-control: 32px;
             }
-            /* 手机上顶部渐变模糊收窄一些，避免遮住太多内容 */
-            body::before {
-                height: 110px;
+            .site-header {
+                /* 左右内边距、通栏负 margin、安全区沿用基础样式。
+                   gap 收到 6：360 宽的屏上「品牌 + 副标题 + 四项导航」
+                   刚好能并排，再多 2px 副标题就得打省略号 */
+                margin-bottom: 14px;
+                gap: 6px;
             }
             .hero-section {
                 padding-top: 4px;
             }
+            /* 手机上保留副标题（只剩一个名字，信息太少了）。
+               空间不够时优先压缩副标题并加省略号，而不是把导航挤变形。 */
             .site-branding {
+                gap: 8px;
+                padding: 0 8px 0 0;
+                flex: 0 1 auto;
                 min-width: 0;
-                flex: 1;
             }
             .site-title-group {
                 min-width: 0;
             }
+            .site-title {
+                font-size: 0.9375rem;
+            }
             .site-subtitle {
+                font-size: 0.6875rem;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                white-space: nowrap;
             }
-            .site-header nav {
-                flex: 1;
-                min-width: 0;
+            /* 导航按内容宽度收缩、贴右。
+               不做「等分撑满」：那样药丸会被拉成 65×26（宽高比 2.5），
+               而桌面是 60×30（2.0），同一个控件在两个断点形状不一致。
+               这里让药丸始终比文字宽出左右各 9px，比例和桌面保持一致。 */
+            .site-nav {
+                flex: 0 0 auto;
+                justify-content: center;
+                --pill-inset-x: 2px;
             }
             .nav-links {
-                display: flex !important;
-                position: static;
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
-                width: 100%;
-                background: rgba(17, 17, 17, 0.04);
-                border: 1px solid rgba(17, 17, 17, 0.06);
-                border-radius: 999px;
-                padding: 4px;
-                gap: 4px;
-                box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
-                z-index: auto;
-                flex-wrap: nowrap;
-                white-space: nowrap;
+                flex: 0 0 auto;
+                gap: 2px;
             }
             .nav-links li {
-                flex: 1 1 0;
-                min-width: 0;
-                text-align: center;
+                flex: 0 0 auto;
             }
+            /* 横向 8px + 12px 字号：4 项合计比原来窄 12px，
+               360 宽才放得下「名字 + 副标题」+ 四项导航 */
             .nav-links a {
-                display: inline-block;
-                width: 100%;
-                padding: 7px 5px;
-                border-radius: 999px;
-                font-size: 0.74rem;
-                line-height: 1.2;
-                white-space: nowrap;
-                color: var(--color-text-secondary);
-                background: transparent;
-                transition: all var(--transition-fast);
-            }
-            .nav-links a:hover,
-            .nav-links a.active {
-                background: #111111;
-                color: #ffffff;
-                box-shadow: 0 4px 12px rgba(17, 17, 17, 0.14);
-            }
-            .nav-links a::after {
-                display: none;
-            }
-            .nav-links.open {
-                display: flex !important;
-            }
-            .mobile-menu-btn {
-                display: none;
+                padding: 0 8px;
+                font-size: 0.75rem;
+                letter-spacing: 0;
             }
             .hero-name {
                 font-size: 1.75rem;
@@ -3829,7 +3953,7 @@
                 font-size: 0.72rem;
             }
             .audio-error-toast {
-                top: 12px;
+                top: calc(var(--header-h) + 8px);
                 right: 12px;
                 width: calc(100% - 24px);
             }
@@ -3913,56 +4037,65 @@
             --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.6);
         }
 
-        /* 顶部导航 */
+        /* 顶部导航：深色下同样是一条通栏底色，只换颜色不加投影 */
+        /* 深色下同样半透明，只是底色换深；不透明度略低一点，
+           因为深底透出的浅色内容不会像黑字压浅底那样刺眼 */
         [data-theme="dark"] .site-header {
-            background: rgba(22, 25, 31, 0.26);
-            border-color: rgba(255, 255, 255, 0.1);
-            box-shadow:
-                0 0 0 1px rgba(0, 0, 0, 0.28),
-                0 10px 28px rgba(0, 0, 0, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.07);
+            background: rgba(15, 17, 21, 0.6);
+            border-bottom-color: rgba(255, 255, 255, 0.08);
         }
-        [data-theme="dark"] body::before {
-            background: linear-gradient(
-                to bottom,
-                rgba(15, 17, 21, 0.94) 0%,
-                rgba(15, 17, 21, 0.6) 45%,
-                rgba(15, 17, 21, 0) 100%
-            );
+        [data-theme="dark"] .site-header.is-scrolled {
+            background: rgba(15, 17, 21, 0.74);
+            border-bottom-color: rgba(255, 255, 255, 0.1);
         }
-        /* 不支持背景模糊的浏览器：用更实的底色保证文字可读、内容不糊成一片 */
         @supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
-            .site-header {
-                background: rgba(255, 255, 255, 0.94);
-            }
-            [data-theme="dark"] .site-header {
-                background: rgba(15, 17, 21, 0.94);
-            }
-            body::before {
-                background: linear-gradient(
-                    to bottom,
-                    rgba(255, 255, 255, 0.98) 0%,
-                    rgba(255, 255, 255, 0) 100%
-                );
-            }
-            [data-theme="dark"] body::before {
-                background: linear-gradient(
-                    to bottom,
-                    rgba(15, 17, 21, 0.98) 0%,
-                    rgba(15, 17, 21, 0) 100%
-                );
+            [data-theme="dark"] .site-header,
+            [data-theme="dark"] .site-header.is-scrolled {
+                background: rgba(15, 17, 21, 0.96);
             }
         }
-        [data-theme="dark"] .nav-links {
-            border-color: rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.06);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        [data-theme="dark"] .avatar {
+            background: linear-gradient(135deg, #2a2e36, #1f232a);
+            box-shadow:
+                0 0 0 1px rgba(255, 255, 255, 0.12),
+                0 2px 8px rgba(0, 0, 0, 0.4);
         }
-        html:not(.is-touch-input) [data-theme="dark"] .nav-links a:hover,
+        @media (hover: hover) {
+            html[data-theme="dark"]:not(.is-touch-input) .site-branding:hover {
+                background: rgba(255, 255, 255, 0.07);
+            }
+            html[data-theme="dark"]:not(.is-touch-input) .site-branding:hover .avatar {
+                box-shadow:
+                    0 0 0 1px rgba(255, 255, 255, 0.18),
+                    0 4px 14px rgba(0, 0, 0, 0.5);
+            }
+        }
+        [data-theme="dark"] .site-nav {
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow:
+                inset 0 0 0 1px rgba(255, 255, 255, 0.09),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+        /* 深色下「黑底」反相成「白底」，保持同样的对比关系 */
+        [data-theme="dark"] .nav-pill {
+            background: #f3f4f6;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+        }
+        html[data-theme="dark"]:not(.is-touch-input) .nav-links a:not(.active):hover {
+            color: var(--color-text-primary);
+        }
+        /* 注意写法：data-theme 就在 <html> 上，所以必须写成 html[data-theme="dark"]。
+           写成「html … [data-theme="dark"] …」会被当成「html 的后代里带这个属性」，
+           永远匹配不到，整条规则静默失效。 */
+        html[data-theme="dark"]:not(.is-touch-input) .nav-links a:not(.active):hover::before {
+            background: rgba(255, 255, 255, 0.09);
+        }
         [data-theme="dark"] .nav-links a.active {
-            background: var(--color-text-primary);
             color: #111111;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+        [data-theme="dark"] .site-nav:not(.has-pill) .nav-links a.active {
+            background: var(--color-text-primary);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
         }
 
         /* 按钮与社交链接 */
@@ -4316,12 +4449,6 @@
             border-color: var(--color-text-primary);
         }
 
-        /* 导航容器：让主题切换按钮与导航项横向排列 */
-        .site-header nav {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
 
         /* ---------- 电影错误弹窗（博客层） ---------- */
         .movie-error-overlay {

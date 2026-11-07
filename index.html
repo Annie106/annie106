@@ -55,34 +55,38 @@
 </head>
 <body>
 
+    <!-- ==================== 头部导航 ==================== -->
+    <header class="site-header">
+        <!-- 品牌区整块可点，回到首页；比只点文字更容易命中 -->
+        <a class="site-branding" id="homeLink" href="#" aria-label="Annie · 返回首页">
+            <img
+            class="avatar"
+            src="https://1837491863.cdn.123clouddisk.com/1837491863/46000074#"
+            alt="Annie 的头像"
+            width="38"
+            height="38"
+            decoding="async"
+            onerror="this.onerror=null;this.src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'"
+            />
+            <span class="site-title-group">
+                <span class="site-title">Annie</span>
+                <span class="site-subtitle">思考 · 记录 · 创造</span>
+            </span>
+        </a>
+        <nav class="site-nav" id="siteNav" aria-label="主导航">
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#" class="active" data-nav="home" aria-current="page">首页</a></li>
+                <li><a href="#" data-nav="blog">文章</a></li>
+                <li><a href="movie.html" data-nav="movie">电影</a></li>
+                <li><a href="about-rh-studio.html" data-nav="about">关于</a></li>
+            </ul>
+            <!-- 跟随当前项滑动的指示块；由 JS 定位，无 JS 时自动隐藏，退回普通激活底色 -->
+            <span class="nav-pill" aria-hidden="true"></span>
+        </nav>
+    </header>
+
     <div class="main-container" id="app">
 
-        <!-- ==================== 头部导航 ==================== -->
-        <header class="site-header">
-            <div class="site-branding">
-                <img
-                class="avatar"
-                src="https://1837491863.cdn.123clouddisk.com/1837491863/46000074#"
-                alt="Annie 的头像"
-                loading="lazy"
-                />
-                <div class="site-title-group">
-                    <a href="#" class="site-title" id="homeLink">Annie</a>
-                    <span class="site-subtitle">思考 · 记录 · 创造</span>
-                </div>
-            </div>
-            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="菜单">
-                <i class="ri-menu-line"></i>
-            </button>
-            <nav>
-                <ul class="nav-links" id="navLinks">
-                    <li><a href="#" class="active" data-nav="home">首页</a></li>
-                    <li><a href="#" data-nav="blog">文章</a></li>
-                    <li><a href="movie.html" data-nav="movie">电影</a></li>
-                    <li><a href="about-rh-studio.html" data-nav="about">关于</a></li>
-                </ul>
-            </nav>
-        </header>
 
         <!-- ==================== 首页视图 ==================== -->
         <div id="view-home" class="view active-view">
@@ -266,7 +270,7 @@
             </section>
 
             <!-- 版本号：从页脚挪到这里，收在关于页右下角 -->
-            <p class="about-version">版本 0.4.21.052</p>
+            <p class="about-version">版本 0.4.21.074</p>
         </div>
 
         <!-- ==================== 文章详情视图 ==================== -->
