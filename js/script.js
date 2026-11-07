@@ -124,7 +124,7 @@
                 // 这是置顶文章模板，直接修改下面的标题、摘要和正文即可
                 pinned: false,
                 title: '我的其它网站',
-                date: '2026-09-23',
+                date: '2026-11-05',
                 excerpt: '有视频网站、直链下载站等',
                 tags: ['网站'],  
                 content: `
@@ -133,7 +133,7 @@
                         <p>视频站</p>
                         <p><a href="https://annie106.github.io" target="_blank" rel="noopener noreferrer">暂停服务</a></p>
                         <p>直链下载站</p>
-                        <p><a href="https://annie106.github.io/annie106/project_subpage/projects/download/index.html" target="_blank" rel="noopener noreferrer">https://annie106.github.io/annie106/project_subpage/projects/download/index.html</a></p>
+                        <p><a href="https://annie106.github.io/project_subpage/projects/download/index.html" target="_blank" rel="noopener noreferrer">https://annie106.github.io/project_subpage/projects/download/index.html</a></p>
                         <h2>视频无法播放时 添加联系方式 备注来意</h2>
                         <p>联系方式在首页位置，点击图标即复制</p>
                     `,
@@ -1614,11 +1614,39 @@
             let commentsObserver = null;
             let commentsFailTimer = null;
             let commentsFrameObserver = null;
+            let commentsReadyTimer = null;
+            let commentsWarmTimer = null;
+            let commentsWarmFallbackTimer = null;
+            let commentsIdleId = null;
+            /* 每次渲染文章递增，用来作废上一篇文章留下的预热任务（切文章/回列表时） */
+            let commentsWarmToken = 0;
+            /* 当前 iframe 对应的 giscus term。同一篇文章来回切换时靠它判断能否复用 */
+            let commentsMountedTerm = null;
+
+            function commentsTerm(post) {
+                return `文章 ${post.id}：${post.title}`;
+            }
 
             function clearCommentsLoading() {
                 if (commentsFailTimer) {
                     clearTimeout(commentsFailTimer);
                     commentsFailTimer = null;
+                }
+                if (commentsWarmTimer) {
+                    clearTimeout(commentsWarmTimer);
+                    commentsWarmTimer = null;
+                }
+                if (commentsWarmFallbackTimer) {
+                    clearTimeout(commentsWarmFallbackTimer);
+                    commentsWarmFallbackTimer = null;
+                }
+                if (commentsIdleId !== null) {
+                    if ('cancelIdleCallback' in window) window.cancelIdleCallback(commentsIdleId);
+                    commentsIdleId = null;
+                }
+                if (commentsReadyTimer) {
+                    clearInterval(commentsReadyTimer);
+                    commentsReadyTimer = null;
                 }
                 if (commentsObserver) {
                     commentsObserver.disconnect();
@@ -1628,6 +1656,13 @@
                     commentsFrameObserver.disconnect();
                     commentsFrameObserver = null;
                 }
+            }
+
+            function removeCommentsSkeleton() {
+                const skeleton = articleCommentsStage
+                    ? articleCommentsStage.querySelector('.comments-skeleton')
+                    : null;
+                if (skeleton) skeleton.remove();
             }
 
             /* 骨架和 giscus 卡片共用同一套网格：头像 40px、右侧 12px 间距、上下 14px，
@@ -1667,9 +1702,10 @@
 
             function showCommentsRetry(post) {
                 if (!articleComments) return;
+                /* 重试面板会清空容器，这里先把还没跑完的轮询/观察器收掉 */
+                clearCommentsLoading();
                 articleComments.replaceChildren();
-                const retrySkeleton = articleCommentsStage ? articleCommentsStage.querySelector('.comments-skeleton') : null;
-                if (retrySkeleton) retrySkeleton.remove();
+                removeCommentsSkeleton();
                 const box = document.createElement('div');
                 box.className = 'comments-retry';
                 const text = document.createElement('p');
@@ -1681,14 +1717,83 @@
                 btn.textContent = '重新加载';
                 btn.addEventListener('click', function () {
                     clearCommentsLoading();
-                    mountArticleComments(post);
+                    mountArticleComments(post, true);
                 });
                 box.append(text, btn);
                 articleComments.appendChild(box);
             }
 
-            function mountArticleComments(post) {
+            /* 页面就绪就把 giscus 整条链拉起来（client.js → iframe → GitHub API 是串行的，
+               等读者滚到底才开始就得干等着）。iframe 在正文下方，加载过程看不见。
+               只在两种情况下让路：
+               1) 正文还没渲染完 → 等 DOMContentLoaded。不等到 load：动态插入的第三方
+                  脚本/iframe 在浏览器里本就是低优先级，不会挤掉正文图片
+               2) 慢网或开了省流量 → 延后 1.5s */
+            function scheduleCommentsWarmMount(callback) {
+                const token = commentsWarmToken;
+                let fired = false;
+
+                function stale() {
+                    return token !== commentsWarmToken;
+                }
+
+                function fire() {
+                    if (fired || stale()) return;
+                    fired = true;
+                    commentsWarmTimer = null;
+                    commentsIdleId = null;
+                    callback();
+                }
+
+                function whenIdle() {
+                    if (stale()) return;
+                    /* 后台标签页先不抢流量，等读者切回前台再补 */
+                    if (document.hidden) {
+                        document.addEventListener('visibilitychange', function onVisible() {
+                            if (document.hidden) return;
+                            document.removeEventListener('visibilitychange', onVisible);
+                            whenIdle();
+                        });
+                        return;
+                    }
+                    if ('requestIdleCallback' in window) {
+                        /* 不等空闲窗口白等太久：1s 内一定执行 */
+                        commentsIdleId = window.requestIdleCallback(fire, { timeout: 1000 });
+                    } else {
+                        commentsWarmTimer = setTimeout(fire, 0);
+                    }
+                }
+
+                function start() {
+                    if (stale()) return;
+                    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                    const onSlowNetwork = Boolean(conn && (conn.saveData || /2g$/.test(conn.effectiveType || '')));
+                    if (onSlowNetwork) {
+                        commentsWarmTimer = setTimeout(whenIdle, 1500);
+                        return;
+                    }
+                    whenIdle();
+                }
+
+                if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                    start();
+                } else {
+                    document.addEventListener('DOMContentLoaded', start, { once: true });
+                    /* 解析被拖住时的兜底，别让评论区一直不启动 */
+                    commentsWarmFallbackTimer = setTimeout(start, 3000);
+                }
+            }
+
+            function mountArticleComments(post, force) {
                 if (!articleComments) return;
+                const term = commentsTerm(post);
+
+                /* 已经挂着同一篇文章的 iframe：直接复用，不再走一遍完整请求链 */
+                if (!force && commentsMountedTerm === term
+                    && articleComments.querySelector('iframe.giscus-frame')) {
+                    return;
+                }
+                commentsMountedTerm = null;
                 articleComments.replaceChildren();
                 if (articleCommentsStage && !articleCommentsStage.querySelector('.comments-skeleton')) {
                     articleCommentsStage.appendChild(buildCommentsSkeleton());
@@ -1698,12 +1803,12 @@
                 script.src = 'https://giscus.app/client.js';
                 script.async = true;
                 script.crossOrigin = 'anonymous';
-                script.dataset.repo = 'annie106/annie106';
+                script.dataset.repo = 'Annie106/Annie106.github.io';
                 script.dataset.repoId = 'R_kgDOSTMWsg';
                 script.dataset.category = 'General';
                 script.dataset.categoryId = 'DIC_kwDOSTMWss4DKarQ';
                 script.dataset.mapping = 'specific';
-                script.dataset.term = `文章 ${post.id}：${post.title}`;
+                script.dataset.term = term;
                 script.dataset.strict = '0';
                 script.dataset.reactionsEnabled = '0';
                 script.dataset.emitMetadata = '0';
@@ -1713,10 +1818,11 @@
                     : 'light';
                 script.dataset.lang = 'zh-CN';
                 articleComments.appendChild(script);
+                commentsMountedTerm = term;
 
                 /* 骨架留到 iframe 真正出现再撤，中间这段时间不留白 */
                 if (commentsFrameObserver) commentsFrameObserver.disconnect();
-                commentsFrameObserver = new MutationObserver(function (mutations) {
+                commentsFrameObserver = new MutationObserver(function () {
                     const frame = articleComments.querySelector('iframe.giscus-frame');
                     if (!frame) return;
                     commentsFrameObserver.disconnect();
@@ -1726,11 +1832,12 @@
                        否则会看到 iframe 从 150px 慢慢长到成稿高度的过程 */
                     /* giscus 自己的「正在加载评论……」也是一个高度约 150px 的稳定块，
                        所以不能用「高度稳定」当完成信号。评论区真正渲染出来至少 200px 以上，
-                       要求连续 1 秒高于 200px 才算就绪；15 秒兜底，避免一直盖着骨架 */
+                       要求连续 450ms 高于 200px 才算就绪；10 秒兜底，避免一直盖着骨架 */
                     let lastHeight = -1;
                     let stableTicks = 0;
                     let ticks = 0;
-                    const readyTimer = setInterval(function () {
+                    if (commentsReadyTimer) clearInterval(commentsReadyTimer);
+                    commentsReadyTimer = setInterval(function () {
                         ticks += 1;
                         const height = frame.getBoundingClientRect().height;
                         if (height > 200 && Math.abs(height - lastHeight) < 2) {
@@ -1739,8 +1846,22 @@
                             stableTicks = 0;
                         }
                         lastHeight = height;
-                        if (stableTicks >= 4 || ticks > 60) {
-                            clearInterval(readyTimer);
+                        if (stableTicks >= 3 || ticks > 70) {
+                            clearInterval(commentsReadyTimer);
+                            commentsReadyTimer = null;
+                            /* 预热挂载比读者先到，这期间切主题的消息 iframe 还收不到，
+                               就绪后按当前主题补一次 */
+                            if (frame.contentWindow) {
+                                frame.contentWindow.postMessage({
+                                    giscus: {
+                                        setConfig: {
+                                            theme: document.documentElement.getAttribute('data-theme') === 'dark'
+                                                ? 'dark'
+                                                : 'light'
+                                        }
+                                    }
+                                }, 'https://giscus.app');
+                            }
                             frame.classList.add('is-ready');
                             const skeleton = articleCommentsStage ? articleCommentsStage.querySelector('.comments-skeleton') : null;
                             if (skeleton) {
@@ -1750,7 +1871,7 @@
                                 }, 260);
                             }
                         }
-                    }, 250);
+                    }, 150);
                 });
                 commentsFrameObserver.observe(articleComments, { childList: true });
 
@@ -1767,28 +1888,57 @@
             function renderArticleComments(post, isUnavailableArticle) {
                 if (!articleCommentsSection || !articleComments) return;
 
-                clearCommentsLoading();
+                /* 作废上一篇留下的预热任务：否则它可能在切文章之后才醒来，
+                   把旧文章的评论区挂到新文章上 */
+                commentsWarmToken += 1;
+
                 articleCommentsSection.hidden = isUnavailableArticle;
                 if (articleCommentsDivider) articleCommentsDivider.hidden = isUnavailableArticle;
-                articleComments.replaceChildren();
-                const staleSkeleton = articleCommentsStage ? articleCommentsStage.querySelector('.comments-skeleton') : null;
-                if (staleSkeleton) staleSkeleton.remove();
-                if (isUnavailableArticle) return;
 
+                if (isUnavailableArticle) {
+                    clearCommentsLoading();
+                    articleComments.replaceChildren();
+                    removeCommentsSkeleton();
+                    commentsMountedTerm = null;
+                    return;
+                }
+
+                /* 返回后再打开同一篇文章：iframe 还在 DOM 里，直接复用。
+                   这里省掉的是 client.js → iframe → GitHub API 整条串行链 */
+                if (commentsMountedTerm === commentsTerm(post)
+                    && articleComments.querySelector('iframe.giscus-frame')) {
+                    clearCommentsLoading();
+                    removeCommentsSkeleton();
+                    return;
+                }
+
+                clearCommentsLoading();
+                commentsMountedTerm = null;
+                articleComments.replaceChildren();
+                removeCommentsSkeleton();
                 if (articleCommentsStage) articleCommentsStage.appendChild(buildCommentsSkeleton());
 
-                /* 距离视口还有 800px 时就开始加载：读者看正文的时间足够把评论拉回来，
-                   滚到底部时基本已经渲染好，同时不占用首屏资源 */
+                let mounted = false;
+                function mountOnce() {
+                    if (mounted) return;
+                    mounted = true;
+                    clearCommentsLoading();
+                    mountArticleComments(post);
+                }
+
                 if ('IntersectionObserver' in window) {
+                    /* 快滚的读者：距离视口还有 1200px 就开始挂载 */
                     commentsObserver = new IntersectionObserver(function (entries) {
                         if (entries.some(function (entry) { return entry.isIntersecting; })) {
-                            clearCommentsLoading();
-                            mountArticleComments(post);
+                            mountOnce();
                         }
-                    }, { rootMargin: '800px 0px' });
+                    }, { rootMargin: '1200px 0px' });
                     commentsObserver.observe(articleCommentsSection);
+
+                    /* 慢读的读者：不等滚动，首屏稳定后就在后台跑完整条链 */
+                    scheduleCommentsWarmMount(mountOnce);
                 } else {
-                    mountArticleComments(post);
+                    mountOnce();
                 }
             }
 

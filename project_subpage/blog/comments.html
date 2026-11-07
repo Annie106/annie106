@@ -7,8 +7,16 @@
   <title>Annie · 文章评论</title>
   <link rel="icon" type="image/svg+xml" href="../../favicon.svg">
   <link rel="preconnect" href="https://giscus.app" crossorigin>
-  <link rel="preload" href="https://giscus.app/client.js" as="script" crossorigin="anonymous" fetchpriority="low">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css">
+  <link rel="dns-prefetch" href="https://giscus.app">
+  <link rel="preload" href="https://giscus.app/client.js" as="script" crossorigin="anonymous" fetchpriority="high">
+  <!-- 图标样式表走 CDN，慢的时候会卡住整页渲染，连带把下面挂 giscus 的脚本也一起堵住。
+       改成 preload + 加载完再切成样式表：先出内容，图标稍后补上。 -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css"
+        onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css">
+  </noscript>
   <link rel="stylesheet" href="../../css/style.css">
   <script>
     (function () {
@@ -90,7 +98,31 @@
       </p>
       <div class="comments-content">
         <div class="article-comments">
-          <div class="giscus" id="commentsWidget"></div>
+          <div class="comments-stage">
+            <!-- 骨架先占位：giscus 要等 iframe + GitHub API 回来才有内容，
+                 这段时间页面不应该是一块空白 -->
+            <div class="comments-skeleton" id="commentsSkeleton" aria-hidden="true">
+              <div class="comments-skeleton-card">
+                <div class="comments-skeleton-avatar"></div>
+                <div class="comments-skeleton-main">
+                  <div class="comments-skeleton-line comments-skeleton-line--name"></div>
+                  <div class="comments-skeleton-line comments-skeleton-line--time"></div>
+                  <div class="comments-skeleton-line"></div>
+                  <div class="comments-skeleton-line comments-skeleton-line--short"></div>
+                </div>
+              </div>
+              <div class="comments-skeleton-card">
+                <div class="comments-skeleton-avatar"></div>
+                <div class="comments-skeleton-main">
+                  <div class="comments-skeleton-line comments-skeleton-line--name"></div>
+                  <div class="comments-skeleton-line comments-skeleton-line--time"></div>
+                  <div class="comments-skeleton-line"></div>
+                  <div class="comments-skeleton-line comments-skeleton-line--short"></div>
+                </div>
+              </div>
+            </div>
+            <div class="giscus" id="commentsWidget"></div>
+          </div>
         </div>
       </div>
       <hr class="divider-thin">
@@ -117,6 +149,7 @@
       const title = document.getElementById('commentsTitle');
       const error = document.getElementById('commentsError');
       const widget = document.getElementById('commentsWidget');
+      const skeleton = document.getElementById('commentsSkeleton');
       const backLink = document.getElementById('commentsBack');
       const backLinkBottom = document.getElementById('commentsBackBottom');
       const feedbackLink = document.getElementById('commentsFeedback');
@@ -124,6 +157,7 @@
       if (!articleId || !/^\d+$/.test(articleId) || !articleTitle) {
         error.hidden = false;
         widget.hidden = true;
+        if (skeleton) skeleton.remove();
         return;
       }
 
@@ -138,7 +172,7 @@
       script.src = 'https://giscus.app/client.js';
       script.async = true;
       script.crossOrigin = 'anonymous';
-      script.dataset.repo = 'annie106/annie106';
+      script.dataset.repo = 'Annie106/Annie106.github.io';
       script.dataset.repoId = 'R_kgDOSTMWsg';
       script.dataset.category = 'General';
       script.dataset.categoryId = 'DIC_kwDOSTMWss4DKarQ';
@@ -153,6 +187,37 @@
         : 'light';
       script.dataset.lang = 'zh-CN';
       widget.appendChild(script);
+
+      /* iframe 起来以后盯高度：giscus 自带的「正在加载评论」只有约 150px，
+         评论区真正渲染出来才会超过 200px；连续 3 帧稳定（约 450ms）就撤骨架 */
+      const frameObserver = new MutationObserver(function () {
+        const frame = widget.querySelector('iframe.giscus-frame');
+        if (!frame) return;
+        frameObserver.disconnect();
+        let lastHeight = -1;
+        let stableTicks = 0;
+        let ticks = 0;
+        const readyTimer = setInterval(function () {
+          ticks += 1;
+          const height = frame.getBoundingClientRect().height;
+          if (height > 200 && Math.abs(height - lastHeight) < 2) {
+            stableTicks += 1;
+          } else {
+            stableTicks = 0;
+          }
+          lastHeight = height;
+          if (stableTicks >= 3 || ticks > 80) {
+            clearInterval(readyTimer);
+            if (skeleton) {
+              skeleton.classList.add('is-hidden');
+              setTimeout(function () {
+                if (skeleton.parentNode) skeleton.remove();
+              }, 260);
+            }
+          }
+        }, 150);
+      });
+      frameObserver.observe(widget, { childList: true });
 
       function syncGiscusTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);

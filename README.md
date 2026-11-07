@@ -67,7 +67,7 @@ archive/                    归档，不参与显示
 
 几个注意点：
 
-- 分享封面必须写绝对地址，如 `https://annie106.github.io/annie106/share_cover.jpg`；相对路径抓不到，带 Referer 鉴权的 CDN 也抓不到。
+- 分享封面必须写绝对地址，如 `https://annie106.github.io/share_cover.jpg`；相对路径抓不到，带 Referer 鉴权的 CDN 也抓不到。
 - 全站共用一个 `index.html?article=N` 页面，微信不执行 JS，所以所有文章共用同一张封面。
 - 改文章 `id` 会让已分享的链接失效。
 - 首页标签在 `js/script.js` 的 `renderTagPills` 里，目前是「置顶 / 社交 / 随笔」。
